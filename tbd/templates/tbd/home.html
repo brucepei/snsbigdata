@@ -1,11 +1,145 @@
+<!DOCTYPE html>
 <html>
-<head>
-    <title>SnS Big Data</title>
-</head>
+    <head>
+        <title>SnS Big Data</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="/static/css/bootstrap-3.3.5.min.css" rel="stylesheet">
+        <style type="text/css">
+    .dropdown-submenu {
+        position:relative;
+    }
+    .dropdown-submenu>.dropdown-menu {
+        top:0;
+        left:100%;
+        margin-top:-6px;
+        margin-left:-1px;
+        -webkit-border-radius:0 6px 6px 6px;
+        -moz-border-radius:0 6px 6px 6px;
+        border-radius:0 6px 6px 6px;
+    }
+    .dropdown-submenu:hover>.dropdown-menu {
+        display:block;
+    }
+    .dropdown-submenu>a:after {
+        display:block;
+        content:" ";
+        float:right;
+        width:0;
+        height:0;
+        border-color:transparent;
+        border-style:solid;
+        border-width:5px 0 5px 5px;
+        border-left-color:#cccccc;
+        margin-top:5px;
+        margin-right:-10px;
+    }
+    .dropdown-submenu:hover>a:after {
+        border-left-color:#ffffff;
+    }
+    .dropdown-submenu.pull-left {
+        float:none;
+    }
+    .dropdown-submenu.pull-left>.dropdown-menu {
+        left:-100%;
+        margin-left:10px;
+        -webkit-border-radius:6px 0 6px 6px;
+        -moz-border-radius:6px 0 6px 6px;
+        border-radius:6px 0 6px 6px;
+    }
+        </style>
+        <link rel="shortcut icon" href="/static/images/favicon.ico" type="image/x-icon" />
+        <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon" />
+    </head>
+    
+    <body>
 
-<body>
-    <h1>any problem, contact me!</h1>
+<div class="navbar navbar-inverse" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Home</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        Project <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        
+                        <li class="dropdown dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">8</a>
+                            <ul class="dropdown-menu">
+                                <li><a href="/build/list?project_name=8">Build List</a></li>
+                                <li><a href="/project/tbd?project_name=8">Test Big Data</a></li>
+                                <li><a href="/manual/build?project_name=8">Manual Build Data</a></li>
+                                <li><a href="/manual/test?project_name=8">Manual Test Data</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">MDM.LE.1.0</a>
+                            <ul class="dropdown-menu">
+                                <li><a href="/build/list?project_name=MDM.LE.1.0">Build List</a></li>
+                                <li><a href="/project/tbd?project_name=MDM.LE.1.0">Test Big Data</a></li>
+                                <li><a href="/manual/build?project_name=MDM.LE.1.0">Manual Build Data</a></li>
+                                <li><a href="/manual/test?project_name=MDM.LE.1.0">Manual Test Data</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">MDM.LE.1.0.1</a>
+                            <ul class="dropdown-menu">
+                                <li><a href="/build/list?project_name=MDM.LE.1.0.1">Build List</a></li>
+                                <li><a href="/project/tbd?project_name=MDM.LE.1.0.1">Test Big Data</a></li>
+                                <li><a href="/manual/build?project_name=MDM.LE.1.0.1">Manual Build Data</a></li>
+                                <li><a href="/manual/test?project_name=MDM.LE.1.0.1">Manual Test Data</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown dropdown-submenu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tufello_PCIE</a>
+                            <ul class="dropdown-menu">
+                                <li><a href="/build/list?project_name=Tufello_PCIE">Build List</a></li>
+                                <li><a href="/project/tbd?project_name=Tufello_PCIE">Test Big Data</a></li>
+                                <li><a href="/manual/build?project_name=Tufello_PCIE">Manual Build Data</a></li>
+                                <li><a href="/manual/test?project_name=Tufello_PCIE">Manual Test Data</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li><a href="/manual/project">New Project</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        Configure <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#">configure 1</a></li>
+                        <li><a href="#">configure 2</a></li>
+                        <li><a href="#">configure 3</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+ 
+    <div class="container">
+        <div class="page-header">
+            <h1>Hello, any question, please contact with <a href="mailto:lpei@qti.qualcomm.com">lpei</a>!</h1>
+        </div>
+    </div>
 
+    <script src="/static/js/jquery-1.11.3.min.js"></script>
+    <script src="/static/js/bootstrap-3.3.5.min.js"></script>
 
-</body>
+    </body>
 </html>

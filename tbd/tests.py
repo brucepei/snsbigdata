@@ -15,6 +15,7 @@ class Homepage(TestCase):
         request = HttpRequest()
         resp = home_page(request)
         
-        self.assertTrue(resp.content.startswith(b'<html>'))
-        self.assertTrue(resp.content.endswith(b'</html>'))
+        self.assertIn(b'<html>', resp.content)
+        self.assertTrue(resp.content.strip().endswith(b'</html>'))
         self.assertIn(b'<title>SnS Big Data</title>', resp.content)
+        self.assertTrue(resp.content == render_to_string('tbd/home.html'))
