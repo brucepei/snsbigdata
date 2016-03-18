@@ -101,7 +101,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "common_static"),
+)
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 

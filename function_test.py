@@ -5,7 +5,7 @@ import unittest
 class TBDTest(unittest.TestCase):
     def setUp(self):
         self.browser = webdriver.Chrome()
-        self.browser.implicitly_wait(3)
+        self.browser.implicitly_wait(1)
     
     def tearDown(self):
         self.browser.quit()
@@ -21,6 +21,11 @@ class TBDTest(unittest.TestCase):
         self.assertIn('Home', links_text)
         self.assertIn('Project', links_text)
             
-        
+    def test_static_bootstap(self):
+        self.browser.get('http://127.0.0.1:8000/static/css/bootstrap.min.css')
+        self.assertNotIn('Page not found', self.browser.title)
+        self.browser.get('http://127.0.0.1:8000/static/js/bootstrap.min.js')
+        self.assertNotIn('Page not found', self.browser.title)
+    
 if __name__ == '__main__':
     unittest.main()
