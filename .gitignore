@@ -3,3 +3,4 @@
 __pycache__ 
 *.prj
 venv
+*.komodoproject
