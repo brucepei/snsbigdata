@@ -24,6 +24,8 @@ class TBDTest(unittest.TestCase):
     def test_static_bootstap(self):
         self.browser.get('http://127.0.0.1:8000/static/css/bootstrap.min.css')
         self.assertNotIn('Page not found', self.browser.title)
+        self.browser.get('http://127.0.0.1:8000/static/js/jquery-1.11.3.min.js')
+        self.assertNotIn('Page not found', self.browser.title)
         self.browser.get('http://127.0.0.1:8000/static/js/bootstrap.min.js')
         self.assertNotIn('Page not found', self.browser.title)
     
