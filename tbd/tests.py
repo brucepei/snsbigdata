@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.core.urlresolvers import resolve
 from django.http import HttpRequest
 from django.template.loader import render_to_string
-from tbd.views import home_page
+from tbd.views import home_page, project_page
 
 
 # Create your tests here.
@@ -19,3 +19,16 @@ class Homepage(TestCase):
         self.assertTrue(resp.content.strip().endswith(b'</html>'))
         self.assertIn(b'<title>SnS Big Data</title>', resp.content)
         self.assertTrue(resp.content.decode('utf8') == render_to_string('tbd/home.html'))
+    
+    def test_project_url_handler(self):
+        handler_obj = resolve('/project')
+        self.assertEqual(handler_obj.func, project_page)
+        
+    def test_project_return_correct_html(self):
+        request = HttpRequest()
+        resp = project_page(request)
+        
+        self.assertIn(b'<html>', resp.content)
+        self.assertTrue(resp.content.strip().endswith(b'</html>'))
+        self.assertIn(b'<title>SnS Big Data-Project</title>', resp.content)
+        self.assertTrue(resp.content.decode('utf8') == render_to_string('tbd/project.html'))

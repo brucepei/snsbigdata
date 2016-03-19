@@ -20,4 +20,5 @@ import tbd.views
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', tbd.views.home_page, name='tbd_home'),
+    url(r'^project$', tbd.views.project_page, name='tbd_home'),
 ]

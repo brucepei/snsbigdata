@@ -1,0 +1,41 @@
+{% extends 'tbd/base.html' %}
+{% block title %}SnS Big Data-Project{% endblock %}
+ 
+{% block content %}
+    <div class="container">
+        <table id="id_project_table" class="table" contenteditable="false">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Create time</th>
+                    <th>Build count</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="success">
+                    <td>1</td>
+                    <td>project1</td>
+                    <td>2016/3/20</td>
+                    <td>10</td>
+                </tr>
+                <tr class="info">
+                    <td>2</td>
+                    <td>project2</td>
+                    <td>2016/3/19</td>
+                    <td>12</td>
+                </tr>
+            </tbody>
+        </table>
+        <form>
+            <fieldset>
+                <legend contenteditable="true">New/Delete Project</legend>
+                <label contenteditable="true">Project Name</label>
+                <input id="id_target_project" type="text" placeholder="project name">
+                <span class="help-block" contenteditable="true">You can add a new one or delete the old one!</span>
+                <button type="reset" class="btn" contenteditable="true">Reset</button>
+                <button type="submit" class="btn" contenteditable="true">Submit</button>
+            </fieldset>
+        </form>
+    </div>
+{% endblock %}
