@@ -1,9 +1,16 @@
+decorator==4.0.9
 Django==1.9.4
 et-xmlfile==1.0.1
+ipython==4.1.2
+ipython-genutils==0.1.0
 jdcal==1.2
 openpyxl==2.3.4
+path.py==8.1.2
+pickleshare==0.6
 python-ntlm3==1.0.2
 requests==2.9.1
 requests-ntlm==0.2.0
 selenium==2.53.1
+simplegeneric==0.8.1
 six==1.10.0
+traitlets==4.2.1

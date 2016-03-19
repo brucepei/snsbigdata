@@ -18,4 +18,4 @@ class Homepage(TestCase):
         self.assertIn(b'<html>', resp.content)
         self.assertTrue(resp.content.strip().endswith(b'</html>'))
         self.assertIn(b'<title>SnS Big Data</title>', resp.content)
-        self.assertTrue(resp.content == render_to_string('tbd/home.html'))
+        self.assertTrue(resp.content.decode('utf8') == render_to_string('tbd/home.html'))
