@@ -11,7 +11,7 @@ class Homepage(TestCase):
         handler_obj = resolve('/')
         self.assertEqual(handler_obj.func, home_page)
         
-    def test_homepage_return_correct_html(self):
+    def test_homepage_get_correct_html(self):
         request = HttpRequest()
         resp = home_page(request)
         
@@ -24,7 +24,7 @@ class Homepage(TestCase):
         handler_obj = resolve('/project')
         self.assertEqual(handler_obj.func, project_page)
         
-    def test_project_return_correct_html(self):
+    def test_project_get_correct_html(self):
         request = HttpRequest()
         resp = project_page(request)
         
@@ -32,3 +32,16 @@ class Homepage(TestCase):
         self.assertTrue(resp.content.strip().endswith(b'</html>'))
         self.assertIn(b'<title>Project - SBD</title>', resp.content)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request))
+        
+    def test_project_post_add_project(self):
+        request = HttpRequest()
+        request.method = 'POST'
+        request.POST['add'] = None
+        request.POST['name'] = 'unit_test_prj'
+        
+        resp = project_page(request)
+        
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request))
+        self.assertIn("unit_test_prj", resp.content.decode('utf8'))
+        
+       
