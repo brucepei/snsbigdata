@@ -1,7 +1,7 @@
 from selenium import webdriver
-import unittest
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium.webdriver.common.keys import Keys
+import time
 
 class TBDTest(StaticLiveServerTestCase):
     
@@ -36,6 +36,7 @@ class TBDTest(StaticLiveServerTestCase):
         target_project = self.browser.find_element_by_id('id_target_project')
         target_project.send_keys("test_func")
         target_project.send_keys(Keys.ENTER)
+        self.browser.refresh()
         project_table = self.browser.find_element_by_id('id_project_table')
         rows = project_table.find_elements_by_tag_name('tr')
-        self.assertIn('test_func', [row.text for row in rows])
+        self.assertIn('test_func', rows[1].text)

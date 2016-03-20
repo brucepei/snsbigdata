@@ -9,33 +9,34 @@
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
-                    <th>Create time</th>
-                    <th>Build count</th>
+                    <th>Owner</th>
+                    <th>CreateTime</th>
+                    <th>Operation</th>
                 </tr>
             </thead>
             <tbody>
-                <tr class="success">
-                    <td>1</td>
-                    <td>project1</td>
-                    <td>2016/3/20</td>
-                    <td>10</td>
+                {% for prj in projects %}
+                <tr {% cycle 'class="info"' '' %}>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ prj.name }}</td>
+                    <td>{{ prj.owner }}</td>
+                    <td>{{ prj.create }}</td>
+                    <td><a href="{% url 'tbd_project' %}?method=delete&name={{prj.name|iriencode}}">delete</a></td>
                 </tr>
-                <tr class="info">
-                    <td>2</td>
-                    <td>project2</td>
-                    <td>2016/3/19</td>
-                    <td>12</td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
         <form action="{% url 'tbd_project' %}" method="post">
             <fieldset>
-                <legend contenteditable="false">Add/Delete Project</legend>
+                <legend contenteditable="false">Add Project</legend>
                 <label contenteditable="false">Project Name</label>
                 <input id="id_target_project" name="name" type="text" placeholder="project name">
+                <br/>
+                <label contenteditable="false">Owner Name</label>
+                <input name="owner" type="text" placeholder="owner name">
                 <span class="help-block" contenteditable="false">You can add a new one or delete the old one!</span>
-                <button class="btn" name="add" type="submit" contenteditable="false">Add</button>
-                <button class="btn" name="delete" type="submit" contenteditable="false">Delete</button>
+                <button class="btn" type="reset" contenteditable="false">Reset</button>
+                <button class="btn" name="add" type="submit" contenteditable="false">Submit</button>
                 {% csrf_token %}
             </fieldset>
         </form>
