@@ -18,7 +18,7 @@ class Homepage(TestCase):
         self.assertIn(b'<html>', resp.content)
         self.assertTrue(resp.content.strip().endswith(b'</html>'))
         self.assertIn(b'<title>SnS Big Data</title>', resp.content)
-        self.assertTrue(resp.content.decode('utf8') == render_to_string('tbd/home.html'))
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/home.html'))
     
     def test_project_url_handler(self):
         handler_obj = resolve('/project')
@@ -31,4 +31,4 @@ class Homepage(TestCase):
         self.assertIn(b'<html>', resp.content)
         self.assertTrue(resp.content.strip().endswith(b'</html>'))
         self.assertIn(b'<title>Project - SBD</title>', resp.content)
-        self.assertTrue(resp.content.decode('utf8') == render_to_string('tbd/project.html'))
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request))

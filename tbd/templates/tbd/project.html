@@ -28,14 +28,15 @@
                 </tr>
             </tbody>
         </table>
-        <form>
+        <form action="{% url 'tbd_project' %}" method="post">
             <fieldset>
-                <legend contenteditable="false">New/Delete Project</legend>
+                <legend contenteditable="false">Add/Delete Project</legend>
                 <label contenteditable="false">Project Name</label>
-                <input id="id_target_project" type="text" placeholder="project name">
+                <input id="id_target_project" name="name" type="text" placeholder="project name">
                 <span class="help-block" contenteditable="false">You can add a new one or delete the old one!</span>
-                <button type="submit" class="btn" contenteditable="false">Delete</button>
-                <button type="submit" class="btn" contenteditable="false">New</button>
+                <button class="btn" name="add" type="submit" contenteditable="false">Add</button>
+                <button class="btn" name="delete" type="submit" contenteditable="false">Delete</button>
+                {% csrf_token %}
             </fieldset>
         </form>
     </div>
