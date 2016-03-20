@@ -7,3 +7,6 @@ class Project(models.Model):
     name = models.CharField(unique=True, default='', max_length=30)
     owner = models.CharField(unique=False, default='', max_length=30)
     create = models.DateTimeField(unique=False, default=timezone.now())
+    
+    def __unicode__(self):
+        return "{}({})".format(self.name, self.owner)
