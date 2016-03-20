@@ -30,5 +30,5 @@ class Homepage(TestCase):
         
         self.assertIn(b'<html>', resp.content)
         self.assertTrue(resp.content.strip().endswith(b'</html>'))
-        self.assertIn(b'<title>SnS Big Data-Project</title>', resp.content)
+        self.assertIn(b'<title>Project - SBD</title>', resp.content)
         self.assertTrue(resp.content.decode('utf8') == render_to_string('tbd/project.html'))
