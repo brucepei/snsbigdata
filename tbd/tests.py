@@ -5,6 +5,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from tbd.models import Project
 from tbd.views import home_page, project_page
+from datetime import datetime
 
 
 # Create your tests here.
@@ -43,8 +44,9 @@ class TBDTest(TestCase):
         request.POST['add'] = None
         request.POST['name'] = 'unit_test_prj'
         request.POST['owner'] = 'tester'
-        #request.POST['create'] = timezone.now()
-        
+        request.POST['create'] = datetime.now()
+        aware_create_time = timezone.make_aware(request.POST['create'], timezone.get_current_timezone())
+
         resp = project_page(request)
         
         saved_projects = Project.objects.all()
@@ -52,10 +54,33 @@ class TBDTest(TestCase):
         first_project = saved_projects[0]
         self.assertEqual(first_project.name, request.POST['name'])
         self.assertEqual(first_project.owner, request.POST['owner'])
-        #self.assertEqual(first_project.create, request.POST['create'])
+        self.assertEqual(first_project.create, aware_create_time)
         
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp['location'], '/project')
+        
+    def test_project_post_delete_project(self):
+        request = HttpRequest()
+        request.method = 'POST'
+        request.POST['add'] = None
+        request.POST['name'] = 'unit_test_prj'
+        request.POST['owner'] = 'tester'
+        request.POST['create'] = datetime.now()
+        
+        resp = project_page(request)
+        
+        saved_projects = Project.objects.all()
+        self.assertEqual(saved_projects.count(), 1)
+
+        request = HttpRequest()
+        request.GET['method'] = 'delete'
+        request.GET['name'] = 'unit_test_prj'
+        resp = project_page(request)
+        
+        saved_projects = Project.objects.all()
+        self.assertEqual(saved_projects.count(), 0)
+        
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request))
 
 class ProjectModelTest(TestCase):
     def test_saving_and_retrieve_project(self):
