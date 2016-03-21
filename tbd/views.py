@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.utils import timezone
 from tbd.models import Project
-
+from .forms import AddProjectForm
 
 # Create your views here.
 def home_page(request):
@@ -10,11 +10,18 @@ def home_page(request):
 
 def project_page(request):
     if request.method == 'POST':
-        prj_name = request.POST.get('name', '')
-        target_prj = Project.objects.filter(name=prj_name)
-        if not target_prj:
-            prj_owner = request.POST['owner']
-            Project.objects.create(name=prj_name, owner=prj_owner)
+        form = AddProjectForm(request.POST)
+        if form.is_valid():
+            prj_name = form.cleaned_data['name']
+            prj_owner = form.cleaned_data['owner']
+            target_prj = Project.objects.filter(name=prj_name)
+            if not target_prj:
+                Project.objects.create(name=prj_name, owner=prj_owner)
+        else:
+            request.session['flash_msg'] = ''
+            request.session['flash_type'] = 'Error'
+            for field, msg in form.errors.items():
+                request.session['flash_msg'] += "{}:{}".format(field, msg)
         return redirect('tbd_project')
     else:
         prj_name = request.GET.get('name', '')
@@ -24,4 +31,9 @@ def project_page(request):
                 target_prj = Project.objects.filter(name=prj_name)
                 if target_prj:
                     target_prj.delete()
-    return render(request, 'tbd/project.html', {'projects': Project.objects.all()})
+        if 'flash_type' in request.session:
+            flash_type = request.session.pop('flash_type')
+            flash_msg = request.session.pop('flash_msg')
+            return render(request, 'tbd/project.html', {'projects': Project.objects.all(), 'error_type': flash_type, 'error_msg': flash_msg})
+        else:
+            return render(request, 'tbd/project.html', {'projects': Project.objects.all()})

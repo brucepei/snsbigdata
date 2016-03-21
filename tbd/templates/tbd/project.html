@@ -40,5 +40,10 @@
                 {% csrf_token %}
             </fieldset>
         </form>
+        {% if error_msg %}
+        <div class="alert alert-danger">
+            <strong>{{ error_type }}!</strong><br/>{{ error_msg|safe }}
+        </div>
+        {% endif %}
     </div>
 {% endblock %}
