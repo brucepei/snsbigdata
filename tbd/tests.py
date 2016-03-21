@@ -6,7 +6,7 @@ from django.utils import timezone
 from tbd.models import Project
 from tbd.views import home_page, project_page
 from datetime import datetime
-
+import mock
 
 # Create your tests here.
 class TBDTest(TestCase):
@@ -29,6 +29,8 @@ class TBDTest(TestCase):
         
     def test_project_get_correct_html(self):
         request = HttpRequest()
+        setattr(request, 'session', {})
+        
         resp = project_page(request)
         
         self.assertIn(b'<html>', resp.content)
@@ -60,6 +62,7 @@ class TBDTest(TestCase):
         
     def test_project_post_delete_project(self):
         request = HttpRequest()
+        setattr(request, 'session', {})
         request.method = 'POST'
         request.POST['add'] = None
         request.POST['name'] = 'unit_test_prj'
@@ -71,6 +74,7 @@ class TBDTest(TestCase):
         self.assertEqual(saved_projects.count(), 1)
 
         request = HttpRequest()
+        setattr(request, 'session', {})
         request.GET['method'] = 'delete'
         request.GET['name'] = 'unit_test_prj'
         resp = project_page(request)
