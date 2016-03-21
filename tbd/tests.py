@@ -44,8 +44,7 @@ class TBDTest(TestCase):
         request.POST['add'] = None
         request.POST['name'] = 'unit_test_prj'
         request.POST['owner'] = 'tester'
-        request.POST['create'] = datetime.now()
-        aware_create_time = timezone.make_aware(request.POST['create'], timezone.get_current_timezone())
+        aware_create_time = timezone.now()
 
         resp = project_page(request)
         
@@ -65,8 +64,7 @@ class TBDTest(TestCase):
         request.POST['add'] = None
         request.POST['name'] = 'unit_test_prj'
         request.POST['owner'] = 'tester'
-        request.POST['create'] = datetime.now()
-        
+
         resp = project_page(request)
         
         saved_projects = Project.objects.all()

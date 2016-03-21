@@ -6,7 +6,7 @@ from django.db import models
 class Project(models.Model):
     name = models.CharField(unique=True, default='', max_length=30)
     owner = models.CharField(unique=False, default='', max_length=30)
-    create = models.DateTimeField(unique=False, default=timezone.now())
+    create = models.DateTimeField(unique=False, auto_now_add=True)
     
     def __unicode__(self):
         return "{}({})".format(self.name, self.owner)
