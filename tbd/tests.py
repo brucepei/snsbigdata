@@ -29,7 +29,7 @@ class TBDTest(TestCase):
         
     def test_project_get_correct_html(self):
         request = HttpRequest()
-        setattr(request, 'session', {})
+        request.session = {}
         
         resp = project_page(request)
         
@@ -40,10 +40,27 @@ class TBDTest(TestCase):
         self.assertEqual(saved_projects.count(), 0)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request))
         
-    def test_project_post_add_project(self):
+    def test_project_post_add_project_with_invalid_input(self):
+        #name [a-zA-Z]\w{0,39}, owner \w{1,20}
+        for name, owner in (('', ''), ('a12', ''), ('a12', '!o'), ('', 'n1'), ('1ab', 'n1'), ('@n', 'n1')
+            , ('a12', '123456789012345678901'), ('a1234567890123456789012345678901234567890', 'n1')):
+            request = HttpRequest()
+            request.session = {}
+            request.method = 'POST'
+            request.POST['name'] = name
+            request.POST['owner'] = owner
+    
+            resp = project_page(request)
+            saved_projects = Project.objects.all()
+            
+            self.assertEqual(saved_projects.count(), 0)
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp['location'], '/project')
+
+    def test_project_post_add_project_with_valid_input(self):
         request = HttpRequest()
+        request.session = {}
         request.method = 'POST'
-        request.POST['add'] = None
         request.POST['name'] = 'unit_test_prj'
         request.POST['owner'] = 'tester'
         aware_create_time = timezone.now()
@@ -62,7 +79,7 @@ class TBDTest(TestCase):
         
     def test_project_post_delete_project(self):
         request = HttpRequest()
-        setattr(request, 'session', {})
+        request.session = {}
         request.method = 'POST'
         request.POST['add'] = None
         request.POST['name'] = 'unit_test_prj'
@@ -74,7 +91,7 @@ class TBDTest(TestCase):
         self.assertEqual(saved_projects.count(), 1)
 
         request = HttpRequest()
-        setattr(request, 'session', {})
+        request.session = {}
         request.GET['method'] = 'delete'
         request.GET['name'] = 'unit_test_prj'
         resp = project_page(request)
@@ -86,9 +103,9 @@ class TBDTest(TestCase):
 
 class ProjectModelTest(TestCase):
     def test_saving_and_retrieve_project(self):
-        prj1 = Project(name="unit_project1")
+        prj1 = Project(name="unit_project1", owner="test1")
         prj1.save()
-        prj2 = Project(name="unit_project2")
+        prj2 = Project(name="unit_project2", owner="test1")
         prj2.save()
         
         saved_items = Project.objects.all()
@@ -97,4 +114,6 @@ class ProjectModelTest(TestCase):
         first_prj = saved_items[0]
         second_prj = saved_items[1]
         self.assertEqual(first_prj.name, prj1.name)
+        self.assertEqual(first_prj.owner, prj1.owner)
         self.assertEqual(second_prj.name, prj2.name)
+        self.assertEqual(second_prj.owner, prj2.owner)
