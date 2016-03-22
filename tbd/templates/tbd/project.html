@@ -1,7 +1,7 @@
 ﻿{% extends 'tbd/base.html' %}
 {% block title %}Project - SBD{% endblock %}
 {% block nav_project_attr %}class="active"{% endblock %}
- 
+
 {% block content %}
     <div class="container">
         <table id="id_project_table" class="table" contenteditable="false">
@@ -29,20 +29,19 @@
         <form action="{% url 'tbd_project' %}" method="post">
             <fieldset>
                 <legend contenteditable="false">Add Project</legend>
-                <label contenteditable="false">Project Name</label>
-                <input id="id_target_project" name="name" type="text" placeholder="project name">
-                <br/>
-                <label contenteditable="false">Owner Name</label>
-                <input name="owner" type="text" placeholder="owner name">
-                <span class="help-block" contenteditable="false">You can add a new one or delete the old one!</span>
-                <button class="btn" type="reset" contenteditable="false">Reset</button>
-                <button class="btn" name="add" type="submit" contenteditable="false">Submit</button>
-                {% csrf_token %}
+                <table>
+                    {% csrf_token %}
+                    {{ form }}
+                    <tr>
+                        <td><button class="btn" type="reset" contenteditable="false">Reset</button></td>
+                        <td><button class="btn" name="add" type="submit" contenteditable="false">Submit</button></td>
+                    </tr>
+                </table>
             </fieldset>
         </form>
         {% if error_msg %}
         <div class="alert alert-danger">
-            <strong>{{ error_type }}!</strong><br/>{{ error_msg|safe }}
+            <strong>Error!</strong><br/>{{ error_msg|safe }}
         </div>
         {% endif %}
     </div>

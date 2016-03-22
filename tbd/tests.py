@@ -6,6 +6,7 @@ from django.utils import timezone
 from tbd.models import Project
 from tbd.views import home_page, project_page
 from datetime import datetime
+from .forms import AddProjectForm
 import mock
 
 # Create your tests here.
@@ -37,8 +38,10 @@ class TBDTest(TestCase):
         self.assertTrue(resp.content.strip().endswith(b'</html>'))
         self.assertIn(b'<title>Project - SBD</title>', resp.content)
         saved_projects = Project.objects.all()
+        form = AddProjectForm()
+        
         self.assertEqual(saved_projects.count(), 0)
-        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request))
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'form': form}))
         
     def test_project_post_add_project_with_invalid_input(self):
         #name [a-zA-Z]\w{0,39}, owner \w{1,20}
@@ -97,9 +100,10 @@ class TBDTest(TestCase):
         resp = project_page(request)
         
         saved_projects = Project.objects.all()
-        self.assertEqual(saved_projects.count(), 0)
+        form = AddProjectForm()
         
-        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request))
+        self.assertEqual(saved_projects.count(), 0)
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'form': form}))
 
 class ProjectModelTest(TestCase):
     def test_saving_and_retrieve_project(self):

@@ -18,22 +18,22 @@ def project_page(request):
             if not target_prj:
                 Project.objects.create(name=prj_name, owner=prj_owner)
         else:
-            request.session['flash_msg'] = ''
-            request.session['flash_type'] = 'Error'
+            request.session['project_error'] = ''
             for field, msg in form.errors.items():
-                request.session['flash_msg'] += "{}:{}".format(field, msg)
+                request.session['project_error'] += "{}:{}".format(field, msg)
         return redirect('tbd_project')
     else:
         prj_name = request.GET.get('name', '')
         get_method = request.GET.get('method', None)
+        form = AddProjectForm()
         if get_method:
             if get_method.lower() == 'delete':
                 target_prj = Project.objects.filter(name=prj_name)
                 if target_prj:
                     target_prj.delete()
-        if 'flash_type' in request.session:
-            flash_type = request.session.pop('flash_type')
-            flash_msg = request.session.pop('flash_msg')
-            return render(request, 'tbd/project.html', {'projects': Project.objects.all(), 'error_type': flash_type, 'error_msg': flash_msg})
-        else:
-            return render(request, 'tbd/project.html', {'projects': Project.objects.all()})
+        project_error = None
+        if 'project_error' in request.session:
+            project_error = request.session.pop('project_error')
+        return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'error_msg': project_error})
+
+
