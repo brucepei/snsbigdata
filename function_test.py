@@ -4,11 +4,10 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 class TBDTest(StaticLiveServerTestCase):
-    
     def setUp(self):
         self.browser = webdriver.Chrome()
         self.browser.implicitly_wait(1)
-    
+        
     def tearDown(self):
         self.browser.quit()
         
@@ -33,23 +32,27 @@ class TBDTest(StaticLiveServerTestCase):
     
     def test_project_form(self):
         self.browser.get(self.live_server_url + '/project')
-        target_project = self.browser.find_element_by_id('id_target_project')
+        target_project = self.browser.find_element_by_id('id_project_name')
         target_project.send_keys("test_func")
+        project_owner = self.browser.find_element_by_id('id_project_owner')
+        project_owner.send_keys("tester")
         target_project.send_keys(Keys.ENTER)
         self.browser.refresh()
         project_table = self.browser.find_element_by_id('id_project_table')
         rows = project_table.find_elements_by_tag_name('tr')
         self.assertEqual(len(rows), 2)
-        self.assertIn('test_func', rows[1].text)
+        self.assertIn('test_func tester', rows[1].text)
         
-        target_project = self.browser.find_element_by_id('id_target_project')
+        target_project = self.browser.find_element_by_id('id_project_name')
         target_project.send_keys("test_func")
+        project_owner = self.browser.find_element_by_id('id_project_owner')
+        project_owner.send_keys("tester")
         target_project.send_keys(Keys.ENTER)
         self.browser.refresh()
         project_table = self.browser.find_element_by_id('id_project_table')
         rows = project_table.find_elements_by_tag_name('tr')
         self.assertEqual(len(rows), 2, "should not duplicated with the same prj name")
-        self.assertIn('test_func', rows[1].text)
+        self.assertIn('test_func tester', rows[1].text)
         
         self.browser.get(self.live_server_url + '/project?method=delete&name=test_func')
         project_table = self.browser.find_element_by_id('id_project_table')
