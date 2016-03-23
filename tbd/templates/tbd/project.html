@@ -21,7 +21,7 @@
                     <td>{{ prj.name }}</td>
                     <td>{{ prj.owner }}</td>
                     <td>{{ prj.create }}</td>
-                    <td><a href="{% url 'tbd_project' %}?method=delete&name={{prj.name|iriencode}}">delete</a></td>
+                    <td><a href="{% url 'tbd_project' %}?method=delete&project_name={{prj.name|iriencode}}">delete</a></td>
                 </tr>
                 {% endfor %}
             </tbody>

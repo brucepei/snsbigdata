@@ -12,8 +12,8 @@ def project_page(request):
     if request.method == 'POST':
         form = AddProjectForm(request.POST)
         if form.is_valid():
-            prj_name = form.cleaned_data['name']
-            prj_owner = form.cleaned_data['owner']
+            prj_name = form.cleaned_data['project_name']
+            prj_owner = form.cleaned_data['project_owner']
             target_prj = Project.objects.filter(name=prj_name)
             if not target_prj:
                 Project.objects.create(name=prj_name, owner=prj_owner)
@@ -23,7 +23,7 @@ def project_page(request):
                 request.session['project_error'] += "{}:{}".format(field, msg)
         return redirect('tbd_project')
     else:
-        prj_name = request.GET.get('name', '')
+        prj_name = request.GET.get('project_name', '')
         get_method = request.GET.get('method', None)
         form = AddProjectForm()
         if get_method:

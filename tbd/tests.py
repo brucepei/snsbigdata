@@ -50,8 +50,8 @@ class TBDTest(TestCase):
             request = HttpRequest()
             request.session = {}
             request.method = 'POST'
-            request.POST['name'] = name
-            request.POST['owner'] = owner
+            request.POST['project_name'] = name
+            request.POST['project_owner'] = owner
     
             resp = project_page(request)
             saved_projects = Project.objects.all()
@@ -64,8 +64,8 @@ class TBDTest(TestCase):
         request = HttpRequest()
         request.session = {}
         request.method = 'POST'
-        request.POST['name'] = 'unit_test_prj'
-        request.POST['owner'] = 'tester'
+        request.POST['project_name'] = 'unit_test_prj'
+        request.POST['project_owner'] = 'tester'
         aware_create_time = timezone.now()
 
         resp = project_page(request)
@@ -73,9 +73,9 @@ class TBDTest(TestCase):
         saved_projects = Project.objects.all()
         self.assertEqual(saved_projects.count(), 1)
         first_project = saved_projects[0]
-        self.assertEqual(first_project.name, request.POST['name'])
-        self.assertEqual(first_project.owner, request.POST['owner'])
-        self.assertEqual(first_project.create, aware_create_time)
+        self.assertEqual(first_project.name, request.POST['project_name'])
+        self.assertEqual(first_project.owner, request.POST['project_owner'])
+        self.assertAlmostEqual((first_project.create - aware_create_time).seconds, 0)
         
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp['location'], '/project')
@@ -85,8 +85,8 @@ class TBDTest(TestCase):
         request.session = {}
         request.method = 'POST'
         request.POST['add'] = None
-        request.POST['name'] = 'unit_test_prj'
-        request.POST['owner'] = 'tester'
+        request.POST['project_name'] = 'unit_test_prj'
+        request.POST['project_owner'] = 'tester'
 
         resp = project_page(request)
         
@@ -96,7 +96,7 @@ class TBDTest(TestCase):
         request = HttpRequest()
         request.session = {}
         request.GET['method'] = 'delete'
-        request.GET['name'] = 'unit_test_prj'
+        request.GET['project_name'] = 'unit_test_prj'
         resp = project_page(request)
         
         saved_projects = Project.objects.all()

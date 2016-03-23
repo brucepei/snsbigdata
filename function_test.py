@@ -53,8 +53,8 @@ class TBDTest(StaticLiveServerTestCase):
         rows = project_table.find_elements_by_tag_name('tr')
         self.assertEqual(len(rows), 2, "should not duplicated with the same prj name")
         self.assertIn('test_func tester', rows[1].text)
-        
-        self.browser.get(self.live_server_url + '/project?method=delete&name=test_func')
+
+        self.browser.find_element_by_css_selector("#id_project_table tr td a").click()
         project_table = self.browser.find_element_by_id('id_project_table')
         rows = project_table.find_elements_by_tag_name('tr')
         self.assertEqual(len(rows), 1)

@@ -2,13 +2,13 @@ import re
 from django import forms
 
 class AddProjectForm(forms.Form):
-    name = forms.RegexField(
+    project_name = forms.RegexField(
         regex=re.compile(r'^[a-zA-Z]\w{0,39}$'),
         strip=True,
         label='Project Name',
         max_length=40,
     )
-    owner = forms.RegexField(
+    project_owner = forms.RegexField(
         regex=re.compile(r'^\w{1,20}$'),
         strip=True,
         label='Owner name',
