@@ -3,8 +3,8 @@ from django.core.urlresolvers import resolve
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.utils import timezone
-from tbd.models import Project
-from tbd.views import home_page, project_page
+from tbd.models import Project, Build
+from tbd.views import home_page, project_page, build_page
 from datetime import datetime
 from .forms import AddProjectForm
 import mock
@@ -41,6 +41,25 @@ class TBDTest(TestCase):
         form = AddProjectForm()
         
         self.assertEqual(saved_projects.count(), 0)
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'form': form}))
+        
+    def test_build_url_handler(self):
+        handler_obj = resolve('/build')
+        self.assertEqual(handler_obj.func, build_page)
+        
+    def test_build_get_correct_html(self):
+        request = HttpRequest()
+        request.session = {}
+        
+        resp = build_page(request)
+        
+        self.assertIn(b'<html>', resp.content)
+        self.assertTrue(resp.content.strip().endswith(b'</html>'))
+        self.assertIn(b'<title>Build - SBD</title>', resp.content)
+        saved_builds = Build.objects.all()
+        form = AddBuildForm()
+        
+        self.assertEqual(saved_builds.count(), 0)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'form': form}))
         
     def test_project_post_add_project_with_invalid_input(self):
