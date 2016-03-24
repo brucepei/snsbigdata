@@ -124,7 +124,7 @@ class TBDTest(TestCase):
         self.assertEqual(saved_projects.count(), 0)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'form': form}))
 
-class ProjectModelTest(TestCase):
+class TBDModelTest(TestCase):
     def test_saving_and_retrieve_project(self):
         prj1 = Project(name="unit_project1", owner="test1")
         prj1.save()
@@ -140,3 +140,23 @@ class ProjectModelTest(TestCase):
         self.assertEqual(first_prj.owner, prj1.owner)
         self.assertEqual(second_prj.name, prj2.name)
         self.assertEqual(second_prj.owner, prj2.owner)
+        
+    def test_saving_and_retrieve_build(self):
+        prj1 = Project(name="unit_project1", owner="test1")
+        prj1.save()
+        prj2 = Project(name="unit_project2", owner="test1")
+        prj2.save()
+        build1 = Build(version="unit_project1", project=prj1)
+        build1.save()
+        build2 = Build(version="unit_project2", project=prj2)
+        build2.save()
+        
+        saved_items = Build.objects.all()
+        self.assertEqual(saved_items.count(), 2)
+        
+        first_build = saved_items[0]
+        second_build = saved_items[1]
+        self.assertEqual(first_build.version, build1.version)
+        self.assertEqual(first_build.project.name, build1.project.name)
+        self.assertEqual(second_build.version, build2.version)
+        self.assertEqual(second_build.project.name, build2.project.name)

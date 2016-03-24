@@ -36,4 +36,5 @@ def project_page(request):
             project_error = request.session.pop('project_error')
         return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'error_msg': project_error})
 
-
+def build_page(request):
+    return HttpResponse('<html>not implement</html>')
