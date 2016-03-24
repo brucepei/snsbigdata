@@ -6,7 +6,7 @@ from django.utils import timezone
 from tbd.models import Project, Build
 from tbd.views import home_page, project_page, build_page
 from datetime import datetime
-from .forms import AddProjectForm
+from .forms import AddProjectForm, AddBuildForm
 import mock
 
 # Create your tests here.
@@ -60,7 +60,7 @@ class TBDTest(TestCase):
         form = AddBuildForm()
         
         self.assertEqual(saved_builds.count(), 0)
-        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'form': form}))
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/build.html', request=request, context={'form': form}))
         
     def test_project_post_add_project_with_invalid_input(self):
         #name [a-zA-Z]\w{0,39}, owner \w{1,20}

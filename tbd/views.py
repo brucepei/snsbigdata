@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.utils import timezone
 from tbd.models import Project
-from .forms import AddProjectForm
+from tbd.models import Build
+from .forms import AddProjectForm, AddBuildForm
 
 # Create your views here.
 def home_page(request):
@@ -37,4 +38,9 @@ def project_page(request):
         return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'error_msg': project_error})
 
 def build_page(request):
-    return HttpResponse('<html>not implement</html>')
+    if request.method == 'POST':
+        form = AddBuildForm(request.POST)
+        return redirect('tbd_build')
+    else:
+        form = AddBuildForm()
+        return render(request, 'tbd/build.html', {'form': form, 'builds': Build.objects.all()})
