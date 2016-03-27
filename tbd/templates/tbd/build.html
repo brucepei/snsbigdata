@@ -1,39 +1,78 @@
 ﻿{% extends 'tbd/base.html' %}
 {% block title %}Build - SBD{% endblock %}
 {% block nav_build_attr %}class="active"{% endblock %}
+{% block user_style %}<link href="/static/css/user_style.css" rel="stylesheet">{% endblock %}
 
 {% block content %}
     <div class="container">
-        <table id="id_project_table" class="table" contenteditable="false">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Owner</th>
-                    <th>CreateTime</th>
-                    <th>Operation</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-        <form action="{% url 'tbd_build' %}" method="post">
-            <fieldset>
-                <legend contenteditable="false">Add Build</legend>
-                <table>
-                    {% csrf_token %}
-                    {{ form }}
-                    <tr>
-                        <td><button class="btn" type="reset" contenteditable="false">Reset</button></td>
-                        <td><button class="btn" name="add" type="submit" contenteditable="false">Submit</button></td>
-                    </tr>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-7">
+                        <p>
+                          <h1>No project selection <small>anonymous</small></h1>
+                        </p>
+                    </div>
+                    <div class="col-md-5 row-bottom">
+                        <select>
+                            <option>--select project--</option>
+                            <option>Project some description so long xxxx 1</option>
+                            <option>Project some description so long xxxx 2</option>
+                            <option>Project some description so long xxxx 3</option>
+                        </select>
+                    </div>
+                </div>
+                <table id="id_project_table" class="table" contenteditable="false">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Owner</th>
+                            <th>CreateTime</th>
+                            <th>Operation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
                 </table>
-            </fieldset>
-        </form>
-        {% if error_msg %}
-        <div class="alert alert-danger">
-            <strong>Error!</strong><br/>{{ error_msg|safe }}
+                <ul class="pagination">
+                <li>
+                  <a href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+                <li class="active"><a href="#">1</a></li>
+                <li><a href="#">2</a></li>
+                <li><a href="#">3</a></li>
+                <li><a href="#">4</a></li>
+                <li><a href="#">5</a></li>
+                <li>
+                  <a href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+                </ul>
+                <div>
+                    <form action="{% url 'tbd_build' %}" method="post">
+                        <fieldset>
+                            <legend contenteditable="false">Add Build</legend>
+                            <table>
+                                {% csrf_token %}
+                                {{ form }}
+                                <tr>
+                                    <td><button class="btn" type="reset" contenteditable="false">Reset</button></td>
+                                    <td><button class="btn" name="add" type="submit" contenteditable="false">Submit</button></td>
+                                </tr>
+                            </table>
+                        </fieldset>
+                    </form>
+                </div>
+                {% if error_msg %}
+                <div class="alert alert-danger"  role="alert">
+                    <strong>Error!</strong><br/>{{ error_msg|safe }}
+                </div>
+                {% endif %}
+            </div>
         </div>
-        {% endif %}
     </div>
 {% endblock %}

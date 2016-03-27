@@ -1,0 +1,11 @@
+@media (min-width: 768px ) {
+    .row {
+        position: relative;
+    }
+
+    .row-bottom {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+}
