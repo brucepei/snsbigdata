@@ -2,6 +2,7 @@
 {% block title %}Build - SBD{% endblock %}
 {% block nav_build_attr %}class="active"{% endblock %}
 {% block user_style %}<link href="/static/css/user_style.css" rel="stylesheet">{% endblock %}
+{% block user_js %}<script src="/static/js/user_js.js"></script>{% endblock %}
 
 {% block content %}
     <div class="container">
@@ -20,7 +21,7 @@
                         </p>
                     </div>
                     <div class="col-md-5 row-bottom">
-                        <h4>Choose project {{ project.name }}:
+                        <h4>Choose project:
                             <select name="project_name">
                                 <option>--select project--</option>
                                 {% for prj in projects %}
@@ -43,12 +44,24 @@
                     </thead>
                     <tbody>
                         {% for blt in builds %}
-                        <tr>
+                        <tr class="build_head">
                             <td>{{ forloop.counter }}</td>
                             <td>{{ blt.version }}</td>
                             <td>{{ blt.short_name }}</td>
                             <td>{{ blt.use_server }}</td>
                             <td>{{ blt.create }}</td>
+                        </tr>
+                        <tr class="hidden info">
+                            <td colspan="2">Server Installer Path:</td>
+                            <td colspan="8" contenteditable="true">{{ blt.server_path }}</td>
+                        </tr>
+                        <tr class="hidden info">
+                            <td colspan="2">Crash Path:</td>
+                            <td colspan="8" contenteditable="true">{{ blt.crash_path }}</td>
+                        </tr>
+                        <tr class="hidden info">
+                            <td colspan="2">Local Installer Path:</td>
+                            <td colspan="8" contenteditable="true">{{ blt.local_path }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
