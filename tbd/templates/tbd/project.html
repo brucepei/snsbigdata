@@ -11,6 +11,7 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>Owner</th>
+                    <th>Builds</th>
                     <th>CreateTime</th>
                     <th>Operation</th>
                 </tr>
@@ -21,8 +22,12 @@
                     <td>{{ forloop.counter }}</td>
                     <td>{{ prj.name }}</td>
                     <td>{{ prj.owner }}</td>
+                    <td>{{ prj.build_set.all | length }}</td>
                     <td>{{ prj.create }}</td>
-                    <td><a href="{% url 'tbd_project' %}?method=delete&project_name={{prj.name|iriencode}}">delete</a></td>
+                    <td>
+                        <a href="{% url 'tbd_project' %}?method=delete&project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>del?</a>
+                        <a href="{% url 'tbd_build' %}?project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"></span>build</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
