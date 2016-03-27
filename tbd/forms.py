@@ -7,24 +7,68 @@ class AddProjectForm(forms.Form):
         strip=True,
         label='Project Name',
         max_length=40,
+        error_messages={
+            'invalid': 'Maximum length 40, and starts with letter, only includes letter and digit!'
+        }
     )
     project_owner = forms.RegexField(
         regex=re.compile(r'^\w{1,20}$'),
         strip=True,
         label='Owner name',
         max_length=20,
+        error_messages={
+            'invalid': 'Maximum length 20, only includes letter and digits!'
+        }
     )
 
 class AddBuildForm(forms.Form):
+    build_project_name = forms.CharField(
+        widget=forms.HiddenInput
+    )
     build_version = forms.RegexField(
         regex=re.compile(r'^[a-zA-Z]\w{0,39}$'),
         strip=True,
-        label='Project Name',
+        label='Version',
         max_length=40,
+        error_messages={
+            'invalid': 'Maximum length 40, and starts with letter, only includes letter and digit!'
+        }
     )
-    build_server = forms.RegexField(
-        regex=re.compile(r'^.{1,255}$'),
+    build_name = forms.RegexField(
+        regex=re.compile(r'^\w{1,20}$'),
         strip=True,
-        label='Server Path',
+        label='Short Name',
+        max_length=20,
+        error_messages={
+            'invalid': 'Maximum length 20, only includes letter and digits!'
+        }
+    )
+    build_server_path = forms.RegexField(
+        regex=re.compile(r'^\\\\.+'),
+        label='Server Installer Path',
         max_length=255,
+        error_messages={
+            'invalid': "Maximum length 255, should start with '\\\\'!"
+        }
+    )
+    build_crash_path = forms.RegexField(
+        regex=re.compile(r'^\\\\.+'),
+        label='Crash Path',
+        max_length=255,
+        error_messages={
+            'invalid': "Maximum length 255, should start with '\\\\'!"
+        }
+    )
+    build_local_path = forms.RegexField(
+        regex=re.compile(r'^\\\\.+'),
+        label='Local Installer Path',
+        max_length=255,
+        required=False,
+        error_messages={
+            'invalid': "Maximum length 255, should start with '\\\\'!"
+        }
+    )
+    build_use_server = forms.BooleanField(
+        label='Use Server Installer',
+        required=False,
     )
