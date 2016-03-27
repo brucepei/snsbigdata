@@ -43,4 +43,13 @@ def build_page(request):
         return redirect('tbd_build')
     else:
         form = AddBuildForm()
-        return render(request, 'tbd/build.html', {'form': form, 'builds': Build.objects.all()})
+        prj_name = request.GET.get('project_name', '')
+        projects = Project.objects.all()
+        builds = []
+        target_prj = None
+        if prj_name:
+            target_prj = Project.objects.filter(name=prj_name)
+            if target_prj:
+                target_prj = target_prj[0]
+                builds = Build.objects.filter(project=target_prj)
+        return render(request, 'tbd/build.html', {'form': form, 'project': target_prj, 'builds': builds, 'projects': projects, 'type': type})

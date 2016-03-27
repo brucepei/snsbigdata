@@ -10,29 +10,47 @@
                 <div class="row">
                     <div class="col-md-7">
                         <p>
-                          <h1>No project selection <small>anonymous</small></h1>
+                          <h1>
+                          {% if project %}
+                          {{ project.name }} <small>{{ project.owner }}</small>
+                          {% else %}
+                          No project selection <small>anonymous</small>
+                          {% endif %}
+                          </h1>
                         </p>
                     </div>
                     <div class="col-md-5 row-bottom">
-                        <select>
-                            <option>--select project--</option>
-                            <option>Project some description so long xxxx 1</option>
-                            <option>Project some description so long xxxx 2</option>
-                            <option>Project some description so long xxxx 3</option>
-                        </select>
+                        <h4>Choose project {{ project.name }}:
+                            <select name="project_name">
+                                <option>--select project--</option>
+                                {% for prj in projects %}
+                                    <option value="{{prj.name}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </h4>
                     </div>
                 </div>
                 <table id="id_project_table" class="table" contenteditable="false">
+                    <caption class="text-center">Build List</caption>
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Name</th>
-                            <th>Owner</th>
-                            <th>CreateTime</th>
-                            <th>Operation</th>
+                            <th>Version</th>
+                            <th>ShortName</th>
+                            <th>UseServer</th>
+                            <th>Create</th>
                         </tr>
                     </thead>
                     <tbody>
+                        {% for blt in builds %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ blt.version }}</td>
+                            <td>{{ blt.short_name }}</td>
+                            <td>{{ blt.use_server }}</td>
+                            <td>{{ blt.create }}</td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
                 <ul class="pagination">
