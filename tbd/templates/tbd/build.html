@@ -45,7 +45,7 @@
                     <tbody>
                         {% for blt in builds %}
                         <tr class="build_head">
-                            <td>{{ forloop.counter }}</td>
+                            <td>{{ blt.no }}</td>
                             <td>{{ blt.version }}</td>
                             <td>{{ blt.short_name }}</td>
                             <td>{{ blt.use_server }}</td>
@@ -66,26 +66,26 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <ul class="pagination">
-                <li>
-                  <a href="#" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                  </a>
-                </li>
-                <li class="active"><a href="#">1</a></li>
-                <li><a href="#">2</a></li>
-                <li><a href="#">3</a></li>
-                <li><a href="#">4</a></li>
-                <li><a href="#">5</a></li>
-                <li>
-                  <a href="#" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                  </a>
-                </li>
+                {% if page.list %}
+                    <ul class="pagination">
+                    <li>
+                      <a href="{% url 'tbd_build' %}?project_name={{ project.name }}&page={{ page.previous }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                    {% for p in page.list %}
+                    <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_build' %}?project_name={{ project.name }}&page={{ p }}">{{ p }}</a></li>
+                    {% endfor %}
+                    <li>
+                      <a href="{% url 'tbd_build' %}?project_name={{ project.name }}&page={{ page.next }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                {% endif %}
                 </ul>
-                {% if flash_type %}
-                <div class="alert alert-{{ flash_type }}"  role="alert">
-                    <strong>{{ flash_type }}!</strong><br/>{{ flash_msg|safe }}
+                {% if flash %}
+                <div class="alert alert-{{ flash.type }}"  role="alert">
+                    <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
                 </div>
                 {% endif %}
                 <div>

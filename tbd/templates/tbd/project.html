@@ -32,9 +32,9 @@
                 {% endfor %}
             </tbody>
         </table>
-        {% if flash_type %}
-        <div class="alert alert-{{ flash_type }}"  role="alert">
-            <strong>{{ flash_type }}!</strong><br/>{{ flash_msg|safe }}
+        {% if flash %}
+        <div class="alert alert-{{ flash.type }}"  role="alert">
+            <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
         </div>
         {% endif %}
         <form action="{% url 'tbd_project' %}" method="post">

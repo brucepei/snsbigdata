@@ -9,18 +9,14 @@ from .forms import AddProjectForm, AddBuildForm
 # Create your views here.
 def home_page(request):
     return render(request, 'tbd/home.html')
-
-def flash(request, flash_type=None, flash_msg=None):
-    if flash_type:
-        request.session['flash_type'] = flash_type
-        request.session['flash_msg'] = flash_msg
-        # print "save type {}, err: {}".format(request.session['flash_type'], request.session['flash_msg'])
-    else:
-        flash_type = request.session.pop('flash_type') if 'flash_type' in request.session else None
-        flash_msg = request.session.pop('flash_msg') if 'flash_msg' in request.session else None
-        # print "load type {}, err: {}".format(flash_type, flash_msg)
-        return (flash_type, flash_msg)
     
+def flash(request, flash_data=None):
+    if flash_data:
+        request.session['flash_data'] = flash_data
+    else:
+        flash_data = request.session.pop('flash_data') if 'flash_data' in request.session else None
+        return flash_data
+        
 def project_page(request):
     if request.method == 'POST':
         form = AddProjectForm(request.POST)
@@ -31,16 +27,16 @@ def project_page(request):
             if not target_prj:
                 try:
                     Project.objects.create(name=prj_name, owner=prj_owner)
-                    flash(request, 'success', "Create Project {} successfully!".format(prj_name))
+                    flash(request, {'type': 'success', 'msg': "Create Project {} successfully!".format(prj_name)})
                 except Exception as err:
-                    flash(request, 'danger', "Save Project {} failed: {}!".format(prj_name, err))
+                    flash(request, {'type': 'danger', 'msg': "Save Project {} failed: {}!".format(prj_name, err)})
             else:
-                flash(request, 'danger', 'Project {} has laready existed!'.format(prj_name))
+                flash(request, {'type': 'danger', 'msg': 'Project {} has laready existed!'.format(prj_name)})
         else:
             flash_err = ''
             for field, msg in form.errors.items():
                 flash_err += "{}:{}".format(field, msg)
-            flash(request, 'danger', flash_err)
+            flash(request, {'type': 'danger', 'msg': flash_err})
         return redirect('tbd_project')
     else:
         prj_name = request.GET.get('project_name', '')
@@ -50,9 +46,12 @@ def project_page(request):
             if get_method.lower() == 'delete':
                 target_prj = Project.objects.filter(name=prj_name)
                 if target_prj:
-                    target_prj.delete()
-        flash_type, flash_msg = flash(request)
-        return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'flash_type': flash_type, 'flash_msg': flash_msg})
+                    try:
+                        target_prj.delete()
+                        flash(request, {'type': 'success', 'msg': "Delete Project {} successfully!".format(prj_name)})
+                    except Exception as err:
+                        flash(request, {'type': 'danger', 'msg': "Delete Project {} failed: {}!".format(prj_name, err)})
+        return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'flash': flash(request)})
 
 def build_page(request):
     if request.method == 'POST':
@@ -71,23 +70,32 @@ def build_page(request):
                 try:
                     Build.objects.create(project=target_prj, version=version, short_name=short_name, server_path=server_path,
                         crash_path=crash_path, local_path=local_path, use_server=use_server)
-                    flash(request, 'success', "Create Build {} successfully!".format(version))
+                    flash(request, {'type': 'success', 'msg': "Create Build {} successfully!".format(version)})
                 except Exception as err:
-                    flash(request, 'danger', "Save Build {} failed: {}!".format(version, err))
+                    flash(request, {'type': 'danger', 'msg': "Save Build {} failed: {}!".format(version, err)})
             else:
-                flash(request, 'danger', 'Project {} does NOT exist when create Build!'.format(prj_name))
+                flash(request, {'type': 'danger', 'msg': 'Project {} does NOT exist when create Build!'.format(prj_name)})
         else:
             prj_name = request.POST.get('build_project_name', '')
             flash_err = ''
             for field, msg in form.errors.items():
                 flash_err += "{}:{}".format(field, msg)
-            flash(request, 'danger', flash_err)
+            flash(request, {'type': 'danger', 'msg': flash_err})
         redirect_url = reverse('tbd_build')
         if prj_name:
             redirect_url += '?project_name=' + prj_name
         return redirect(redirect_url)
     else:
         prj_name = request.GET.get('project_name', '')
+        page_data = {}
+        cur_page = request.GET.get('page', 1)
+        try:
+            cur_page = int(cur_page)
+        except:
+            cur_page = 1
+        page_data['cur'] = cur_page
+        total_page = None
+        builds_in_page = 5
         form = AddBuildForm(initial={'build_project_name': prj_name})
         projects = Project.objects.all()
         builds = []
@@ -96,6 +104,14 @@ def build_page(request):
             target_prj = Project.objects.filter(name=prj_name)
             if target_prj:
                 target_prj = target_prj[0]
-                builds = Build.objects.filter(project=target_prj)
-        flash_type, flash_msg = flash(request)
-        return render(request, 'tbd/build.html', {'flash_type':flash_type, 'flash_msg':flash_msg, 'form': form, 'project': target_prj, 'builds': builds, 'projects': projects})
+                builds = Build.objects.filter(project=target_prj).order_by('-create')
+                total_builds = len(builds)
+                total_page = (total_builds+builds_in_page-1)/builds_in_page
+                builds = builds[(cur_page-1)*builds_in_page:cur_page*builds_in_page]
+        page_data['list'] = xrange(1, total_page+1) if total_page else []
+        page_data['previous'] = cur_page - 1 if cur_page > 1 else 1
+        page_data['next'] = cur_page + 1 if cur_page < total_page else total_page
+        for no, build in enumerate(builds):
+            setattr(build, 'no', no + 1 + builds_in_page * (cur_page-1))
+        return render(request, 'tbd/build.html', {'page': page_data, 'flash': flash(request), 
+            'form': form, 'project': target_prj, 'builds': builds, 'projects': projects})
