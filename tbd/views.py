@@ -29,8 +29,11 @@ def project_page(request):
             prj_owner = form.cleaned_data['project_owner']
             target_prj = Project.objects.filter(name=prj_name)
             if not target_prj:
-                Project.objects.create(name=prj_name, owner=prj_owner)
-                flash(request, 'success', "Create Project {} successfully!".format(prj_name))
+                try:
+                    Project.objects.create(name=prj_name, owner=prj_owner)
+                    flash(request, 'success', "Create Project {} successfully!".format(prj_name))
+                except Exception as err:
+                    flash(request, 'danger', "Save Project {} failed: {}!".format(prj_name, err))
             else:
                 flash(request, 'danger', 'Project {} has laready existed!'.format(prj_name))
         else:
@@ -65,9 +68,12 @@ def build_page(request):
                 crash_path = form.cleaned_data['build_crash_path']
                 local_path = form.cleaned_data['build_local_path']
                 use_server = form.cleaned_data['build_use_server']
-                Build.objects.create(project=target_prj, version=version, short_name=short_name, server_path=server_path,
-                    crash_path=crash_path, local_path=local_path, use_server=use_server)
-                flash(request, 'success', "Create Build {} successfully!".format(version))
+                try:
+                    Build.objects.create(project=target_prj, version=version, short_name=short_name, server_path=server_path,
+                        crash_path=crash_path, local_path=local_path, use_server=use_server)
+                    flash(request, 'success', "Create Build {} successfully!".format(version))
+                except Exception as err:
+                    flash(request, 'danger', "Save Build {} failed: {}!".format(version, err))
             else:
                 flash(request, 'danger', 'Project {} does NOT exist when create Build!'.format(prj_name))
         else:

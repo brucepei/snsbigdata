@@ -23,7 +23,10 @@ class AddProjectForm(forms.Form):
 
 class AddBuildForm(forms.Form):
     build_project_name = forms.CharField(
-        widget=forms.HiddenInput
+        widget=forms.HiddenInput,
+        error_messages={
+            'required': 'Please choose a Project!'
+        }
     )
     build_version = forms.RegexField(
         regex=re.compile(r'^[a-zA-Z]\w{0,39}$'),
