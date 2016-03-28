@@ -14,34 +14,28 @@
     <body>
         <div class="container">
             <div class="row">
-                <div class="span12">
-                    <div class="view">
-                        <ul class="nav nav-tabs" contenteditable="false">
-                            <li {% block nav_home_attr %}{% endblock %}><a href="{% url 'tbd_home' %}">Home</a></li>
-                            <li {% block nav_project_attr %}{% endblock %}><a href="{% url 'tbd_project' %}">Project</a></li>
-                            <li {% block nav_build_attr %}{% endblock %}><a href="{% url 'tbd_build' %}">Build</a></li>
-                            <li class="disabled"><a href="#">To-Do</a></li>
-                            <li class="dropdown pull-right">
-                                <a href="#" data-toggle="dropdown" class="dropdown-toggle">
-                                    Configuration<b class="caret"></b>
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="/admin">Manage</a></li>
-                                    <li><a href="#">to-do 1</a></li>
-                                    <li><a href="#">to-do 2</a></li>
-                                    <li class="divider"></li>
-                                    <li><a href="#">to-do 11</a></li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="col-md-12">
+                    <ul class="nav nav-tabs" contenteditable="false">
+                        <li {% block nav_home_attr %}{% endblock %}><a href="{% url 'tbd_home' %}">Home</a></li>
+                        <li {% block nav_project_attr %}{% endblock %}><a href="{% url 'tbd_project' %}">Project</a></li>
+                        <li {% block nav_build_attr %}{% endblock %}><a href="{% url 'tbd_build' %}">Build</a></li>
+                        <li class="disabled"><a href="#">To-Do</a></li>
+                        <li class="dropdown pull-right">
+                            <a href="#" data-toggle="dropdown" class="dropdown-toggle">
+                                Configuration<b class="caret"></b>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="/admin">Manage</a></li>
+                                <li><a href="#">to-do 1</a></li>
+                                <li><a href="#">to-do 2</a></li>
+                                <li class="divider"></li>
+                                <li><a href="#">to-do 11</a></li>
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
             </div>
-            <div class="row">
-                <div class="span12">
-                    {% block content %}{% endblock %}
-                </div>
-            </div>
+            {% block content %}{% endblock %}
         </div>
 
         <script src="/static/js/jquery-1.11.3.min.js"></script>

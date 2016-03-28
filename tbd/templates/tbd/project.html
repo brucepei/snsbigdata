@@ -4,51 +4,55 @@
 
 {% block content %}
     <div class="container">
-        <table id="id_project_table" class="table table-striped table-hover" contenteditable="false">
-            <caption class="text-center">Project List</caption>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Owner</th>
-                    <th>Builds</th>
-                    <th>CreateTime</th>
-                    <th>Operation</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for prj in projects %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ prj.name }}</td>
-                    <td>{{ prj.owner }}</td>
-                    <td>{{ prj.build_set.all | length }}</td>
-                    <td>{{ prj.create }}</td>
-                    <td>
-                        <a href="{% url 'tbd_project' %}?method=delete&project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>del?</a>
-                        <a href="{% url 'tbd_build' %}?project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"></span>build</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if flash %}
-        <div class="alert alert-{{ flash.type }}"  role="alert">
-            <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
-        </div>
-        {% endif %}
-        <form action="{% url 'tbd_project' %}" method="post">
-            <fieldset>
-                <legend contenteditable="false">Add Project</legend>
-                <table>
-                    {% csrf_token %}
-                    {{ form }}
-                    <tr>
-                        <td><button class="btn" type="reset" contenteditable="false">Reset</button></td>
-                        <td><button class="btn" name="add" type="submit" contenteditable="false">Submit</button></td>
-                    </tr>
+        <div class="row">
+            <div class="col-md-12">
+                <table id="id_project_table" class="table table-striped table-hover" contenteditable="false">
+                    <caption class="text-center">Project List</caption>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Owner</th>
+                            <th>Builds</th>
+                            <th>CreateTime</th>
+                            <th>Operation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prj in projects %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ prj.name }}</td>
+                            <td>{{ prj.owner }}</td>
+                            <td>{{ prj.build_set.all | length }}</td>
+                            <td>{{ prj.create }}</td>
+                            <td>
+                                <a href="{% url 'tbd_project' %}?method=delete&project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>del?</a>
+                                <a href="{% url 'tbd_build' %}?project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"></span>build</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
-            </fieldset>
-        </form>
+                {% if flash %}
+                <div class="alert alert-{{ flash.type }}"  role="alert">
+                    <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
+                </div>
+                {% endif %}
+                <form action="{% url 'tbd_project' %}" method="post">
+                    <fieldset>
+                        <legend contenteditable="false">Add Project</legend>
+                        <table>
+                            {% csrf_token %}
+                            {{ form }}
+                            <tr>
+                                <td><button class="btn" type="reset" contenteditable="false">Reset</button></td>
+                                <td><button class="btn" name="add" type="submit" contenteditable="false">Submit</button></td>
+                            </tr>
+                        </table>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
     </div>
 {% endblock %}
