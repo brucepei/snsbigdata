@@ -44,7 +44,7 @@
                     </thead>
                     <tbody>
                         {% for blt in builds %}
-                        <tr class="build_head">
+                        <tr class="build_head{% cycle ' striped' '' %}">
                             <td>{{ blt.no }}</td>
                             <td>{{ blt.version }}</td>
                             <td>{{ blt.short_name }}</td>

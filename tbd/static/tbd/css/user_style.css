@@ -8,4 +8,8 @@
         bottom: 0;
         right: 0;
     }
+    
+    .striped {
+        background-color: #f9f9f9;
+    }
 }
