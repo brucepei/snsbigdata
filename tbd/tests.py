@@ -120,9 +120,9 @@ class TBDTest(TestCase):
         
         saved_projects = Project.objects.all()
         form = AddProjectForm()
-        
+        flash_data = {'type': 'success', 'msg': "Delete Project {} successfully!".format('unit_test_prj')}
         self.assertEqual(saved_projects.count(), 0)
-        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'form': form}))
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'flash': flash_data, 'form': form}))
 
 class TBDModelTest(TestCase):
     def test_saving_and_retrieve_project(self):
