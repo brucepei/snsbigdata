@@ -83,6 +83,11 @@
                   </a>
                 </li>
                 </ul>
+                {% if flash_type %}
+                <div class="alert alert-{{ flash_type }}"  role="alert">
+                    <strong>{{ flash_type }}!</strong><br/>{{ flash_msg|safe }}
+                </div>
+                {% endif %}
                 <div>
                     <form action="{% url 'tbd_build' %}" method="post">
                         <fieldset>
@@ -98,11 +103,6 @@
                         </fieldset>
                     </form>
                 </div>
-                {% if error_msg %}
-                <div class="alert alert-danger"  role="alert">
-                    <strong>Error!</strong><br/>{{ error_msg|safe }}
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>

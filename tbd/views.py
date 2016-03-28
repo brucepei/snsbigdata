@@ -10,6 +10,17 @@ from .forms import AddProjectForm, AddBuildForm
 def home_page(request):
     return render(request, 'tbd/home.html')
 
+def flash(request, flash_type=None, flash_msg=None):
+    if flash_type:
+        request.session['flash_type'] = flash_type
+        request.session['flash_msg'] = flash_msg
+        # print "save type {}, err: {}".format(request.session['flash_type'], request.session['flash_msg'])
+    else:
+        flash_type = request.session.pop('flash_type') if 'flash_type' in request.session else None
+        flash_msg = request.session.pop('flash_msg') if 'flash_msg' in request.session else None
+        # print "load type {}, err: {}".format(flash_type, flash_msg)
+        return (flash_type, flash_msg)
+    
 def project_page(request):
     if request.method == 'POST':
         form = AddProjectForm(request.POST)
@@ -19,12 +30,14 @@ def project_page(request):
             target_prj = Project.objects.filter(name=prj_name)
             if not target_prj:
                 Project.objects.create(name=prj_name, owner=prj_owner)
+                flash(request, 'success', "Create Project {} successfully!".format(prj_name))
             else:
-                request.session['project_error'] = 'Project {} has laready existed!'.format(prj_name)
+                flash(request, 'danger', 'Project {} has laready existed!'.format(prj_name))
         else:
-            request.session['project_error'] = ''
+            flash_err = ''
             for field, msg in form.errors.items():
-                request.session['project_error'] += "{}:{}".format(field, msg)
+                flash_err += "{}:{}".format(field, msg)
+            flash(request, 'danger', flash_err)
         return redirect('tbd_project')
     else:
         prj_name = request.GET.get('project_name', '')
@@ -35,10 +48,8 @@ def project_page(request):
                 target_prj = Project.objects.filter(name=prj_name)
                 if target_prj:
                     target_prj.delete()
-        project_error = None
-        if 'project_error' in request.session:
-            project_error = request.session.pop('project_error')
-        return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'error_msg': project_error})
+        flash_type, flash_msg = flash(request)
+        return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'flash_type': flash_type, 'flash_msg': flash_msg})
 
 def build_page(request):
     if request.method == 'POST':
@@ -56,13 +67,15 @@ def build_page(request):
                 use_server = form.cleaned_data['build_use_server']
                 Build.objects.create(project=target_prj, version=version, short_name=short_name, server_path=server_path,
                     crash_path=crash_path, local_path=local_path, use_server=use_server)
+                flash(request, 'success', "Create Build {} successfully!".format(version))
             else:
-                request.session['build_error'] = 'Project {} does NOT exist when create Build!'.format(prj_name)
+                flash(request, 'danger', 'Project {} does NOT exist when create Build!'.format(prj_name))
         else:
-            prj_name = request.POST['build_project_name']
-            request.session['build_error'] = ''
+            prj_name = request.POST.get('build_project_name', '')
+            flash_err = ''
             for field, msg in form.errors.items():
-                request.session['build_error'] += "{}:{}".format(field, msg)
+                flash_err += "{}:{}".format(field, msg)
+            flash(request, 'danger', flash_err)
         redirect_url = reverse('tbd_build')
         if prj_name:
             redirect_url += '?project_name=' + prj_name
@@ -78,7 +91,5 @@ def build_page(request):
             if target_prj:
                 target_prj = target_prj[0]
                 builds = Build.objects.filter(project=target_prj)
-        build_error = None
-        if 'build_error' in request.session:
-            build_error = request.session.pop('build_error')
-        return render(request, 'tbd/build.html', {'error_msg':build_error, 'form': form, 'project': target_prj, 'builds': builds, 'projects': projects})
+        flash_type, flash_msg = flash(request)
+        return render(request, 'tbd/build.html', {'flash_type':flash_type, 'flash_msg':flash_msg, 'form': form, 'project': target_prj, 'builds': builds, 'projects': projects})

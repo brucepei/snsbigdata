@@ -32,6 +32,11 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% if flash_type %}
+        <div class="alert alert-{{ flash_type }}"  role="alert">
+            <strong>{{ flash_type }}!</strong><br/>{{ flash_msg|safe }}
+        </div>
+        {% endif %}
         <form action="{% url 'tbd_project' %}" method="post">
             <fieldset>
                 <legend contenteditable="false">Add Project</legend>
@@ -45,10 +50,5 @@
                 </table>
             </fieldset>
         </form>
-        {% if error_msg %}
-        <div class="alert alert-danger">
-            <strong>Error!</strong><br/>{{ error_msg|safe }}
-        </div>
-        {% endif %}
     </div>
 {% endblock %}
