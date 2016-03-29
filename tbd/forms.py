@@ -3,12 +3,12 @@ from django import forms
 
 class AddProjectForm(forms.Form):
     project_name = forms.RegexField(
-        regex=re.compile(r'^[a-zA-Z]\w{0,39}$'),
+        regex=re.compile(r'^[a-zA-Z][\w.-]{0,39}$'),
         strip=True,
         label='Project Name',
         max_length=40,
         error_messages={
-            'invalid': 'Maximum length 40, and starts with letter, only includes letter and digit!'
+            'invalid': "Maximum length 40, and starts with letter, only includes '.', '-', letter and digit!"
         }
     )
     project_owner = forms.RegexField(
@@ -29,12 +29,12 @@ class AddBuildForm(forms.Form):
         }
     )
     build_version = forms.RegexField(
-        regex=re.compile(r'^[a-zA-Z]\w{0,39}$'),
+        regex=re.compile(r'^[a-zA-Z][\w.-]{0,39}$'),
         strip=True,
         label='Version',
         max_length=40,
         error_messages={
-            'invalid': 'Maximum length 40, and starts with letter, only includes letter and digit!'
+            'invalid': "Maximum length 40, and starts with letter, only includes '.', '-', letter and digit!"
         }
     )
     build_name = forms.RegexField(
