@@ -10,7 +10,7 @@ from .forms import AddProjectForm, AddBuildForm
 import mock
 
 # Create your tests here.
-class TBDTest(TestCase):
+class TBDHomeTest(TestCase):
     def test_homepage_url_handler(self):
         handler_obj = resolve('/')
         self.assertEqual(handler_obj.func, home_page)
@@ -23,7 +23,8 @@ class TBDTest(TestCase):
         self.assertTrue(resp.content.strip().endswith(b'</html>'))
         self.assertIn(b'<title>SnS Big Data</title>', resp.content)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/home.html'))
-    
+        
+class TBDProjectTest(TestCase):
     def test_project_url_handler(self):
         handler_obj = resolve('/project')
         self.assertEqual(handler_obj.func, project_page)
@@ -42,25 +43,6 @@ class TBDTest(TestCase):
         
         self.assertEqual(saved_projects.count(), 0)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'form': form}))
-        
-    def test_build_url_handler(self):
-        handler_obj = resolve('/build')
-        self.assertEqual(handler_obj.func, build_page)
-        
-    def test_build_get_correct_html(self):
-        request = HttpRequest()
-        request.session = {}
-        
-        resp = build_page(request)
-        
-        self.assertIn(b'<html>', resp.content)
-        self.assertTrue(resp.content.strip().endswith(b'</html>'))
-        self.assertIn(b'<title>Build - SBD</title>', resp.content)
-        saved_builds = Build.objects.all()
-        form = AddBuildForm()
-        
-        self.assertEqual(saved_builds.count(), 0)
-        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/build.html', request=request, context={'form': form}))
         
     def test_project_post_add_project_with_invalid_input(self):
         #name [a-zA-Z]\w{0,39}, owner \w{1,20}
@@ -124,6 +106,121 @@ class TBDTest(TestCase):
         self.assertEqual(saved_projects.count(), 0)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'flash': flash_data, 'form': form}))
 
+class TBDTestBuild(TestCase):
+    def test_build_url_handler(self):
+        handler_obj = resolve('/build')
+        self.assertEqual(handler_obj.func, build_page)
+        
+    def test_build_get_correct_html(self):
+        request = HttpRequest()
+        request.session = {}
+        
+        resp = build_page(request)
+        
+        self.assertIn(b'<html>', resp.content)
+        self.assertTrue(resp.content.strip().endswith(b'</html>'))
+        self.assertIn(b'<title>Build - SBD</title>', resp.content)
+        saved_builds = Build.objects.all()
+        form = AddBuildForm()
+        
+        self.assertEqual(saved_builds.count(), 0)
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/build.html', request=request, context={'form': form}))
+        
+    def test_build_post_add_project_with_invalid_input(self):
+        prj = Project(name="unit_project", owner="tester")
+        prj.save()
+        #name [a-zA-Z]\w{0,39}, owner \w{1,20}
+        for version, short_name, server_path, crash_path, local_path, use_server in (('', '', '', '', '', True), ('version1', '', '', '', '', True)
+            , ('version1', 'v1', 'abc', 'def', 'agc', True), ('version1', 'v1', '\\\\a\\b', 'def', 'agc', True), ('version1', 'v1', '\\\\a\\b', '\\\\c\\d', 'agc', True)):
+            request = HttpRequest()
+            request.session = {}
+            request.method = 'POST'
+            request.POST['build_project_name'] = prj.name
+            request.POST['build_version'] = version
+            request.POST['build_name'] = short_name
+            request.POST['build_server_path'] = server_path
+            request.POST['build_crash_path'] = crash_path
+            request.POST['build_local_path'] = local_path
+            request.POST['build_use_server'] = use_server
+    
+            resp = build_page(request)
+            saved_builds = Build.objects.all()
+            
+            self.assertEqual(saved_builds.count(), 0)
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp['location'], '/build?project_name='+prj.name)
+
+    def test_project_post_add_project_with_valid_input(self):
+        prj = Project(name="unit_project", owner="tester")
+        prj.save()
+        #name [a-zA-Z]\w{0,39}, owner \w{1,20}
+        build_no = 0
+        for version, short_name, server_path, crash_path, local_path, use_server in (('version1', 'v1', '\\\\s\\v1', '\\\\c\\v1', '\\\\l\\v1', True)
+            , ('version2', 'v2', '\\\\s\\v2', '\\\\c\\v2', '', True), ('version3', 'v3', '\\\\s\\v3', '\\\\c\\v3', '', False), ('version4', 'v4', '\\\\s\\v4', '\\\\c\\v4', '\\\\l\\v4', False), ):
+            build_no += 1
+            request = HttpRequest()
+            request.session = {}
+            request.method = 'POST'
+            request.POST['build_project_name'] = prj.name
+            request.POST['build_version'] = version
+            request.POST['build_name'] = short_name
+            request.POST['build_server_path'] = server_path
+            request.POST['build_crash_path'] = crash_path
+            request.POST['build_local_path'] = local_path
+            request.POST['build_use_server'] = use_server
+            aware_create_time = timezone.now()
+
+            resp = build_page(request)
+            saved_builds = Build.objects.all()
+            self.assertEqual(saved_builds.count(), build_no)
+            target_build = Build.objects.filter(version=version)[0]
+            self.assertEqual(target_build.project.name, prj.name)
+            self.assertEqual(target_build.version, version)
+            self.assertEqual(target_build.short_name, short_name)
+            self.assertEqual(target_build.server_path, server_path)
+            self.assertEqual(target_build.crash_path, crash_path)
+            self.assertEqual(target_build.local_path, local_path)
+            self.assertEqual(target_build.use_server, use_server)
+            self.assertAlmostEqual((target_build.create - aware_create_time).seconds, 0)
+            
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp['location'], '/build?project_name='+prj.name)
+        
+    def test_project_post_delete_project(self):
+        request = HttpRequest()
+        request.session = {}
+        request.method = 'POST'
+        prj = Project(name="unit_project", owner="tester")
+        prj.save()
+        version, short_name, server_path, crash_path, local_path, use_server = ('version1', 'v1', '\\\\s\\v1', '\\\\c\\v1', '\\\\l\\v1', True)
+        request.POST['build_project_name'] = prj.name
+        request.POST['build_version'] = version
+        request.POST['build_name'] = short_name
+        request.POST['build_server_path'] = server_path
+        request.POST['build_crash_path'] = crash_path
+        request.POST['build_local_path'] = local_path
+        request.POST['build_use_server'] = use_server
+
+        resp = build_page(request)
+        
+        saved_builds = Build.objects.all()
+        self.assertEqual(saved_builds.count(), 1)
+
+        request = HttpRequest()
+        request.session = {}
+        request.GET['method'] = 'delete'
+        request.GET['project_name'] = prj.name
+        request.GET['version'] = version
+        resp = build_page(request)
+        
+        saved_builds = Build.objects.all()
+        form = AddBuildForm()
+        page = {'cur': 1, 'previous': 1, 'next': 1, 'list': [1]}
+        flash_data = {'type': 'success', 'msg': "Delete Version {} in Project {} successfully!".format(version, prj.name)}
+        self.assertEqual(saved_builds.count(), 0)
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/build.html', request=request, context={
+            'page': page, 'project': prj, 'projects': Project.objects.all(), 'flash': flash_data, 'form': form}))
+        
 class TBDModelTest(TestCase):
     def test_saving_and_retrieve_project(self):
         prj1 = Project(name="unit_project1", owner="test1")
