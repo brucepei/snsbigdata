@@ -3,7 +3,7 @@ from django.core.urlresolvers import resolve
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.utils import timezone
-from tbd.models import Project, Build
+from tbd.models import Project, Build, TestData
 from tbd.views import home_page, project_page, build_page
 from datetime import datetime
 from .forms import AddProjectForm, AddBuildForm
@@ -257,3 +257,29 @@ class TBDModelTest(TestCase):
         self.assertEqual(first_build.project.name, build1.project.name)
         self.assertEqual(second_build.version, build2.version)
         self.assertEqual(second_build.project.name, build2.project.name)
+        
+    def test_saving_and_retrieve_testdata(self):
+        prj1 = Project(name="unit_project1", owner="test1")
+        prj1.save()
+        prj2 = Project(name="unit_project2", owner="test1")
+        prj2.save()
+        build1 = Build(version="unit_project1", project=prj1)
+        build1.save()
+        build2 = Build(version="unit_project2", project=prj2)
+        build2.save()
+        td1 = TestData(testcase="test_case1", project=prj1, build=build1)
+        td1.save()
+        td2 = TestData(testcase="test_case2", project=prj2, build=build2)
+        td2.save()
+        
+        saved_items = TestData.objects.all()
+        self.assertEqual(saved_items.count(), 2)
+        
+        first_td = saved_items[0]
+        second_td = saved_items[1]
+        self.assertEqual(first_td.testcase, td1.testcase)
+        self.assertEqual(first_td.project.name, td1.project.name)
+        self.assertEqual(first_td.build.version, td1.build.version)
+        self.assertEqual(second_td.testcase, td2.testcase)
+        self.assertEqual(second_td.project.name, td2.project.name)
+        self.assertEqual(second_td.build.version, td2.build.version)
