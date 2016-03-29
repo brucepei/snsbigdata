@@ -214,8 +214,8 @@ class TBDTestBuild(TestCase):
         resp = build_page(request)
         
         saved_builds = Build.objects.all()
-        form = AddBuildForm()
-        page = {'cur': 1, 'previous': 1, 'next': 1, 'list': [1]}
+        form = AddBuildForm(initial={'build_project_name': prj.name})
+        page = {'list': []}
         flash_data = {'type': 'success', 'msg': "Delete Version {} in Project {} successfully!".format(version, prj.name)}
         self.assertEqual(saved_builds.count(), 0)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/build.html', request=request, context={

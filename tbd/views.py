@@ -87,6 +87,8 @@ def build_page(request):
         return redirect(redirect_url)
     else:
         prj_name = request.GET.get('project_name', '')
+        get_method = request.GET.get('method', None)
+        target_version = request.GET.get('version', None)
         page_data = {}
         cur_page = request.GET.get('page', 1)
         try:
@@ -104,6 +106,15 @@ def build_page(request):
             target_prj = Project.objects.filter(name=prj_name)
             if target_prj:
                 target_prj = target_prj[0]
+                if target_version and get_method:
+                    if get_method.lower() == 'delete':
+                        target_build = Build.objects.filter(project=target_prj, version=target_version)
+                        if target_build:
+                            try:
+                                target_build[0].delete()
+                                flash(request, {'type': 'success', 'msg': "Delete Version {} in Project {} successfully!".format(target_version, prj_name)})
+                            except Exception as err:
+                                flash(request, {'type': 'danger', 'msg': "Delete Version {} in Project {} failed: {}!".format(target_version, prj_name, err)})
                 builds = Build.objects.filter(project=target_prj).order_by('-create')
                 total_builds = len(builds)
                 total_page = (total_builds+builds_in_page-1)/builds_in_page
