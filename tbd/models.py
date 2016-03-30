@@ -47,4 +47,22 @@ class TestCase(models.Model):
     def __unicode__(self):
         return "TestCase {}({})".format(self.name, self.platform)
         
-        
+class Crash(models.Model):
+    path = models.CharField(unique=True, default='', max_length=255)
+    create = models.DateTimeField(auto_now_add=True)
+    
+    build = models.ForeignKey(
+        Build,
+        on_delete=models.PROTECT,
+        verbose_name="the related build",
+    )
+    host = models.ForeignKey(
+        Host,
+        on_delete=models.PROTECT,
+        verbose_name="the related host",
+    )
+    testcase = models.ForeignKey(
+        TestCase,
+        on_delete=models.PROTECT,
+        verbose_name="the related testcase",
+    )

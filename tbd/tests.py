@@ -3,7 +3,7 @@ from django.core.urlresolvers import resolve
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.utils import timezone
-from tbd.models import Project, Build, Host, TestCase#, Crash
+from tbd.models import Project, Build, Host, TestCase, Crash
 from tbd.views import home_page, project_page, build_page
 from datetime import datetime
 from .forms import AddProjectForm, AddBuildForm
@@ -291,7 +291,7 @@ class TBDModelTest(TC):
         self.assertEqual(second_item.name, tc2.name)
         self.assertEqual(second_item.platform, tc2.platform)
 
-    def atest_saving_and_retrieve_testdata(self):
+    def test_saving_and_retrieve_crash(self):
         prj1 = Project(name="unit_project1", owner="tester1")
         prj1.save()
         prj2 = Project(name="unit_project2", owner="tester1")
@@ -304,22 +304,28 @@ class TBDModelTest(TC):
         host1.save()
         host2 = Host(name="hostname2", ip="1.1.1.2")
         host2.save()
-        td1 = TestData(testcase="test_case1", host=host1, build=build1)
-        td1.save()
-        td2 = TestData(testcase="test_case2", host=host2, build=build2)
-        td2.save()
+        tc1 = TestCase(name="s3.xml", platform="Phoenix")
+        tc1.save()
+        tc2 = TestCase(name="s4.xml", platform="Phoenix")
+        tc2.save()
+        crash1 = Crash(path='\\\\crash_server\\c1', testcase=tc1, host=host1, build=build1)
+        crash1.save()
+        crash2 = Crash(path='\\\\crash_server\\c2', testcase=tc2, host=host2, build=build2)
+        crash2.save()
         
-        saved_items = TestData.objects.all()
+        saved_items = Crash.objects.all()
         self.assertEqual(saved_items.count(), 2)
         
-        first_td = saved_items[0]
-        second_td = saved_items[1]
-        self.assertEqual(first_td.testcase, td1.testcase)
-        self.assertEqual(first_td.build.project.name, td1.build.project.name)
-        self.assertEqual(first_td.build.version, td1.build.version)
-        self.assertEqual(first_td.host.name, td1.host.name)
+        first_item = saved_items[0]
+        second_item = saved_items[1]
+        self.assertEqual(first_item.path, crash1.path)
+        self.assertEqual(first_item.build.project.name, build1.project.name)
+        self.assertEqual(first_item.build.version, build1.version)
+        self.assertEqual(first_item.host.name, host1.name)
+        self.assertEqual(first_item.testcase.name, tc1.name)
         
-        self.assertEqual(second_td.testcase, td2.testcase)
-        self.assertEqual(second_td.build.project.name, td2.build.project.name)
-        self.assertEqual(second_td.build.version, td2.build.version)
-        self.assertEqual(second_td.host.name, td2.host.name)
+        self.assertEqual(second_item.path, crash2.path)
+        self.assertEqual(second_item.build.project.name, build2.project.name)
+        self.assertEqual(second_item.build.version, build2.version)
+        self.assertEqual(second_item.host.name, host2.name)
+        self.assertEqual(second_item.testcase.name, tc2.name)
