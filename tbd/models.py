@@ -40,5 +40,11 @@ class Host(models.Model):
     def __unicode__(self):
         return "Host {}(IPv4{})".format(self.name, self.ip)
         
-
+class TestCase(models.Model):
+    name = models.CharField(unique=True, default='', max_length=80)
+    platform = models.CharField(default='', max_length=30)
+    
+    def __unicode__(self):
+        return "TestCase {}({})".format(self.name, self.platform)
+        
         

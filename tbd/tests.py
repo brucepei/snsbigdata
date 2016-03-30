@@ -1,16 +1,16 @@
-from django.test import TestCase
+from django.test import TestCase as TC
 from django.core.urlresolvers import resolve
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.utils import timezone
-from tbd.models import Project, Build, Host#, TestCase, Crash
+from tbd.models import Project, Build, Host, TestCase#, Crash
 from tbd.views import home_page, project_page, build_page
 from datetime import datetime
 from .forms import AddProjectForm, AddBuildForm
 import mock
 
 # Create your tests here.
-class TBDHomeTest(TestCase):
+class TBDHomeTest(TC):
     def test_homepage_url_handler(self):
         handler_obj = resolve('/')
         self.assertEqual(handler_obj.func, home_page)
@@ -24,7 +24,7 @@ class TBDHomeTest(TestCase):
         self.assertIn(b'<title>SnS Big Data</title>', resp.content)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/home.html'))
         
-class TBDProjectTest(TestCase):
+class TBDProjectTest(TC):
     def test_project_url_handler(self):
         handler_obj = resolve('/project')
         self.assertEqual(handler_obj.func, project_page)
@@ -106,7 +106,7 @@ class TBDProjectTest(TestCase):
         self.assertEqual(saved_projects.count(), 0)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'flash': flash_data, 'form': form}))
 
-class TBDTestBuild(TestCase):
+class TBDTestBuild(TC):
     def test_build_url_handler(self):
         handler_obj = resolve('/build')
         self.assertEqual(handler_obj.func, build_page)
@@ -221,7 +221,7 @@ class TBDTestBuild(TestCase):
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/build.html', request=request, context={
             'page': page, 'project': prj, 'projects': Project.objects.all(), 'flash': flash_data, 'form': form}))
         
-class TBDModelTest(TestCase):
+class TBDModelTest(TC):
     def test_saving_and_retrieve_project(self):
         prj1 = Project(name="unit_project1", owner="test1")
         prj1.save()
@@ -274,19 +274,22 @@ class TBDModelTest(TestCase):
         self.assertEqual(second_host.name, host2.name)
         self.assertEqual(second_host.ip, host2.ip)
         
-    def atest_saving_and_retrieve_testcase(self):
-        tc1 = TestCase(name="hostname1", ip="1.1.1.1")
+    def test_saving_and_retrieve_testcase(self):
+        tc1 = TestCase(name="s3.xml", platform="Phoenix")
         tc1.save()
-        tc2 = TestCase(name="hostname2", ip="1.1.1.2")
+        tc2 = TestCase(name="s4.xml", platform="Phoenix")
         tc2.save()
         
         saved_items = TestCase.objects.all()
         self.assertEqual(saved_items.count(), 2)
         
-        first_host = saved_items[0]
-        second_host = saved_items[1]
-        self.assertEqual(first_host.name, tc1.name)
-        self.assertEqual(first_host.ip, tc1.ip)
+        first_item = saved_items[0]
+        second_item = saved_items[1]
+        
+        self.assertEqual(first_item.name, tc1.name)
+        self.assertEqual(first_item.platform, tc1.platform)
+        self.assertEqual(second_item.name, tc2.name)
+        self.assertEqual(second_item.platform, tc2.platform)
 
     def atest_saving_and_retrieve_testdata(self):
         prj1 = Project(name="unit_project1", owner="tester1")
