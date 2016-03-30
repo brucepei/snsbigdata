@@ -3,7 +3,7 @@ from django.core.urlresolvers import resolve
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.utils import timezone
-from tbd.models import Project, Build, Host#, TestData
+from tbd.models import Project, Build, Host#, TestCase, Crash
 from tbd.views import home_page, project_page, build_page
 from datetime import datetime
 from .forms import AddProjectForm, AddBuildForm
@@ -274,6 +274,20 @@ class TBDModelTest(TestCase):
         self.assertEqual(second_host.name, host2.name)
         self.assertEqual(second_host.ip, host2.ip)
         
+    def atest_saving_and_retrieve_testcase(self):
+        tc1 = TestCase(name="hostname1", ip="1.1.1.1")
+        tc1.save()
+        tc2 = TestCase(name="hostname2", ip="1.1.1.2")
+        tc2.save()
+        
+        saved_items = TestCase.objects.all()
+        self.assertEqual(saved_items.count(), 2)
+        
+        first_host = saved_items[0]
+        second_host = saved_items[1]
+        self.assertEqual(first_host.name, tc1.name)
+        self.assertEqual(first_host.ip, tc1.ip)
+
     def atest_saving_and_retrieve_testdata(self):
         prj1 = Project(name="unit_project1", owner="tester1")
         prj1.save()

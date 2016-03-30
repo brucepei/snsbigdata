@@ -31,3 +31,14 @@ class Build(models.Model):
         
     def __unicode__(self):
         return "Build {}({})".format(self.short_name, self.version)
+        
+class Host(models.Model):
+    name = models.CharField(unique=True, default='', max_length=50)
+    ip = models.GenericIPAddressField(protocol='IPv4', default='')
+    mac = models.CharField(default='', max_length=12)
+    
+    def __unicode__(self):
+        return "Host {}(IPv4{})".format(self.name, self.ip)
+        
+
+        
