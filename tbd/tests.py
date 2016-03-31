@@ -275,9 +275,9 @@ class TBDModelTest(TC):
         self.assertEqual(second_host.ip, host2.ip)
         
     def test_saving_and_retrieve_testcase(self):
-        tc1 = TestCase(name="s3.xml", platform="Phoenix")
+        tc1 = TestCase(name="s3.xml", platform=TestCase.PHOENIX)
         tc1.save()
-        tc2 = TestCase(name="s4.xml", platform="Phoenix")
+        tc2 = TestCase(name="s4.pl", platform=TestCase.WPA)
         tc2.save()
         
         saved_items = TestCase.objects.all()
@@ -304,17 +304,23 @@ class TBDModelTest(TC):
         host1.save()
         host2 = Host(name="hostname2", ip="1.1.1.2")
         host2.save()
-        tc1 = TestCase(name="s3.xml", platform="Phoenix")
+        tc1 = TestCase(name="s3.xml", platform=TestCase.PHOENIX)
         tc1.save()
-        tc2 = TestCase(name="s4.xml", platform="Phoenix")
+        tc2 = TestCase(name="s4.xml", platform=TestCase.VEGA)
         tc2.save()
         crash1 = Crash(path='\\\\crash_server\\c1', testcase=tc1, host=host1, build=build1)
         crash1.save()
-        crash2 = Crash(path='\\\\crash_server\\c2', testcase=tc2, host=host2, build=build2)
+        crash2 = Crash(path='\\\\crash_server\\c2', testcase=tc2, host=host2, build=build2, category=Crash.NONCNSS)
         crash2.save()
         
-        saved_items = Crash.objects.all()
+        saved_items = Crash.objects.all()        
+        
+        self.assertEqual(crash1.is_cnss(), False)
+        self.assertEqual(crash1.is_valid(), False)
+        self.assertEqual(crash2.is_cnss(), False)
+        self.assertEqual(crash2.is_valid(), True)
         self.assertEqual(saved_items.count(), 2)
+        
         
         first_item = saved_items[0]
         second_item = saved_items[1]
@@ -323,9 +329,13 @@ class TBDModelTest(TC):
         self.assertEqual(first_item.build.version, build1.version)
         self.assertEqual(first_item.host.name, host1.name)
         self.assertEqual(first_item.testcase.name, tc1.name)
+        self.assertEqual(first_item.is_cnss(), False)
+        self.assertEqual(first_item.is_valid(), False)
         
         self.assertEqual(second_item.path, crash2.path)
         self.assertEqual(second_item.build.project.name, build2.project.name)
         self.assertEqual(second_item.build.version, build2.version)
         self.assertEqual(second_item.host.name, host2.name)
         self.assertEqual(second_item.testcase.name, tc2.name)
+        self.assertEqual(second_item.is_cnss(), False)
+        self.assertEqual(second_item.is_valid(), True)

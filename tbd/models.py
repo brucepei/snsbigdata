@@ -74,7 +74,7 @@ class Crash(models.Model):
         (NONCNSS, 'Non-CNSS Issue'),
     )
     path = models.CharField(unique=True, default='', max_length=255)
-    category = models.CharField(default='', choices=CATEGORY_CHOICE, max_length=2)
+    category = models.CharField(default=UNDETERMINED, choices=CATEGORY_CHOICE, max_length=2)
     create = models.DateTimeField(auto_now_add=True)
     
     build = models.ForeignKey(
