@@ -1,5 +1,6 @@
 import re
 from django import forms
+from .models import Crash
 
 class AddProjectForm(forms.Form):
     project_name = forms.RegexField(
@@ -74,4 +75,33 @@ class AddBuildForm(forms.Form):
     build_use_server = forms.BooleanField(
         label='Use Server Installer',
         required=False,
+    )
+    
+class AddCrashForm(forms.Form):
+    crash_path = forms.RegexField(
+        regex=re.compile(r'^\\\\.+'),
+        label='Crash Path',
+        max_length=255,
+        error_messages={
+            'invalid': "Maximum length 255, should start with '\\\\'!"
+        }
+    )
+    
+    crash_category = forms.ChoiceField(
+        choices = Crash.CATEGORY_CHOICE,
+        label='Crash Category'
+    )
+    
+    crash_project_name = forms.CharField(
+        widget=forms.HiddenInput,
+        error_messages={
+            'required': 'Please choose a Project!'
+        }
+    )
+    
+    crash_build_version = forms.CharField(
+        widget=forms.HiddenInput,
+        error_messages={
+            'required': 'Please choose a Build!'
+        }
     )

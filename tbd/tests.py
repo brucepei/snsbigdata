@@ -4,9 +4,9 @@ from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.utils import timezone
 from tbd.models import Project, Build, Host, TestCase, Crash
-from tbd.views import home_page, project_page, build_page
+from tbd.views import home_page, project_page, build_page, testdata_page
 from datetime import datetime
-from .forms import AddProjectForm, AddBuildForm
+from .forms import AddProjectForm, AddBuildForm, AddCrashForm
 import mock
 
 # Create your tests here.
@@ -220,6 +220,27 @@ class TBDTestBuild(TC):
         self.assertEqual(saved_builds.count(), 0)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/build.html', request=request, context={
             'page': page, 'project': prj, 'projects': Project.objects.all(), 'flash': flash_data, 'form': form}))
+
+class TBDTestTestData(TC):
+    def test_testdata_url_handler(self):
+        handler_obj = resolve('/testdata')
+        self.assertEqual(handler_obj.func, testdata_page)
+        
+    def test_testdata_get_correct_html(self):
+        request = HttpRequest()
+        request.session = {}
+        
+        resp = testdata_page(request)
+        
+        self.assertIn(b'<html>', resp.content)
+        self.assertTrue(resp.content.strip().endswith(b'</html>'))
+        self.assertIn(b'<title>TestData - SBD</title>', resp.content)
+        # saved_builds = Build.objects.all()
+        form = AddCrashForm()
+        
+        # self.assertEqual(saved_builds.count(), 0)
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/testdata.html', request=request, context={'form': form}))
+        
         
 class TBDModelTest(TC):
     def test_saving_and_retrieve_project(self):

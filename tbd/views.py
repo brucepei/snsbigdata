@@ -4,7 +4,8 @@ from django.http import HttpResponse
 from django.utils import timezone
 from tbd.models import Project
 from tbd.models import Build
-from .forms import AddProjectForm, AddBuildForm
+from tbd.models import Crash
+from .forms import AddProjectForm, AddBuildForm, AddCrashForm
 
 # Create your views here.
 def home_page(request):
@@ -126,3 +127,12 @@ def build_page(request):
             setattr(build, 'no', no + 1 + builds_in_page * (cur_page-1))
         return render(request, 'tbd/build.html', {'page': page_data, 'flash': flash(request), 
             'form': form, 'project': target_prj, 'builds': builds, 'projects': projects})
+
+def testdata_page(request):
+    if request.method == 'POST':
+        # form = AddProjectForm(request.POST)
+        # if form.is_valid():
+        return redirect('tbd_testdata')
+    else:
+        form = AddCrashForm()
+        return render(request, 'tbd/testdata.html', {'form': form})

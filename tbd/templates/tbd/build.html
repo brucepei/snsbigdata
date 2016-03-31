@@ -53,7 +53,7 @@
                             <td>{{ blt.create }}</td>
                             <td>
                                 <a href="{% url 'tbd_build' %}?method=delete&project_name={{project.name|iriencode}}&version={{blt.version|iriencode}}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>del?</a>
-                                <a href="{% url 'tbd_build' %}?project_name={{project.name|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"></span>TestData</a>
+                                <a href="{% url 'tbd_testdata' %}?project_name={{project.name|iriencode}}&version={{blt.version|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"></span>TestData</a>
                             </td>
                         </tr>
                         <tr class="hidden info">

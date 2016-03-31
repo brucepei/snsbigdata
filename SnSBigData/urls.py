@@ -22,4 +22,5 @@ urlpatterns = [
     url(r'^$', tbd.views.home_page, name='tbd_home'),
     url(r'^project$', tbd.views.project_page, name='tbd_project'),
     url(r'^build$', tbd.views.build_page, name='tbd_build'),
+    url(r'^testdata$', tbd.views.testdata_page, name='tbd_testdata'),
 ]
