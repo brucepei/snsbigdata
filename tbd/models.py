@@ -41,14 +41,40 @@ class Host(models.Model):
         return "Host {}(IPv4{})".format(self.name, self.ip)
         
 class TestCase(models.Model):
-    name = models.CharField(unique=True, default='', max_length=80)
-    platform = models.CharField(default='', max_length=30)
+    PHOENIX = 'PH'
+    VEGA    = 'VE'
+    WPA     = 'WP'
+    GARNET  = 'GA'
+    PLATFORM_CHOICE = (
+        (PHOENIX, 'Phoenix XML'),
+        (VEGA, 'Vega XML'),
+        (GARNET, 'Garnet XML'),
+        (WPA, 'WPA Perl'),
+    )
+    name = models.CharField(default='', max_length=80)
+    platform = models.CharField(default='', choices=PLATFORM_CHOICE, max_length=2)
     
+    class Meta:
+        unique_together = ("name", "platform")
+        
     def __unicode__(self):
         return "TestCase {}({})".format(self.name, self.platform)
         
 class Crash(models.Model):
+    UNDETERMINED = 'UN'
+    INVALID     = 'IN'
+    WITHDRAW  = 'WD'
+    CNSS    = 'CN'
+    NONCNSS = 'NC'
+    CATEGORY_CHOICE = (
+        (UNDETERMINED, 'Undetermined Issue'),
+        (INVALID, 'Invalid Issue'),
+        (WITHDRAW, 'Withdraw Issue'),
+        (CNSS, 'CNSS Issue'),
+        (NONCNSS, 'Non-CNSS Issue'),
+    )
     path = models.CharField(unique=True, default='', max_length=255)
+    category = models.CharField(default='', choices=CATEGORY_CHOICE, max_length=2)
     create = models.DateTimeField(auto_now_add=True)
     
     build = models.ForeignKey(
@@ -66,3 +92,11 @@ class Crash(models.Model):
         on_delete=models.PROTECT,
         verbose_name="the related testcase",
     )
+    
+    def is_valid(self):
+        return self.category in (self.CNSS, self.NONCNSS)
+        
+    def is_cnss(self):
+        return self.category == self.CNSS
+        
+            
