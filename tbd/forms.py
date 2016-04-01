@@ -53,7 +53,10 @@ class AddBuildForm(forms.Form):
         max_length=255,
         error_messages={
             'invalid': "Maximum length 255, should start with '\\\\'!"
-        }
+        },
+        widget=forms.TextInput(
+            attrs={'class':'path_input'}
+        )
     )
     build_crash_path = forms.RegexField(
         regex=re.compile(r'^\\\\.+'),
@@ -61,7 +64,10 @@ class AddBuildForm(forms.Form):
         max_length=255,
         error_messages={
             'invalid': "Maximum length 255, should start with '\\\\'!"
-        }
+        },
+        widget=forms.TextInput(
+            attrs={'class':'path_input'}
+        )
     )
     build_local_path = forms.RegexField(
         regex=re.compile(r'^\\\\.+'),
@@ -70,7 +76,10 @@ class AddBuildForm(forms.Form):
         required=False,
         error_messages={
             'invalid': "Maximum length 255, should start with '\\\\'!"
-        }
+        },
+        widget=forms.TextInput(
+            attrs={'class':'path_input'}
+        )
     )
     build_use_server = forms.BooleanField(
         label='Use Server Installer',
@@ -84,7 +93,10 @@ class AddCrashForm(forms.Form):
         max_length=255,
         error_messages={
             'invalid': "Maximum length 255, should start with '\\\\'!"
-        }
+        },
+        widget=forms.TextInput(
+            attrs={'class':'path_input'}
+        )
     )
     
     crash_project_name = forms.CharField(

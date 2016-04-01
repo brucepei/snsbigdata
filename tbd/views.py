@@ -134,5 +134,40 @@ def testdata_page(request):
         # if form.is_valid():
         return redirect('tbd_testdata')
     else:
-        form = AddCrashForm()
-        return render(request, 'tbd/testdata.html', {'form': form})
+        prj_name = request.GET.get('project_name', '')
+        version = request.GET.get('version', '')
+        page_data = {}
+        cur_page = request.GET.get('page', 1)
+        try:
+            cur_page = int(cur_page)
+        except:
+            cur_page = 1
+        page_data['cur'] = cur_page
+        total_page = None
+        builds_in_page = 5
+        form = AddCrashForm(initial={'crash_project_name': prj_name, 'crash_build_version': version})
+        projects = Project.objects.all()
+        builds = []
+        crashes = []
+        target_prj = None
+        target_build = None
+        if prj_name:
+            target_prj = Project.objects.filter(name=prj_name)
+            if target_prj:
+                target_prj = target_prj[0]
+                builds = Build.objects.filter(project=target_prj).order_by('-create')
+                if version:
+                    target_build = Build.objects.filter(project=target_prj, version=version)
+                    if target_build:
+                        target_build = target_build[0]
+                        crashes = Crash.objects.filter(build=target_build)
+                total_crashes = len(crashes)
+                total_page = (total_crashes+builds_in_page-1)/builds_in_page
+                crashes = crashes[(cur_page-1)*builds_in_page:cur_page*builds_in_page]
+        page_data['list'] = xrange(1, total_page+1) if total_page else []
+        page_data['previous'] = cur_page - 1 if cur_page > 1 else 1
+        page_data['next'] = cur_page + 1 if cur_page < total_page else total_page
+        for no, crash in enumerate(crashes):
+            setattr(build, 'no', no + 1 + builds_in_page * (cur_page-1))
+        return render(request, 'tbd/testdata.html', {'page': page_data, 'flash': flash(request), 
+            'form': form, 'project': target_prj, 'build': target_build, 'crashes': crashes, 'builds': builds, 'projects': projects})

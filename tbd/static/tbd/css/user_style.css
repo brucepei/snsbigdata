@@ -12,4 +12,8 @@
     .striped {
         background-color: #f9f9f9;
     }
+    
+    .path_input {
+        width: 600px;
+    }
 }
