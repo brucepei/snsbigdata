@@ -331,15 +331,10 @@ class TBDModelTest(TC):
         tc2.save()
         crash1 = Crash(path='\\\\crash_server\\c1', testcase=tc1, host=host1, build=build1)
         crash1.save()
-        crash2 = Crash(path='\\\\crash_server\\c2', testcase=tc2, host=host2, build=build2, category=Crash.NONCNSS)
+        crash2 = Crash(path='\\\\crash_server\\c2', testcase=tc2, host=host2, build=build2)
         crash2.save()
         
         saved_items = Crash.objects.all()        
-        
-        self.assertEqual(crash1.is_cnss(), False)
-        self.assertEqual(crash1.is_valid(), False)
-        self.assertEqual(crash2.is_cnss(), False)
-        self.assertEqual(crash2.is_valid(), True)
         self.assertEqual(saved_items.count(), 2)
         
         
@@ -350,13 +345,9 @@ class TBDModelTest(TC):
         self.assertEqual(first_item.build.version, build1.version)
         self.assertEqual(first_item.host.name, host1.name)
         self.assertEqual(first_item.testcase.name, tc1.name)
-        self.assertEqual(first_item.is_cnss(), False)
-        self.assertEqual(first_item.is_valid(), False)
         
         self.assertEqual(second_item.path, crash2.path)
         self.assertEqual(second_item.build.project.name, build2.project.name)
         self.assertEqual(second_item.build.version, build2.version)
         self.assertEqual(second_item.host.name, host2.name)
         self.assertEqual(second_item.testcase.name, tc2.name)
-        self.assertEqual(second_item.is_cnss(), False)
-        self.assertEqual(second_item.is_valid(), True)

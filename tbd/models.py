@@ -59,22 +59,31 @@ class TestCase(models.Model):
         
     def __unicode__(self):
         return "TestCase {}({})".format(self.name, self.platform)
-        
-class Crash(models.Model):
-    UNDETERMINED = 'UN'
+
+class JIRA(models.Model):
+    OPEN = 'OP'
     INVALID     = 'IN'
     WITHDRAW  = 'WD'
     CNSS    = 'CN'
     NONCNSS = 'NC'
     CATEGORY_CHOICE = (
-        (UNDETERMINED, 'Undetermined Issue'),
+        (OPEN, 'Open Issue'),
         (INVALID, 'Invalid Issue'),
         (WITHDRAW, 'Withdraw Issue'),
         (CNSS, 'CNSS Issue'),
         (NONCNSS, 'Non-CNSS Issue'),
     )
+    jira_id = models.CharField(unique=True, default='', max_length=20)
+    category = models.CharField(default=OPEN, choices=CATEGORY_CHOICE, max_length=2)
+    
+    def is_valid(self):
+        return self.category in (self.CNSS, self.NONCNSS)
+        
+    def is_cnss(self):
+        return self.category == self.CNSS
+        
+class Crash(models.Model):
     path = models.CharField(unique=True, default='', max_length=255)
-    category = models.CharField(default=UNDETERMINED, choices=CATEGORY_CHOICE, max_length=2)
     create = models.DateTimeField(auto_now_add=True)
     
     build = models.ForeignKey(
@@ -93,10 +102,13 @@ class Crash(models.Model):
         verbose_name="the related testcase",
     )
     
-    def is_valid(self):
-        return self.category in (self.CNSS, self.NONCNSS)
-        
-    def is_cnss(self):
-        return self.category == self.CNSS
+    jira = models.ForeignKey(
+        JIRA,
+        on_delete=models.PROTECT,
+        verbose_name="the related JIRA",
+        null = True
+    )
+    
+
         
             

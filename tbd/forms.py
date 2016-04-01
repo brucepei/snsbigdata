@@ -87,11 +87,6 @@ class AddCrashForm(forms.Form):
         }
     )
     
-    crash_category = forms.ChoiceField(
-        choices = Crash.CATEGORY_CHOICE,
-        label='Crash Category'
-    )
-    
     crash_project_name = forms.CharField(
         widget=forms.HiddenInput,
         error_messages={
