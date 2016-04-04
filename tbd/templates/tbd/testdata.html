@@ -69,6 +69,38 @@
                         <fieldset>
                             <legend contenteditable="false">Add Crash</legend>
                             <table>
+                                <tr>
+                                    <td><label>Host:</label></td>
+                                    <td>
+                                        <select name="td_host">
+                                            <option>--select host--</option>
+                                        {% for host in hosts %}
+                                            <option value="{{host.name}}">{{forloop.counter}}. {{host.name}}({{host.ip}})</option>
+                                        {% endfor %}
+                                        </select>
+                                        <button class="btn" contenteditable="false">Add</button>
+                                    </td>
+                                </tr>
+                                <tr class="hidden info">
+                                    <td>Add Host:</td>
+                                    <td>Name=<input type="text" />IP=<input type="text" />MAC=<input type="text" /></td>
+                                </tr>
+                                <tr>
+                                    <td><label>TestCase:</label></td>
+                                    <td>
+                                        <select name="td_testcase">
+                                            <option>--select testcase--</option>
+                                        {% for tc in testcases %}
+                                            <option value="{{tc.name}}">{{forloop.counter}}. {{tc.name}}({{tc.platform}})</option>
+                                        {% endfor %}
+                                        </select>
+                                        <button class="btn" contenteditable="false">Add</button>
+                                    </td>
+                                </tr>
+                                <tr class="hidden info">
+                                    <td>Add TestCase:</td>
+                                    <td>Name=<input type="text" />Platform=<input type="text" /></td>
+                                </tr>
                                 {% for field in form.visible_fields %}
                                 <tr><td>{{ field.label_tag }}</td><td>{{ field }}</td></tr>
                                 {% endfor %}

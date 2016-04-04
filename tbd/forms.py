@@ -112,3 +112,17 @@ class AddCrashForm(forms.Form):
             'required': 'Please choose a Build!'
         }
     )
+    
+    crash_host = forms.CharField(
+        widget=forms.HiddenInput,
+        error_messages={
+            'required': 'Please choose a Host!'
+        }
+    )
+    
+    crash_testcase = forms.CharField(
+        widget=forms.HiddenInput,
+        error_messages={
+            'required': 'Please choose a TestCase!'
+        }
+    )
