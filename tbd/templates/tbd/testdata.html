@@ -26,7 +26,7 @@
                     </div>
                     <div class="col-md-5 row-bottom">
                         <h4>Choose project:
-                            <select name="project_name">
+                            <select name="td_project_name">
                                 <option>--select project--</option>
                                 {% for prj in projects %}
                                     <option value="{{prj.name}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>
@@ -34,11 +34,11 @@
                             </select>
                         </h4>
                         <h4>Choose build:
-                            <select name="build_version">
+                            <select name="td_build_version">
                                 <option>--select build--</option>
                                 {% if project %}
                                 {% for bld in builds %}
-                                    <option value="{{bld.project.name}}&version={{bld.version}}"{% if build and bld == build %} selected="selected"{% endif %}>{{forloop.counter}}. {{bld.version}}</option>
+                                    <option value="{{bld.version}}"{% if build and bld == build %} selected="selected"{% endif %}>{{forloop.counter}}. {{bld.version}}</option>
                                 {% endfor %}
                                 {% endif %}
                             </select>

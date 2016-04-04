@@ -1,22 +1,39 @@
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from tbd.models import Project
 from tbd.models import Build
 from tbd.models import Crash
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm
 
-# Create your views here.
-def home_page(request):
-    return render(request, 'tbd/home.html')
-    
+#internal func
 def flash(request, flash_data=None):
     if flash_data:
         request.session['flash_data'] = flash_data
     else:
         flash_data = request.session.pop('flash_data') if 'flash_data' in request.session else None
         return flash_data
+
+def json_response(json, code=0):
+    return JsonResponse({'code': code, 'result': json})
+    
+#ajax views
+def ajax_get_builds(request):
+    prj_name = request.POST.get('project_name', None)
+    builds = []
+    if prj_name:
+        target_prj = Project.objects.filter(name=prj_name)
+        if target_prj:
+            target_prj = target_prj[0]
+            builds = Build.objects.filter(project=target_prj).order_by('-create')
+    return json_response([bld.version for bld in builds])
+
+# Create your views here.
+def home_page(request):
+    return render(request, 'tbd/home.html')
+    
+
         
 def project_page(request):
     if request.method == 'POST':
