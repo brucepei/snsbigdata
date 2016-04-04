@@ -4,12 +4,33 @@ from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.utils import timezone
 from tbd.models import Project, Build, Host, TestCase, Crash
-from tbd.views import home_page, project_page, build_page, testdata_page
+from tbd.views import home_page, project_page, build_page, testdata_page, ajax_get_builds
 from datetime import datetime
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm
 import mock
 
 # Create your tests here.
+class TBDAjaxTest(TC):
+    def test_ajax_get_builds_url_handler(self):
+        handler_obj = resolve('/ajax_get_builds')
+        self.assertEqual(handler_obj.func, ajax_get_builds)
+        
+    def test_ajax_get_builds_get_correct_list(self):
+        prj1 = Project(name="unit_project1", owner="tester1")
+        prj1.save()
+        build1 = Build(version="unit_build1", project=prj1)
+        build1.save()
+        build2 = Build(version="unit_build2", project=prj1)
+        build2.save()
+
+        request = HttpRequest()
+        request.method = 'POST'
+        request.POST['project_name'] = "unit_project1"
+        
+        resp = ajax_get_builds(request)
+        
+        self.assertEqual(resp.content.decode('utf8'), '{"code": 0, "result": ["unit_build1", "unit_build2"]}')
+
 class TBDHomeTest(TC):
     def test_homepage_url_handler(self):
         handler_obj = resolve('/')
