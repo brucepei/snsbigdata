@@ -26,7 +26,7 @@
                     </div>
                     <div class="col-md-5 row-bottom">
                         <h4>Choose project:
-                            <select name="td_project_name">
+                            <select name="td_project_name" class="selectpicker">
                                 <option>--select project--</option>
                                 {% for prj in projects %}
                                     <option value="{{prj.name}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>
@@ -34,7 +34,7 @@
                             </select>
                         </h4>
                         <h4>Choose build:
-                            <select name="td_build_version">
+                            <select name="td_build_version" class="selectpicker">
                                 <option>--select build--</option>
                                 {% if project %}
                                 {% for bld in builds %}
@@ -72,7 +72,7 @@
                                 <tr>
                                     <td><label>Host:</label></td>
                                     <td>
-                                        <select name="td_host">
+                                        <select name="td_host" class="selectpicker">
                                             <option>--select host--</option>
                                         {% for host in hosts %}
                                             <option value="{{host.name}}">{{forloop.counter}}. {{host.name}}({{host.ip}})</option>
@@ -88,7 +88,7 @@
                                 <tr>
                                     <td><label>TestCase:</label></td>
                                     <td>
-                                        <select name="td_testcase">
+                                        <select name="td_testcase" class="selectpicker">
                                             <option>--select testcase--</option>
                                         {% for tc in testcases %}
                                             <option value="{{tc.name}}">{{forloop.counter}}. {{tc.name}}({{tc.platform}})</option>
