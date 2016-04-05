@@ -20,9 +20,9 @@
                           </h1>
                         </p>
                     </div>
-                    <div class="col-md-5 row-bottom">
+                    <div class="col-md-5">
                         <h4>Choose project:
-                            <select name="project_name">
+                            <select name="project_name" class="selectpicker">
                                 <option>--select project--</option>
                                 {% for prj in projects %}
                                     <option value="{{prj.name}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>

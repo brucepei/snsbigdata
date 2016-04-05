@@ -63,7 +63,8 @@ $("select[name='td_project_name']").change( function() {
             $td_build_version_sel.append("<option>--select build--</option>")
             for(var i=0; i < builds.length; i++) {
                 $td_build_version_sel.append("<option value='"+builds[i]+"'>" + (i + 1) + '. ' +builds[i]+"</option>");
-            } 
+            }
+            $td_build_version_sel.selectpicker('refresh');
         });
     } else {
         $td_build_version_sel.empty();
