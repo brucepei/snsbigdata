@@ -144,7 +144,7 @@ def build_page(request):
             cur_page = 1
         page_data['cur'] = cur_page
         total_page = None
-        builds_in_page = 5
+        items_in_page = 5
         form = AddBuildForm(initial={'build_project_name': prj_name})
         projects = Project.objects.all()
         builds = []
@@ -164,13 +164,13 @@ def build_page(request):
                                 flash(request, {'type': 'danger', 'msg': "Delete Version {} in Project {} failed: {}!".format(target_version, prj_name, err)})
                 builds = Build.objects.filter(project=target_prj).order_by('-create')
                 total_builds = len(builds)
-                total_page = (total_builds+builds_in_page-1)/builds_in_page
-                builds = builds[(cur_page-1)*builds_in_page:cur_page*builds_in_page]
+                total_page = (total_builds+items_in_page-1)/items_in_page
+                builds = builds[(cur_page-1)*items_in_page:cur_page*items_in_page]
         page_data['list'] = xrange(1, total_page+1) if total_page else []
         page_data['previous'] = cur_page - 1 if cur_page > 1 else 1
         page_data['next'] = cur_page + 1 if cur_page < total_page else total_page
         for no, build in enumerate(builds):
-            setattr(build, 'no', no + 1 + builds_in_page * (cur_page-1))
+            setattr(build, 'no', no + 1 + items_in_page * (cur_page-1))
         return render(request, 'tbd/build.html', {'page': page_data, 'flash': flash(request), 
             'form': form, 'project': target_prj, 'builds': builds, 'projects': projects})
 
@@ -190,7 +190,7 @@ def testdata_page(request):
             cur_page = 1
         page_data['cur'] = cur_page
         total_page = None
-        builds_in_page = 5
+        items_in_page = 5
         crash_form = AddCrashForm(initial={'crash_project_name': prj_name, 'crash_build_version': version})
         host_form = AddHostForm(initial={'host_project_name': prj_name})
         testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj_name})
@@ -211,12 +211,12 @@ def testdata_page(request):
                         target_build = target_build[0]
                         crashes = Crash.objects.filter(build=target_build)
                 total_crashes = len(crashes)
-                total_page = (total_crashes+builds_in_page-1)/builds_in_page
-                crashes = crashes[(cur_page-1)*builds_in_page:cur_page*builds_in_page]
+                total_page = (total_crashes+items_in_page-1)/items_in_page
+                crashes = crashes[(cur_page-1)*items_in_page:cur_page*items_in_page]
         page_data['list'] = xrange(1, total_page+1) if total_page else []
         page_data['previous'] = cur_page - 1 if cur_page > 1 else 1
         page_data['next'] = cur_page + 1 if cur_page < total_page else total_page
         for no, crash in enumerate(crashes):
-            setattr(build, 'no', no + 1 + builds_in_page * (cur_page-1))
+            setattr(crash, 'no', no + 1 + items_in_page * (cur_page-1))
         return render(request, 'tbd/testdata.html', {'page': page_data, 'flash': flash(request), 
             'form': form, 'project': target_prj, 'build': target_build, 'crashes': crashes, 'builds': builds, 'projects': projects})

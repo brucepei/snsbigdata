@@ -33,7 +33,7 @@ class AddTestCaseForm(forms.Form):
         regex=re.compile(r'^[a-zA-Z][\w-]{0,49}$'),
         strip=True,
         label='TestCase Name',
-        max_length=40,
+        max_length=50,
         error_messages={
             'invalid': "Maximum length 50, and starts with letter, only includes '-', letter and digit!"
         },
@@ -80,7 +80,7 @@ class AddHostForm(forms.Form):
         regex=re.compile(r'^(?:[a-fA-F0-9]{2}\.){5}[a-fA-F0-9]{2}$'),
         strip=True,
         label='Host MAC address',
-        max_length=40,
+        max_length=17,
         error_messages={
             'invalid': "MAC address should be formated as xx.xx.xx.xx.xx.xx!"
         },

@@ -6,7 +6,7 @@ from django.utils import timezone
 from tbd.models import Project, Build, Host, TestCase, Crash
 from tbd.views import home_page, project_page, build_page, testdata_page, ajax_get_builds
 from datetime import datetime
-from .forms import AddProjectForm, AddBuildForm, AddCrashForm
+from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 import mock
 
 # Create your tests here.
@@ -248,19 +248,34 @@ class TBDTestTestData(TC):
         self.assertEqual(handler_obj.func, testdata_page)
         
     def test_testdata_get_correct_html(self):
+        prj1 = Project(name="unit_project1", owner="tester1")
+        prj1.save()
+        build1 = Build(version="unit_project1", project=prj1)
+        build1.save()
+        host1 = Host(name="hostname1", ip="1.1.1.1")
+        host1.save()
+        tc1 = TestCase(name="s3.xml", platform=TestCase.PHOENIX)
+        tc1.save()
+        crash1 = Crash(path='\\\\crash_server\\c1', testcase=tc1, host=host1, build=build1)
+        crash1.save()
         request = HttpRequest()
         request.session = {}
-        
+        request.GET['project_name'] = prj1.name
+        request.GET['version'] = build1.version
         resp = testdata_page(request)
         
         self.assertIn(b'<html>', resp.content)
         self.assertTrue(resp.content.strip().endswith(b'</html>'))
         self.assertIn(b'<title>TestData - SBD</title>', resp.content)
-        # saved_builds = Build.objects.all()
-        form = AddCrashForm()
+
+        crash_form = AddCrashForm(initial={'crash_project_name': prj1.name, 'crash_build_version': build1.version})
+        host_form = AddHostForm(initial={'host_project_name': prj1.name})
+        testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj1.name})
+        form = {'crash':crash_form, 'host': host_form, 'testcase': testcase_form}
+        page = {'list': [1], 'previous': 1, 'next': 1}
         
-        # self.assertEqual(saved_builds.count(), 0)
-        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/testdata.html', request=request, context={'form': form}))
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/testdata.html', request=request, context={
+            'project': prj1, 'build': build1, 'crashes': [crash1], 'builds': [build1], 'projects': [prj1], 'form': form}))
         
         
 class TBDModelTest(TC):
