@@ -62,7 +62,7 @@
                 </table>
                 <div>
                     <form action="{% url 'tbd_testdata' %}" method="post">
-                        {% for hidden in form.hidden_fields %}
+                        {% for hidden in form.crash.hidden_fields %}
                         {{ hidden }}
                         {% endfor %}
                         {% csrf_token %}
@@ -85,7 +85,11 @@
                                 </tr>
                                 <tr class="hidden info">
                                     <td>Adjust Host:</td>
-                                    <td><input type="text" name="host_name" placeholder="Host Name"/><input type="text" name="host_ip" placeholder="IP address"/><input type="text" name="host_mac" placeholder="MAC address"/></td>
+                                    <td>
+                                        {% for host_field in form.host %}
+                                            {{host_field}}
+                                        {% endfor %}
+                                    </td>
                                 </tr>
                                 <tr class="crash_head">
                                     <td><label>TestCase:</label></td>
@@ -103,18 +107,18 @@
                                 </tr>
                                 <tr class="hidden info">
                                     <td>Adjust TestCase:</td>
-                                    <td><input type="text" name="tc_name" placeholder="TestCase Name"/>
-                                        <select name="tc_platform" class="selectpicker">
-                                            <option>--select platform--</option>
-                                        </select>
+                                    <td>
+                                        {% for testcase_field in form.testcase %}
+                                            {{testcase_field}}
+                                        {% endfor %}
                                     </td>
                                 </tr>
-                                {% for field in form.visible_fields %}
+                                {% for field in form.crash.visible_fields %}
                                 <tr class="crash_head"><td>{{ field.label_tag }}</td><td>{{ field }}</td></tr>
                                 {% endfor %}
                                 <tr>
-                                    <td><button class="btn" type="reset" contenteditable="false">Reset</button></td>
-                                    <td><button class="btn" name="add" type="submit" contenteditable="false">Submit</button></td>
+                                    <td><button class="btn btn-default" type="reset" contenteditable="false">Reset</button></td>
+                                    <td><button class="btn btn-default" name="add" type="submit" contenteditable="false">Submit</button></td>
                                 </tr>
                             </table>
                         </fieldset>

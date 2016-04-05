@@ -1,6 +1,6 @@
 import re
 from django import forms
-from .models import Crash
+from .models import TestCase
 
 class AddProjectForm(forms.Form):
     project_name = forms.RegexField(
@@ -20,6 +20,73 @@ class AddProjectForm(forms.Form):
         error_messages={
             'invalid': 'Maximum length 20, only includes letter and digits!'
         }
+    )
+class AddTestCaseForm(forms.Form):
+    testcase_project_name = forms.CharField(
+        widget=forms.HiddenInput,
+        error_messages={
+            'required': 'Please choose a Project!'
+        }
+    )
+    
+    testcase_name = forms.RegexField(
+        regex=re.compile(r'^[a-zA-Z][\w-]{0,49}$'),
+        strip=True,
+        label='TestCase Name',
+        max_length=40,
+        error_messages={
+            'invalid': "Maximum length 50, and starts with letter, only includes '-', letter and digit!"
+        },
+        widget=forms.TextInput(
+            attrs={'placeholder':'TestCase Name'}
+        )
+    )
+    testcase_platform = forms.ChoiceField(
+        label='TestCase Platform',
+        choices=TestCase.PLATFORM_CHOICE,
+        widget=forms.Select(
+            attrs={'class':'selectpicker', 'title':'--select testcase--'}
+        )
+    )
+    
+class AddHostForm(forms.Form):
+    host_project_name = forms.CharField(
+        widget=forms.HiddenInput,
+        error_messages={
+            'required': 'Please choose a Project!'
+        }
+    )
+    
+    host_name = forms.RegexField(
+        regex=re.compile(r'^[a-zA-Z][\w-]{0,49}$'),
+        strip=True,
+        label='Host Name',
+        max_length=50,
+        error_messages={
+            'invalid': "Maximum length 50, and starts with letter, only includes '-', letter and digit!"
+        },
+        widget=forms.TextInput(
+            attrs={'placeholder':'Host Name'}
+        )
+    )
+    host_ip = forms.GenericIPAddressField(
+        protocol='IPv4',
+        label='Host IP address',
+        widget=forms.TextInput(
+            attrs={'placeholder':'IP address'}
+        )
+    )
+    host_mac = forms.RegexField(
+        regex=re.compile(r'^(?:[a-fA-F0-9]{2}\.){5}[a-fA-F0-9]{2}$'),
+        strip=True,
+        label='Host MAC address',
+        max_length=40,
+        error_messages={
+            'invalid': "MAC address should be formated as xx.xx.xx.xx.xx.xx!"
+        },
+        widget=forms.TextInput(
+            attrs={'placeholder':'MAC address'}
+        )
     )
 
 class AddBuildForm(forms.Form):

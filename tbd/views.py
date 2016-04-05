@@ -5,7 +5,7 @@ from django.utils import timezone
 from tbd.models import Project
 from tbd.models import Build
 from tbd.models import Crash
-from .forms import AddProjectForm, AddBuildForm, AddCrashForm
+from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 
 #internal func
 def flash(request, flash_data=None):
@@ -30,17 +30,33 @@ def ajax_get_builds(request):
     return json_response([bld.version for bld in builds])
 
 def ajax_add_tc(request):
-    tc_name = request.POST.get('tc_name', None)
-    tc_platform = request.POST.get('tc_platform', None)
-    print "tc_platform={}, tc_platform={}".format(tc_name, tc_platform)
-    return json_response(['tc_temp', "{}({})".format(tc_name, tc_platform)])    
+    form = AddTestCaseForm(request.POST)
+    if form.is_valid():
+        prj_name = form.cleaned_data['testcase_project_name']
+        tc_name = form.cleaned_data['testcase_name']
+        tc_platform = form.cleaned_data['testcase_platform']
+        print "project={}, tc_platform={}, tc_platform={}".format(prj_name, tc_name, tc_platform)
+        return json_response(['tc_temp', "{}({})".format(tc_name, tc_platform)])
+    else:
+        err_str = ''
+        for k, v in form.errors.items():
+            err_str += "{}: {},".format(k, v)
+        return json_response(err_str, -1)
 
 def ajax_add_host(request):
-    host_name = request.POST.get('host_name', None)
-    host_ip = request.POST.get('host_ip', None)
-    host_mac = request.POST.get('host_mac', None)
-    print "host_name={}, host_ip={}, host_mac={}".format(host_name, host_ip, host_mac)
-    return json_response(['1.2.3.4', "{}({})".format(host_name, host_ip)])  
+    form = AddHostForm(request.POST)
+    if form.is_valid():
+        prj_name = form.cleaned_data['host_project_name']
+        host_name = form.cleaned_data['host_name']
+        host_ip = form.cleaned_data['host_ip']
+        host_mac = form.cleaned_data['host_mac']
+        print "project={}, host_name={}, host_ip={}, host_mac={}".format(prj_name, host_name, host_ip, host_mac)
+        return json_response(['1.2.3.4', "{}({})".format(host_name, host_ip)])
+    else:
+        err_str = ''
+        for k, v in form.errors.items():
+            err_str += "{}: {},".format(k, v)
+        return json_response(err_str, -1)
     
 # Create your views here.
 def home_page(request):
@@ -175,7 +191,10 @@ def testdata_page(request):
         page_data['cur'] = cur_page
         total_page = None
         builds_in_page = 5
-        form = AddCrashForm(initial={'crash_project_name': prj_name, 'crash_build_version': version})
+        crash_form = AddCrashForm(initial={'crash_project_name': prj_name, 'crash_build_version': version})
+        host_form = AddHostForm(initial={'host_project_name': prj_name})
+        testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj_name})
+        form = {'crash':crash_form, 'host': host_form, 'testcase': testcase_form}
         projects = Project.objects.all()
         builds = []
         crashes = []

@@ -37,6 +37,16 @@ class Host(models.Model):
     ip = models.GenericIPAddressField(protocol='IPv4', default='')
     mac = models.CharField(default='', max_length=12)
     
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.PROTECT,
+        verbose_name="the related project",
+        null=True
+    )
+    
+    class Meta:
+        unique_together = ("project", "name")
+        
     def __unicode__(self):
         return "Host {}(IPv4{})".format(self.name, self.ip)
         
@@ -54,8 +64,15 @@ class TestCase(models.Model):
     name = models.CharField(default='', max_length=80)
     platform = models.CharField(default='', choices=PLATFORM_CHOICE, max_length=2)
     
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.PROTECT,
+        verbose_name="the related project",
+        null=True
+    )
+    
     class Meta:
-        unique_together = ("name", "platform")
+        unique_together = ("project", "name", "platform")
         
     def __unicode__(self):
         return "TestCase {}({})".format(self.name, self.platform)
