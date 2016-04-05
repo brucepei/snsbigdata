@@ -29,6 +29,19 @@ def ajax_get_builds(request):
             builds = Build.objects.filter(project=target_prj).order_by('-create')
     return json_response([bld.version for bld in builds])
 
+def ajax_add_tc(request):
+    tc_name = request.POST.get('tc_name', None)
+    tc_platform = request.POST.get('tc_platform', None)
+    print "tc_platform={}, tc_platform={}".format(tc_name, tc_platform)
+    return json_response(['tc_temp', "{}({})".format(tc_name, tc_platform)])    
+
+def ajax_add_host(request):
+    host_name = request.POST.get('host_name', None)
+    host_ip = request.POST.get('host_ip', None)
+    host_mac = request.POST.get('host_mac', None)
+    print "host_name={}, host_ip={}, host_mac={}".format(host_name, host_ip, host_mac)
+    return json_response(['1.2.3.4', "{}({})".format(host_name, host_ip)])  
+    
 # Create your views here.
 def home_page(request):
     return render(request, 'tbd/home.html')

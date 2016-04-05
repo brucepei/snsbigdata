@@ -18,10 +18,14 @@ var ajax_error_handler = function (xhr, type, msg) {
 };
 
 var ajax_post_data = function(url, data, success_code) {
+    var process_data = true;
+    if (typeof data == 'string') {
+        process_data = false;
+    }
     $.ajax({
             type: "POST",
             url: url,
-            processData: true,
+            processData: process_data,
             data: data,
             timeout: 2000,
             dataType: "json",
@@ -69,8 +73,8 @@ $("select[name='td_project_name']").change( function() {
     } else {
         $td_build_version_sel.empty();
         $td_build_version_sel.append("<option>--select build--</option>")
+        $td_build_version_sel.selectpicker('refresh');
     }
-
 });
 
 $("select[name='td_build_version']").change( function() {
@@ -81,6 +85,40 @@ $("select[name='td_build_version']").change( function() {
         if (build_version.indexOf('--') != 0) {
             window.location.href = '/testdata?project_name=' + prj_name + "&version=" + build_version;
         }
+    }
+});
+
+$('button.adjust_btn').click(function(){
+    if ($(this).html() == 'Hidden') {
+        $(this).html('Extend');
+        $(this).removeClass('btn btn-primary');
+        $(this).addClass('btn btn-default');
+    } else {
+        $(this).html('Hidden');
+        $(this).removeClass('btn btn-default');
+        $(this).addClass('btn btn-primary');
+    }
+    $(this).nextAll().toggleClass('hidden');
+    $(this).closest('tr').nextUntil('tr.crash_head').toggleClass('hidden');
+});
+
+$('button.add_btn').click(function(){
+    var $add_sel = $(this).parent().find("select");
+    var $inputs = $(this).closest('tr').nextUntil('tr.crash_head').find('input, select');
+    var data_content = $inputs.serialize();
+    var url = $(this).attr('action');
+    if (url) {
+        ajax_post_data(url, data_content, function(items){
+            var first_option = $add_sel.find('option').first().html();
+            $add_sel.empty();
+            $add_sel.append('<option>' + first_option + '</option>')
+            for(var i=0; i < items.length; i++) {
+                $add_sel.append("<option value='"+items[i]+"'>" + (i + 1) + '. ' +items[i]+"</option>");
+            }
+            $add_sel.selectpicker('refresh');
+        });
+    } else {
+        alert("Not found URL in action attribute!");
     }
 });
 
