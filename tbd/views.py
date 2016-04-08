@@ -16,6 +16,11 @@ def flash(request, flash_data=None):
         return flash_data
 
 def json_response(json, code=0):
+    if code and hasattr(json, 'items'):
+        err_str = ''
+        for k, v in json.items():
+            err_str += "<span>{}</span>{}".format(k, v)
+        json = err_str
     return JsonResponse({'code': code, 'result': json})
     
 #ajax views
@@ -38,10 +43,7 @@ def ajax_add_tc(request):
         print "project={}, tc_platform={}, tc_platform={}".format(prj_name, tc_name, tc_platform)
         return json_response(['tc_temp', "{}({})".format(tc_name, tc_platform)])
     else:
-        err_str = ''
-        for k, v in form.errors.items():
-            err_str += "{}: {},".format(k, v)
-        return json_response(err_str, -1)
+        return json_response(form.errors, -1)
 
 def ajax_add_host(request):
     form = AddHostForm(request.POST)
@@ -53,10 +55,7 @@ def ajax_add_host(request):
         print "project={}, host_name={}, host_ip={}, host_mac={}".format(prj_name, host_name, host_ip, host_mac)
         return json_response(['1.2.3.4', "{}({})".format(host_name, host_ip)])
     else:
-        err_str = ''
-        for k, v in form.errors.items():
-            err_str += "{}: {},".format(k, v)
-        return json_response(err_str, -1)
+        return json_response(form.errors, -1)
     
 # Create your views here.
 def home_page(request):

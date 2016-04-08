@@ -13,8 +13,14 @@ var get_cookie = function (name) {
     return cookieValue;  
 };
 
+var alert_box = function(title, body) {
+    $("#alert_msgbox_title").html(title);
+    $("#alert_msgbox_body").html(body);
+    $("#alert_msgbox").modal('show');
+};
+
 var ajax_error_handler = function (xhr, type, msg) {
-    alert( 'Ajax error! Code: ' + xhr.status + ', type: ' + type + ', msg: ' + msg );
+    alert_box("Ajax error with Code: " + xhr.status, 'Type: ' + type + ', Msg: ' + msg);
 };
 
 var ajax_post_data = function(url, data, success_code) {
@@ -35,13 +41,12 @@ var ajax_post_data = function(url, data, success_code) {
             success: function (json) {
                 if ('code' in json && 'result' in json) {
                     if (json.code) {
-                        alert("Receive JSON error code " + json.code + " with message: " + json.result);
+                        alert_box(url + " return error " + json.code, json.result);
                     } else {
                         success_code(json.result);
                     }
-                    
                 } else {
-                    alert("Receive illegal JSON data: Not found key 'code' or 'result'!");
+                    alert_box(url + " return illegal data!", "Receive illegal JSON data: Not found key 'code' or 'result'!");
                 }
             },
             error: ajax_error_handler
@@ -118,7 +123,7 @@ $('button.add_btn').click(function(){
             $add_sel.selectpicker('refresh');
         });
     } else {
-        alert("Not found URL in action attribute!");
+        alert_box("Unknown Action", "Not found URL in action attribute!");
     }
 });
 
