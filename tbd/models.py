@@ -56,6 +56,7 @@ class TestCase(models.Model):
     WPA     = 'WP'
     GARNET  = 'GA'
     PLATFORM_CHOICE = (
+        ('', '--select testcase--'),
         (PHOENIX, 'Phoenix XML'),
         (VEGA, 'Vega XML'),
         (GARNET, 'Garnet XML'),

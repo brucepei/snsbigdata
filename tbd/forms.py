@@ -21,6 +21,7 @@ class AddProjectForm(forms.Form):
             'invalid': 'Maximum length 20, only includes letter and digits!'
         }
     )
+    
 class AddTestCaseForm(forms.Form):
     testcase_project_name = forms.CharField(
         widget=forms.HiddenInput,
@@ -45,7 +46,7 @@ class AddTestCaseForm(forms.Form):
         label='TestCase Platform',
         choices=TestCase.PLATFORM_CHOICE,
         widget=forms.Select(
-            attrs={'class':'selectpicker', 'title':'--select testcase--'}
+            attrs={'class':'selectpicker'}
         )
     )
     
