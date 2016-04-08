@@ -275,7 +275,7 @@ class TBDTestTestData(TC):
         page = {'list': [1], 'previous': 1, 'next': 1}
         
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/testdata.html', request=request, context={
-            'project': prj1, 'build': build1, 'crashes': [crash1], 'builds': [build1], 'projects': [prj1], 'form': form}))
+            'project': prj1, 'build': build1, 'crashes': [crash1], 'builds': [build1], 'projects': [prj1], 'testcases': [tc1], 'hosts': [host1], 'form': form}))
         
         
 class TBDModelTest(TC):

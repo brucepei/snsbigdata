@@ -31,7 +31,7 @@ class AddTestCaseForm(forms.Form):
     )
     
     testcase_name = forms.RegexField(
-        regex=re.compile(r'^[a-zA-Z][\w-]{0,49}$'),
+        regex=re.compile(r'^[a-zA-Z][^\\\/]{0,49}$'),
         strip=True,
         label='TestCase Name',
         max_length=50,

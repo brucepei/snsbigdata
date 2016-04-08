@@ -2,9 +2,7 @@ from django.shortcuts import render, redirect
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
-from tbd.models import Project
-from tbd.models import Build
-from tbd.models import Crash
+from tbd.models import Project, Build, Crash, TestCase, Host
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 
 #internal func
@@ -41,7 +39,19 @@ def ajax_add_tc(request):
         tc_name = form.cleaned_data['testcase_name']
         tc_platform = form.cleaned_data['testcase_platform']
         print "project={}, tc_platform={}, tc_platform={}".format(prj_name, tc_name, tc_platform)
-        return json_response(['tc_temp', "{}({})".format(tc_name, tc_platform)])
+        target_prj = Project.objects.filter(name=prj_name)
+        if target_prj:
+            target_tc = TestCase.objects.filter(name=tc_name, project=target_prj)
+            if not target_tc:
+                try:
+                    TestCase.objects.create(name=tc_name, platform=tc_platform)
+                    return json_response(["{}({})".format(tc.name, tc.platform) for tc in TestCase.objects.all()])
+                except Exception as err:
+                    return json_response('TestCase {} failed to create: {}'.format(tc_name, err), -1)
+            else:
+                return json_response('TestCase {} has laready existed!'.format(tc_name), -1)
+        else:
+            return json_response('Project {} does NOT exist!'.format(prj_name), -1)
     else:
         return json_response(form.errors, -1)
 
@@ -195,6 +205,8 @@ def testdata_page(request):
         testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj_name})
         form = {'crash':crash_form, 'host': host_form, 'testcase': testcase_form}
         projects = Project.objects.all()
+        testcases = TestCase.objects.all()
+        hosts = Host.objects.all()
         builds = []
         crashes = []
         target_prj = None
@@ -218,4 +230,5 @@ def testdata_page(request):
         for no, crash in enumerate(crashes):
             setattr(crash, 'no', no + 1 + items_in_page * (cur_page-1))
         return render(request, 'tbd/testdata.html', {'page': page_data, 'flash': flash(request), 
-            'form': form, 'project': target_prj, 'build': target_build, 'crashes': crashes, 'builds': builds, 'projects': projects})
+            'form': form, 'project': target_prj, 'build': target_build, 'crashes': crashes, 'builds': builds, 'projects': projects,
+            'testcases': testcases, 'hosts': hosts})
