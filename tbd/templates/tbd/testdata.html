@@ -79,7 +79,7 @@
                                         {% endfor %}
                                         </select>
                                         <button type="button" class="btn btn-default add_btn" action="{% url 'ajax_add_host' %}">Extend</button>
-                                        <button type="button" class="btn btn-danger del_btn">Delete</button>
+                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax_del_host' %}">Delete</button>
                                     </td>
                                 </tr>
                                 <tr class="hidden info">
@@ -100,7 +100,7 @@
                                         {% endfor %}
                                         </select>
                                         <button type="button" class="btn btn-default add_btn" action="{% url 'ajax_add_tc' %}">Extend</button>
-                                        <button type="button" class="btn btn-danger del_btn">Delete</button>
+                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax_del_tc' %}">Delete</button>
                                     </td>
                                 </tr>
                                 <tr class="hidden info">

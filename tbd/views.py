@@ -58,6 +58,12 @@ def ajax_add_tc(request):
     else:
         return json_response(form.errors, -1)
 
+def ajax_del_tc(request):
+    return json_response("Not implement", -3)
+
+def ajax_del_host(request):
+    return json_response("Not implement", -3)
+
 def ajax_add_host(request):
     form = AddHostForm(request.POST)
     if form.is_valid():

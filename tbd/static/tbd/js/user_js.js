@@ -155,6 +155,17 @@ $('button.add_btn').click(function(){
     }
 });
 
+$('button.del_btn').click(function(){
+    var url = $(this).attr('action');
+    var data_content = "";
+    if (url) {
+        ajax_post_data(url, data_content, function(json){
+            alert_box("delete done!");
+        });
+    } else {
+        alert_box("Unknown Action", "Not found URL in action attribute!");
+    }
+});
 
 $('tr.build_head').click(function(){
     // alert($(this).nextUntil('tr.build_head').length)
