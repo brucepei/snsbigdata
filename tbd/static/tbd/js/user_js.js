@@ -93,39 +93,68 @@ $("select[name='td_build_version']").change( function() {
     }
 });
 
-$('button.adjust_btn').click(function(){
-    if ($(this).html() == 'Hidden') {
-        $(this).html('Extend');
-        $(this).removeClass('btn btn-primary');
-        $(this).addClass('btn btn-default');
+$('button.add_btn').click(function(){
+    if ($(this).html() == 'Add') {
+        var $add_sel = $(this).parent().find("select");
+        var $inputs = $(this).closest('tr').nextUntil('tr.crash_head').find('input, select');
+        var is_input_empty = true;
+        $inputs.each(function(){
+            if ($(this).attr('type') != 'hidden' && $(this).val()) {
+                is_input_empty = false;
+                return false;
+            }
+            return true;
+        });
+        if (is_input_empty) {
+            $(this).closest('tr').nextUntil('tr.crash_head').toggleClass('hidden');
+            $(this).html('Extend');
+            $(this).removeClass('btn btn-primary');
+            $(this).addClass('btn btn-default');
+            return;
+        }
+        var data_content = $inputs.serialize();
+        var url = $(this).attr('action');
+        var $add_btn = $(this);
+        if (url) {
+            ajax_post_data(url, data_content, function(items){
+                var first_option = $add_sel.find('option').first().html();
+                $add_sel.empty();
+                $add_sel.append('<option>' + first_option + '</option>')
+                for(var i=0; i < items.length; i++) {
+                    var val = items[i][0];
+                    var active = items[i][1] ? ' selected' : '';
+                    $add_sel.append("<option value='"+val+"'" + active + ">" + (i + 1) + '. ' +val+"</option>");
+                }
+                $add_sel.selectpicker('refresh');
+                $inputs.each(function(){
+                    if ($(this).attr('type') != 'hidden' && $(this).val()) {
+                        $(this).val('');
+                        $(this).selectpicker('refresh');
+                    }
+                    return true;
+                });
+                $add_btn.closest('tr').nextUntil('tr.crash_head').toggleClass('hidden');
+                $add_btn.html('Extend');
+                $add_btn.removeClass('btn btn-primary');
+                $add_btn.addClass('btn btn-default');
+                var $pop_element = $add_btn.siblings('div.bootstrap-select');
+                $pop_element.popover({'placement': 'top', 'content': 'add successfully!'});
+                $pop_element.popover('show');
+                $pop_element.one('click', function(){
+                    $pop_element.popover('destroy');
+                });
+            });
+        } else {
+            alert_box("Unknown Action", "Not found URL in action attribute!");
+        }
     } else {
-        $(this).html('Hidden');
+        $(this).html('Add');
         $(this).removeClass('btn btn-default');
         $(this).addClass('btn btn-primary');
+        $(this).closest('tr').nextUntil('tr.crash_head').toggleClass('hidden');
     }
-    $(this).nextAll().toggleClass('hidden');
-    $(this).closest('tr').nextUntil('tr.crash_head').toggleClass('hidden');
 });
 
-$('button.add_btn').click(function(){
-    var $add_sel = $(this).parent().find("select");
-    var $inputs = $(this).closest('tr').nextUntil('tr.crash_head').find('input, select');
-    var data_content = $inputs.serialize();
-    var url = $(this).attr('action');
-    if (url) {
-        ajax_post_data(url, data_content, function(items){
-            var first_option = $add_sel.find('option').first().html();
-            $add_sel.empty();
-            $add_sel.append('<option>' + first_option + '</option>')
-            for(var i=0; i < items.length; i++) {
-                $add_sel.append("<option value='"+items[i]+"'>" + (i + 1) + '. ' +items[i]+"</option>");
-            }
-            $add_sel.selectpicker('refresh');
-        });
-    } else {
-        alert_box("Unknown Action", "Not found URL in action attribute!");
-    }
-});
 
 $('tr.build_head').click(function(){
     // alert($(this).nextUntil('tr.build_head').length)

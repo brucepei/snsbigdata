@@ -41,11 +41,14 @@ def ajax_add_tc(request):
         print "project={}, tc_platform={}, tc_platform={}".format(prj_name, tc_name, tc_platform)
         target_prj = Project.objects.filter(name=prj_name)
         if target_prj:
-            target_tc = TestCase.objects.filter(name=tc_name, project=target_prj)
+            target_prj = target_prj[0]
+            target_tc = TestCase.objects.filter(name=tc_name, platform=tc_platform, project=target_prj)
             if not target_tc:
                 try:
-                    TestCase.objects.create(name=tc_name, platform=tc_platform)
-                    return json_response(["{}({})".format(tc.name, tc.platform) for tc in TestCase.objects.all()])
+                    TestCase.objects.create(name=tc_name, platform=tc_platform, project=target_prj)
+                    return json_response([
+                        ("{}({})".format(tc.name, tc.platform), True) if tc.name == tc_name and tc.platform == tc_platform else ("{}({})".format(tc.name, tc.platform), False)
+                            for tc in TestCase.objects.filter(project=target_prj)])
                 except Exception as err:
                     return json_response('TestCase {} failed to create: {}'.format(tc_name, err), -1)
             else:
@@ -63,15 +66,28 @@ def ajax_add_host(request):
         host_ip = form.cleaned_data['host_ip']
         host_mac = form.cleaned_data['host_mac']
         print "project={}, host_name={}, host_ip={}, host_mac={}".format(prj_name, host_name, host_ip, host_mac)
-        return json_response(['1.2.3.4', "{}({})".format(host_name, host_ip)])
+        target_prj = Project.objects.filter(name=prj_name)
+        if target_prj:
+            target_prj = target_prj[0]
+            target_host = Host.objects.filter(name=host_name, project=target_prj)
+            if not target_host:
+                try:
+                    Host.objects.create(name=host_name, ip=host_ip, mac=host_mac, project=target_prj)
+                    return json_response([
+                        ("{}({})".format(host.name, host.ip), True) if host.name == host_name else ("{}({})".format(host.name, host.ip), False)
+                            for host in Host.objects.filter(project=target_prj)])
+                except Exception as err:
+                    return json_response('Host {} failed to create: {}'.format(host_name, err), -1)
+            else:
+                return json_response('Host {} has laready existed!'.format(host_name), -1)
+        else:
+            return json_response('Project {} does NOT exist!'.format(prj_name), -1)
     else:
         return json_response(form.errors, -1)
     
 # Create your views here.
 def home_page(request):
     return render(request, 'tbd/home.html')
-    
-
         
 def project_page(request):
     if request.method == 'POST':
@@ -205,8 +221,8 @@ def testdata_page(request):
         testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj_name})
         form = {'crash':crash_form, 'host': host_form, 'testcase': testcase_form}
         projects = Project.objects.all()
-        testcases = TestCase.objects.all()
-        hosts = Host.objects.all()
+        testcases = None
+        hosts = None
         builds = []
         crashes = []
         target_prj = None
@@ -215,6 +231,8 @@ def testdata_page(request):
             target_prj = Project.objects.filter(name=prj_name)
             if target_prj:
                 target_prj = target_prj[0]
+                hosts = Host.objects.filter(project=target_prj)
+                testcases = TestCase.objects.filter(project=target_prj)
                 builds = Build.objects.filter(project=target_prj).order_by('-create')
                 if version:
                     target_build = Build.objects.filter(project=target_prj, version=version)

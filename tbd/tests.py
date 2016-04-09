@@ -252,9 +252,9 @@ class TBDTestTestData(TC):
         prj1.save()
         build1 = Build(version="unit_project1", project=prj1)
         build1.save()
-        host1 = Host(name="hostname1", ip="1.1.1.1")
+        host1 = Host(name="hostname1", ip="1.1.1.1", project=prj1)
         host1.save()
-        tc1 = TestCase(name="s3.xml", platform=TestCase.PHOENIX)
+        tc1 = TestCase(name="s3.xml", platform=TestCase.PHOENIX, project=prj1)
         tc1.save()
         crash1 = Crash(path='\\\\crash_server\\c1', testcase=tc1, host=host1, build=build1)
         crash1.save()
@@ -275,7 +275,8 @@ class TBDTestTestData(TC):
         page = {'list': [1], 'previous': 1, 'next': 1}
         
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/testdata.html', request=request, context={
-            'project': prj1, 'build': build1, 'crashes': [crash1], 'builds': [build1], 'projects': [prj1], 'testcases': [tc1], 'hosts': [host1], 'form': form}))
+            'project': prj1, 'build': build1, 'crashes': [crash1], 'builds': [build1], 'projects': [prj1],
+            'testcases': [tc1], 'hosts': [host1], 'form': form}))
         
         
 class TBDModelTest(TC):

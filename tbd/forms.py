@@ -80,6 +80,7 @@ class AddHostForm(forms.Form):
     host_mac = forms.RegexField(
         regex=re.compile(r'^(?:[a-fA-F0-9]{2}\.){5}[a-fA-F0-9]{2}$'),
         strip=True,
+        required=False,
         label='Host MAC address',
         max_length=17,
         error_messages={

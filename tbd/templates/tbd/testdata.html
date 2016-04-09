@@ -78,13 +78,12 @@
                                             <option value="{{host.name}}">{{forloop.counter}}. {{host.name}}({{host.ip}})</option>
                                         {% endfor %}
                                         </select>
-                                        <button type="button" class="btn btn-default adjust_btn" >Extend</button>
-                                        <button type="button" class="btn btn-info hidden add_btn" action="{% url 'ajax_add_host' %}">Add</button>
-                                        <button type="button" class="btn btn-danger hidden del_btn">Delete</button>
+                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax_add_host' %}">Extend</button>
+                                        <button type="button" class="btn btn-danger del_btn">Delete</button>
                                     </td>
                                 </tr>
                                 <tr class="hidden info">
-                                    <td>Adjust Host:</td>
+                                    <td>Add Host:</td>
                                     <td>
                                         {% for host_field in form.host %}
                                             {{host_field}}
@@ -100,13 +99,12 @@
                                             <option value="{{tc.name}}">{{forloop.counter}}. {{tc.name}}({{tc.platform}})</option>
                                         {% endfor %}
                                         </select>
-                                        <button type="button" class="btn btn-default adjust_btn" >Extend</button>
-                                        <button type="button" class="btn btn-info hidden add_btn" action="{% url 'ajax_add_tc' %}">Add</button>
-                                        <button type="button" class="btn btn-danger hidden del_btn">Delete</button>
+                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax_add_tc' %}">Extend</button>
+                                        <button type="button" class="btn btn-danger del_btn">Delete</button>
                                     </td>
                                 </tr>
                                 <tr class="hidden info">
-                                    <td>Adjust TestCase:</td>
+                                    <td>Add TestCase:</td>
                                     <td>
                                         {% for testcase_field in form.testcase %}
                                             {{testcase_field}}
