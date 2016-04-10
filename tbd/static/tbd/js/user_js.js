@@ -1,3 +1,15 @@
+(function($) {
+    $.fn.getAttributes = function() {
+        var attributes = {}; 
+        if( this.length ) {
+            $.each( this[0].attributes, function( index, attr ) {
+                attributes[ attr.name ] = attr.value;
+            } ); 
+        }
+        return attributes;
+    };
+})(jQuery);
+
 var get_cookie = function (name) {  
     var cookieValue = null;  
     if (document.cookie && document.cookie != '') {  
@@ -125,7 +137,7 @@ $('button.add_btn').click(function(){
                 for(var i=0; i < items.length; i++) {
                     var val = items[i][0];
                     var active = items[i][1] ? ' selected' : '';
-                    $add_sel.append("<option value='"+val+"'" + active + ">" + (i + 1) + '. ' +val+"</option>");
+                    $add_sel.append("<option data-host_name='"+val.name+"' data-host_ip='" + val.ip + "' data-host_mac='" + val.mac + "'" + active + ">" + (i + 1) + '. ' + val.name + "(" + val.ip +")</option>");
                 }
                 $add_sel.selectpicker('refresh');
                 $inputs.each(function(){
@@ -159,16 +171,44 @@ $('button.add_btn').click(function(){
 
 $('button.del_btn').click(function(){
     var url = $(this).attr('action');
-    var data_content = "";
-    confirm_box("Delete?", "Do you confirm you really want to delete it?", function() {
-        if (url) {
-            ajax_post_data(url, data_content, function(json){
-                alert_box("delete done!");
+    var $select = $(this).parent().find("select");
+    var $del_option = $select.find("option:selected");
+    var del_attrs = $del_option.getAttributes();
+    var data_attrs = {};
+    var data_count = 0;
+    var all_attrs = $del_option.getAttributes();
+    var $inputs = $(this).closest('tr').nextUntil('tr.crash_head').find('input[type="hidden"]');
+    $inputs.each(function(){
+        data_attrs[$(this).attr('name')] = $(this).val();
+    });
+    for (attr_name in all_attrs) {
+        if (attr_name.indexOf("data-") == 0) {
+            data_attrs[attr_name.substr(5)] = all_attrs[attr_name];
+            data_count++;
+        }
+    }
+    if (url) {
+        if (data_count) {
+            confirm_box("Delete?", "Do you confirm you really want to delete it?", function() {
+                ajax_post_data(url, data_attrs, function(items){
+                    //alert_box('Delete', "done!");
+                    var first_option = $select.find('option').first().html();
+                    $select.empty();
+                    $select.append('<option>' + first_option + '</option>')
+                    for(var i=0; i < items.length; i++) {
+                        var val = items[i][0];
+                        var active = items[i][1] ? ' selected' : '';
+                        $select.append("<option data-host_name='"+val.name+"' data-host_ip='" + val.ip + "' data-host_mac='" + val.mac + "'" + active + ">" + (i + 1) + '. ' + val.name + "(" + val.ip +")</option>");
+                    }
+                    $select.selectpicker('refresh');
+                });
             });
         } else {
-            alert_box("Unknown Action", "Not found URL in action attribute!");
+            alert_box("Not select", "Not select any target!");
         }
-    });
+    } else {
+        alert_box("Unknown Action", "Not found URL in action attribute!");
+    }
 });
 
 $('a>span.glyphicon-remove').click(function(){

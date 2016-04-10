@@ -73,7 +73,7 @@
                                         <select name="td_host" class="selectpicker">
                                             <option>--select host--</option>
                                         {% for host in hosts %}
-                                            <option value="{{host.name}}">{{forloop.counter}}. {{host.name}}({{host.ip}})</option>
+                                            <option data-host_name="{{host.name}}" data-host_ip="{{host.ip}}" data-host_mac="{{host.mac}}">{{forloop.counter}}. {{host.name}}({{host.ip}})</option>
                                         {% endfor %}
                                         </select>
                                         <button type="button" class="btn btn-default add_btn" action="{% url 'ajax_add_host' %}">Extend</button>

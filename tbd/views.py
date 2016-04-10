@@ -62,7 +62,31 @@ def ajax_del_tc(request):
     return json_response("Not implement", -3)
 
 def ajax_del_host(request):
-    return json_response("Not implement", -3)
+    form = AddHostForm(request.POST)
+    if form.is_valid():
+        prj_name = form.cleaned_data['host_project_name']
+        host_name = form.cleaned_data['host_name']
+        host_ip = form.cleaned_data['host_ip']
+        host_mac = form.cleaned_data['host_mac']
+        print "project={}, host_name={}, host_ip={}, host_mac={}".format(prj_name, host_name, host_ip, host_mac)
+        target_prj = Project.objects.filter(name=prj_name)
+        if target_prj:
+            target_prj = target_prj[0]
+            target_host = Host.objects.filter(name=host_name, project=target_prj)
+            if target_host:
+                try:
+                    target_host.delete()
+                    return json_response([
+                        ({'name': host.name, 'ip': host.ip, 'mac': host.mac}, False)
+                            for host in Host.objects.filter(project=target_prj)])
+                except Exception as err:
+                    return json_response('Host {} failed to delete: {}'.format(host_name, err), -1)
+            else:
+                return json_response('Host {} is NOT existed!'.format(host_name), -1)
+        else:
+            return json_response('Project {} does NOT exist!'.format(prj_name), -1)
+    else:
+        return json_response(form.errors, -1)
 
 def ajax_add_host(request):
     form = AddHostForm(request.POST)
@@ -80,7 +104,7 @@ def ajax_add_host(request):
                 try:
                     Host.objects.create(name=host_name, ip=host_ip, mac=host_mac, project=target_prj)
                     return json_response([
-                        ("{}({})".format(host.name, host.ip), True) if host.name == host_name else ("{}({})".format(host.name, host.ip), False)
+                        ({'name': host.name, 'ip': host.ip, 'mac': host.mac}, True) if host.name == host_name else ({'name': host.name, 'ip': host.ip, 'mac': host.mac}, False)
                             for host in Host.objects.filter(project=target_prj)])
                 except Exception as err:
                     return json_response('Host {} failed to create: {}'.format(host_name, err), -1)

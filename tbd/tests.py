@@ -125,8 +125,10 @@ class TBDProjectTest(TC):
         form = AddProjectForm()
         flash_data = {'type': 'success', 'msg': "Delete Project {} successfully!".format('unit_test_prj')}
         self.assertEqual(saved_projects.count(), 0)
-        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/project.html', request=request, context={'flash': flash_data, 'form': form}))
-
+        
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['location'], '/project')
+        
 class TBDTestBuild(TC):
     def test_build_url_handler(self):
         handler_obj = resolve('/build')
