@@ -14,10 +14,12 @@ var get_cookie = function (name) {
 };
 
 var alert_box = function(title, body) {
-    $("#alert_msgbox_title").html(title);
-    $("#alert_msgbox_body").html(body);
-    $("#alert_msgbox").modal('show');
+    $.messager.alert(title, body);
 };
+
+var confirm_box = function(title, body, func) {
+    $.messager.confirm(title, body, func);
+}
 
 var ajax_error_handler = function (xhr, type, msg) {
     alert_box("Ajax error with Code: " + xhr.status, 'Type: ' + type + ', Msg: ' + msg);
@@ -158,13 +160,15 @@ $('button.add_btn').click(function(){
 $('button.del_btn').click(function(){
     var url = $(this).attr('action');
     var data_content = "";
-    if (url) {
-        ajax_post_data(url, data_content, function(json){
-            alert_box("delete done!");
-        });
-    } else {
-        alert_box("Unknown Action", "Not found URL in action attribute!");
-    }
+    confirm_box("Delete?", "Do you confirm you really want to delete it?", function() {
+        if (url) {
+            ajax_post_data(url, data_content, function(json){
+                alert_box("delete done!");
+            });
+        } else {
+            alert_box("Unknown Action", "Not found URL in action attribute!");
+        }
+    });
 });
 
 $('tr.build_head').click(function(){
