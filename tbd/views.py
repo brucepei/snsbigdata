@@ -129,6 +129,7 @@ def project_page(request):
                         flash(request, {'type': 'success', 'msg': "Delete Project {} successfully!".format(prj_name)})
                     except Exception as err:
                         flash(request, {'type': 'danger', 'msg': "Delete Project {} failed: {}!".format(prj_name, err)})
+                return redirect('tbd_project')
         return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'flash': flash(request)})
 
 def build_page(request):

@@ -1,8 +1,6 @@
 ﻿{% extends 'tbd/base.html' %}
 {% block title %}Build - SBD{% endblock %}
 {% block nav_build_attr %}class="active"{% endblock %}
-{% block user_style %}<link href="/static/tbd/css/user_style.css" rel="stylesheet">{% endblock %}
-{% block user_js %}<script src="/static/tbd/js/user_js.js"></script>{% endblock %}
 
 {% block content %}
     <div class="container">
@@ -52,8 +50,8 @@
                             <td>{{ blt.use_server }}</td>
                             <td>{{ blt.create }}</td>
                             <td>
-                                <a href="{% url 'tbd_build' %}?method=delete&project_name={{project.name|iriencode}}&version={{blt.version|iriencode}}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>del?</a>
-                                <a href="{% url 'tbd_testdata' %}?project_name={{project.name|iriencode}}&version={{blt.version|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"></span>TestData</a>
+                                <a href="{% url 'tbd_build' %}?method=delete&project_name={{project.name|iriencode}}&version={{blt.version|iriencode}}"><span class="glyphicon glyphicon-remove" aria-hidden="true">del?</span></a>
+                                <a href="{% url 'tbd_testdata' %}?project_name={{project.name|iriencode}}&version={{blt.version|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true">TestData</span></a>
                             </td>
                         </tr>
                         <tr class="hidden info">

@@ -27,8 +27,8 @@
                             <td>{{ prj.build_set.all | length }}</td>
                             <td>{{ prj.create }}</td>
                             <td>
-                                <a href="{% url 'tbd_project' %}?method=delete&project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>del?</a>
-                                <a href="{% url 'tbd_build' %}?project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"></span>build</a>
+                                <a href="{% url 'tbd_project' %}?method=delete&project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-remove" aria-hidden="true">del?</span></a>
+                                <a href="{% url 'tbd_build' %}?project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true">build</span></a>
                             </td>
                         </tr>
                         {% endfor %}

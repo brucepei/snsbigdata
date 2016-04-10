@@ -171,6 +171,14 @@ $('button.del_btn').click(function(){
     });
 });
 
+$('a>span.glyphicon-remove').click(function(){
+    var goto_url = $(this).parent().attr('href');
+    confirm_box("Delete?", "Do you confirm you really want to delete it?", function() {
+        window.location.href = goto_url;
+    });
+    return false;
+});
+
 $('tr.build_head').click(function(){
     // alert($(this).nextUntil('tr.build_head').length)
     $(this).nextUntil('tr.build_head').toggleClass('hidden');
