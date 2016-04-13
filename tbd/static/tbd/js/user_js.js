@@ -136,8 +136,13 @@ $('button.add_btn').click(function(){
                 $add_sel.append('<option>' + first_option + '</option>')
                 for(var i=0; i < items.length; i++) {
                     var val = items[i][0];
-                    var active = items[i][1] ? ' selected' : '';
-                    $add_sel.append("<option data-host_name='"+val.name+"' data-host_ip='" + val.ip + "' data-host_mac='" + val.mac + "'" + active + ">" + (i + 1) + '. ' + val.name + "(" + val.ip +")</option>");
+                    var display_val = items[i][1];
+                    var active = items[i][2] ? ' selected' : '';
+                    var data_str = '';
+                    for (var data_attr in  val) {
+                        data_str += 'data-' + data_attr + '="' + val[data_attr] + '" '
+                    }
+                    $add_sel.append("<option " + data_str + active + ">" + (i + 1) + '. ' + display_val + "</option>");
                 }
                 $add_sel.selectpicker('refresh');
                 $inputs.each(function(){

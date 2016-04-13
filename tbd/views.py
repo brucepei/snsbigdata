@@ -47,7 +47,7 @@ def ajax_add_tc(request):
                 try:
                     TestCase.objects.create(name=tc_name, platform=tc_platform, project=target_prj)
                     return json_response([
-                        ("{}({})".format(tc.name, tc.platform), True) if tc.name == tc_name and tc.platform == tc_platform else ("{}({})".format(tc.name, tc.platform), False)
+                        ({'testcase_name': tc.name, 'testcase_platform': tc.platform}, "{}({})".format(tc.name, tc.platform), True) if tc.name == tc_name and tc.platform == tc_platform else ({'testcase_name': tc.name, 'testcase_platform': tc.platform}, "{}({})".format(tc.name, tc.platform), False)
                             for tc in TestCase.objects.filter(project=target_prj)])
                 except Exception as err:
                     return json_response('TestCase {} failed to create: {}'.format(tc_name, err), -1)
@@ -104,7 +104,7 @@ def ajax_add_host(request):
                 try:
                     Host.objects.create(name=host_name, ip=host_ip, mac=host_mac, project=target_prj)
                     return json_response([
-                        ({'name': host.name, 'ip': host.ip, 'mac': host.mac}, True) if host.name == host_name else ({'name': host.name, 'ip': host.ip, 'mac': host.mac}, False)
+                        ({'host_name': host.name, 'host_ip': host.ip, 'host_mac': host.mac}, "{}({})".format(host.name, host.ip), True) if host.name == host_name else ({'host_name': host.name, 'host_ip': host.ip, 'host_mac': host.mac}, "{}({})".format(host.name, host.ip), False)
                             for host in Host.objects.filter(project=target_prj)])
                 except Exception as err:
                     return json_response('Host {} failed to create: {}'.format(host_name, err), -1)
