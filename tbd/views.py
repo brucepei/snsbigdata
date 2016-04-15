@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from tbd.models import Project, Build, Crash, TestCase, Host
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
+import json
 
 #internal func
 def flash(request, flash_data=None):
@@ -46,21 +47,66 @@ def ajax_add_tc(request):
             if not target_tc:
                 try:
                     TestCase.objects.create(name=tc_name, platform=tc_platform, project=target_prj)
-                    return json_response([
-                        ({'testcase_name': tc.name, 'testcase_platform': tc.platform}, "{}({})".format(tc.name, tc.platform), True) if tc.name == tc_name and tc.platform == tc_platform else ({'testcase_name': tc.name, 'testcase_platform': tc.platform}, "{}({})".format(tc.name, tc.platform), False)
-                            for tc in TestCase.objects.filter(project=target_prj)])
                 except Exception as err:
-                    return json_response('TestCase {} failed to create: {}'.format(tc_name, err), -1)
+                    return json_response('TestCase {}({}) failed to create: {}'.format(tc_name, tc_platform, err), -1)
+                return json_response(testcase_select_options(target_prj, tc_name, tc_platform))
             else:
-                return json_response('TestCase {} has laready existed!'.format(tc_name), -1)
+                return json_response('TestCase {}({}) has already existed!'.format(tc_name, tc_platform), -1)
         else:
             return json_response('Project {} does NOT exist!'.format(prj_name), -1)
     else:
         return json_response(form.errors, -1)
 
 def ajax_del_tc(request):
-    return json_response("Not implement", -3)
+    form = AddTestCaseForm(request.POST)
+    if form.is_valid():
+        prj_name = form.cleaned_data['testcase_project_name']
+        tc_name = form.cleaned_data['testcase_name']
+        tc_platform = form.cleaned_data['testcase_platform']
+        print "project={}, tc_platform={}, tc_platform={}".format(prj_name, tc_name, tc_platform)
+        target_prj = Project.objects.filter(name=prj_name)
+        if target_prj:
+            target_prj = target_prj[0]
+            target_tc = TestCase.objects.filter(name=tc_name, platform=tc_platform, project=target_prj)
+            if target_tc:
+                try:
+                    target_tc.delete()
+                except Exception as err:
+                    return json_response('TestCase {}({}) failed to delete: {}'.format(tc_name, tc_platform, err), -1)
+                return json_response(testcase_select_options(target_prj))
+            else:
+                return json_response('TestCase {}({}) is NOT existed!'.format(tc_name, tc_platform), -1)
+        else:
+            return json_response('Project {} does NOT exist!'.format(prj_name), -1)
+    else:
+        return json_response(form.errors, -1)
 
+def host_select_options(target_prj, select_host=None):
+    options = []
+    for host in Host.objects.filter(project=target_prj):
+        is_select = False
+        if select_host and host.name == select_host:
+            is_select = True
+        options.append((
+            {'host_name': host.name, 'host_ip': host.ip, 'host_mac': host.mac},
+            "{}({})".format(host.name, host.ip),
+            is_select
+        ))
+    return options
+
+def testcase_select_options(target_prj, select_tc_name=None, select_tc_platform=None):
+    options = []
+    for tc in TestCase.objects.filter(project=target_prj):
+        is_select = False
+        if select_tc_name and select_tc_platform and tc.name == select_tc_name and tc.platform == select_tc_platform:
+            is_select = True
+        options.append((
+            {'testcase_name': tc.name, 'testcase_platform': tc.platform},
+            "{}({})".format(tc.name, tc.platform),
+            is_select
+        ))
+    return options
+    
 def ajax_del_host(request):
     form = AddHostForm(request.POST)
     if form.is_valid():
@@ -76,11 +122,9 @@ def ajax_del_host(request):
             if target_host:
                 try:
                     target_host.delete()
-                    return json_response([
-                        ({'name': host.name, 'ip': host.ip, 'mac': host.mac}, False)
-                            for host in Host.objects.filter(project=target_prj)])
                 except Exception as err:
                     return json_response('Host {} failed to delete: {}'.format(host_name, err), -1)
+                return json_response(host_select_options(target_prj))
             else:
                 return json_response('Host {} is NOT existed!'.format(host_name), -1)
         else:
@@ -103,11 +147,9 @@ def ajax_add_host(request):
             if not target_host:
                 try:
                     Host.objects.create(name=host_name, ip=host_ip, mac=host_mac, project=target_prj)
-                    return json_response([
-                        ({'host_name': host.name, 'host_ip': host.ip, 'host_mac': host.mac}, "{}({})".format(host.name, host.ip), True) if host.name == host_name else ({'host_name': host.name, 'host_ip': host.ip, 'host_mac': host.mac}, "{}({})".format(host.name, host.ip), False)
-                            for host in Host.objects.filter(project=target_prj)])
                 except Exception as err:
                     return json_response('Host {} failed to create: {}'.format(host_name, err), -1)
+                return json_response(host_select_options(target_prj, host_name))
             else:
                 return json_response('Host {} has laready existed!'.format(host_name), -1)
         else:
@@ -262,8 +304,8 @@ def testdata_page(request):
             target_prj = Project.objects.filter(name=prj_name)
             if target_prj:
                 target_prj = target_prj[0]
-                hosts = Host.objects.filter(project=target_prj)
-                testcases = TestCase.objects.filter(project=target_prj)
+                hosts = json.dumps(host_select_options(target_prj))
+                testcases = json.dumps(testcase_select_options(target_prj))
                 builds = Build.objects.filter(project=target_prj).order_by('-create')
                 if version:
                     target_build = Build.objects.filter(project=target_prj, version=version)

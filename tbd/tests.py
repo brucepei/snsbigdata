@@ -8,6 +8,7 @@ from tbd.views import home_page, project_page, build_page, testdata_page, ajax_g
 from datetime import datetime
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 import mock
+import json
 
 # Create your tests here.
 class TBDAjaxTest(TC):
@@ -278,7 +279,8 @@ class TBDTestTestData(TC):
         
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/testdata.html', request=request, context={
             'project': prj1, 'build': build1, 'crashes': [crash1], 'builds': [build1], 'projects': [prj1],
-            'testcases': [tc1], 'hosts': [host1], 'form': form}))
+            'testcases': json.dumps([({'testcase_name': tc1.name, 'testcase_platform': tc1.platform}, "{}({})".format(tc1.name, tc1.platform), False)]),
+            'hosts': json.dumps([({'host_name': host1.name, 'host_ip': host1.ip, 'host_mac': host1.mac}, "{}({})".format(host1.name, host1.ip), False)]), 'form': form}))
         
         
 class TBDModelTest(TC):

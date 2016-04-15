@@ -107,6 +107,25 @@ $("select[name='td_build_version']").change( function() {
     }
 });
 
+var update_select_options = function($selector, items) {
+    var first_option = $selector.find('option').first().html();
+    $selector.empty();
+    $selector.append('<option>' + first_option + '</option>')
+    for(var i=0; i < items.length; i++) {
+        var val = items[i][0];
+        var display_val = items[i][1];
+        var active = items[i][2] ? ' selected' : '';
+        var data_str = '';
+        for (var data_attr in  val) {
+            data_str += 'data-' + data_attr + '="' + val[data_attr] + '" '
+        }
+        $selector.append("<option " + data_str + active + ">" + (i + 1) + '. ' + display_val + "</option>");
+    }
+    $selector.selectpicker('refresh');
+};
+
+
+
 $('button.add_btn').click(function(){
     if ($(this).html() == 'Add') {
         var $add_sel = $(this).parent().find("select");
@@ -132,19 +151,7 @@ $('button.add_btn').click(function(){
         if (url) {
             ajax_post_data(url, data_content, function(items){
                 var first_option = $add_sel.find('option').first().html();
-                $add_sel.empty();
-                $add_sel.append('<option>' + first_option + '</option>')
-                for(var i=0; i < items.length; i++) {
-                    var val = items[i][0];
-                    var display_val = items[i][1];
-                    var active = items[i][2] ? ' selected' : '';
-                    var data_str = '';
-                    for (var data_attr in  val) {
-                        data_str += 'data-' + data_attr + '="' + val[data_attr] + '" '
-                    }
-                    $add_sel.append("<option " + data_str + active + ">" + (i + 1) + '. ' + display_val + "</option>");
-                }
-                $add_sel.selectpicker('refresh');
+                update_select_options($add_sel, items);
                 $inputs.each(function(){
                     if ($(this).attr('type') != 'hidden' && $(this).val()) {
                         $(this).val('');
@@ -197,15 +204,7 @@ $('button.del_btn').click(function(){
             confirm_box("Delete?", "Do you confirm you really want to delete it?", function() {
                 ajax_post_data(url, data_attrs, function(items){
                     //alert_box('Delete', "done!");
-                    var first_option = $select.find('option').first().html();
-                    $select.empty();
-                    $select.append('<option>' + first_option + '</option>')
-                    for(var i=0; i < items.length; i++) {
-                        var val = items[i][0];
-                        var active = items[i][1] ? ' selected' : '';
-                        $select.append("<option data-host_name='"+val.name+"' data-host_ip='" + val.ip + "' data-host_mac='" + val.mac + "'" + active + ">" + (i + 1) + '. ' + val.name + "(" + val.ip +")</option>");
-                    }
-                    $select.selectpicker('refresh');
+                    update_select_options($select, items);
                 });
             });
         } else {
@@ -227,4 +226,15 @@ $('a>span.glyphicon-remove').click(function(){
 $('tr.build_head').click(function(){
     // alert($(this).nextUntil('tr.build_head').length)
     $(this).nextUntil('tr.build_head').toggleClass('hidden');
+});
+
+$(function(){
+    var $td_host = $('select[name="td_host"]');
+    if ($td_host.length) {
+        update_select_options($td_host, hosts);
+    }
+    var $td_testcase = $('select[name="td_testcase"]');
+    if ($td_testcase.length) {
+        update_select_options($td_testcase, testcases);
+    }
 });
