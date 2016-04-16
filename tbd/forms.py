@@ -182,14 +182,21 @@ class AddCrashForm(forms.Form):
         }
     )
     
-    crash_host = forms.CharField(
+    crash_host_name = forms.CharField(
         widget=forms.HiddenInput,
         error_messages={
             'required': 'Please choose a Host!'
         }
     )
     
-    crash_testcase = forms.CharField(
+    crash_testcase_name = forms.CharField(
+        widget=forms.HiddenInput,
+        error_messages={
+            'required': 'Please choose a TestCase!'
+        }
+    )
+    
+    crash_testcase_platform = forms.CharField(
         widget=forms.HiddenInput,
         error_messages={
             'required': 'Please choose a TestCase!'

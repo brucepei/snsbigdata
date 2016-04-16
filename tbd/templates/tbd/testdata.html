@@ -58,6 +58,11 @@
                     <tbody>
                     </tbody>
                 </table>
+                {% if flash %}
+                <div class="alert alert-{{ flash.type }}"  role="alert">
+                    <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
+                </div>
+                {% endif %}
                 <div>
                     <form action="{% url 'tbd_testdata' %}" method="post">
                         {% for hidden in form.crash.hidden_fields %}

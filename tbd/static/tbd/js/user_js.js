@@ -134,6 +134,23 @@ $("select[name='td_build_version']").change( function() {
     }
 });
 
+$("select[name='td_host']").change( function() {
+    var host_name = $(this).find("option:selected").attr('data-host_name');
+    if (host_name) {
+        $("#id_crash_host_name").val(host_name);
+    }
+});
+
+$("select[name='td_testcase']").change( function() {
+    var $selected_tc_option = $(this).find("option:selected")
+    var testcase_name = $selected_tc_option.attr('data-testcase_name');
+    var testcase_platform = $selected_tc_option.attr('data-testcase_platform');
+    if (testcase_name && testcase_platform) {
+        $("#id_crash_testcase_name").val(testcase_name);
+        $("#id_crash_testcase_platform").val(testcase_platform);
+    }
+});
+
 $('button.add_btn').click(function(){
     if ($(this).html() == 'Add') {
         var $add_sel = $(this).parent().find("select");

@@ -68,6 +68,34 @@ def add_build(prj_name, version, **build_attrs):
     else:
         return (-1, 'Project {} does NOT exist when create Build {}!'.format(prj_name, version))
 
+def add_crash(prj_name, version, path, **crash_attrs):
+    target_prj = Project.objects.filter(name=prj_name)
+    if target_prj:
+        target_prj = target_prj[0]
+        if 'host_name' in crash_attrs and 'testcase_name' in crash_attrs and 'testcase_platform' in crash_attrs:
+            target_tc = TestCase.objects.filter(name=crash_attrs['testcase_name'], platform=crash_attrs['testcase_platform'], project=target_prj)
+            target_host = Host.objects.filter(name=crash_attrs['host_name'], project=target_prj)
+            target_build = Build.objects.filter(project=target_prj, version=version)
+            if target_tc and target_host and target_build:
+                target_tc = target_tc[0]
+                target_host = target_host[0]
+                target_build = target_build[0]
+                target_crash = Crash.objects.filter(build=target_build, path=path, testcase=target_tc, host=target_host)
+                if not target_crash:
+                    try:
+                        Crash.objects.create(build=target_build, path=path, testcase=target_tc, host=target_host)
+                    except Exception as err:
+                        return (-1, "Save Crash {} in Project {} Build {} failed: {}!".format(path, prj_name, version, err))
+                    return (0, "Create Crash {} in Project {} Build {} successfully!".format(path, prj_name, version))
+                else:
+                    return (1, "Crash {} in Project {} Build {} is already existed!".format(path, prj_name, version))
+            else:
+                return (-1, 'Build {}/Host {}/TestCase {} is NOT existed in Project {} when create crash {}!'.format(version, crash_attrs['host_name'], crash_attrs['testcase_name'], prj_name, path))
+        else:
+            return (-1, 'Not found host_name/testcase_name/testcase_platform in Project {} when create crash {}!'.format(version, prj_name, path))
+    else:
+        return (-1, 'Project {} does NOT exist when create Build {}!'.format(prj_name, version))
+
 def del_project(name):
     target_prj = Project.objects.filter(name=name)
     if target_prj:
@@ -360,12 +388,33 @@ def build_page_get(request):
     return render(request, 'tbd/build.html', {'page': page_data, 'flash': flash(request), 
         'form': form, 'project': target_prj, 'projects': projects})
 
-
 def testdata_page(request):
     if request.method == 'POST':
-        return redirect('tbd_testdata')
+        return testdata_page_post(request)
     else:
         return testdata_page_get(request)
+
+def testdata_page_post(request):
+    form = AddCrashForm(request.POST)
+    if form.is_valid():
+        prj_name = form.cleaned_data['crash_project_name']
+        version = form.cleaned_data['crash_build_version']
+        err_code, msg = add_crash(prj_name, version, form.cleaned_data['crash_path'],
+            host_name=form.cleaned_data['crash_host_name'], testcase_name=form.cleaned_data['crash_testcase_name'],
+            testcase_platform=form.cleaned_data['crash_testcase_platform'])
+        err_type = 'danger' if err_code else 'success'
+        flash(request, {'type': err_type, 'msg': msg})
+    else:
+        prj_name = request.POST.get('crash_project_name', '')
+        version = request.POST.get('crash_build_version', '')
+        flash_err = ''
+        for field, msg in form.errors.items():
+            flash_err += "{}:{}".format(field, msg)
+        flash(request, {'type': 'danger', 'msg': flash_err})
+    redirect_url = reverse('tbd_testdata')
+    if prj_name and version:
+        redirect_url += '?project_name={}&version={}'.format(prj_name, version)
+    return redirect(redirect_url)
 
 def testdata_page_get(request):
     prj_name = request.GET.get('project_name', '')
