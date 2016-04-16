@@ -22,6 +22,28 @@ def json_response(json, code=0):
         json = err_str
     return JsonResponse({'code': code, 'result': json})
 
+def add_project(name, owner):
+    target_prj = Project.objects.filter(name=name)
+    if not target_prj:
+        try:
+            Project.objects.create(name=name, owner=owner)
+        except Exception as err:
+            return (-1, "Save Project {} failed: {}!".format(name, err))
+        return (0, "Create Project {} successfully!".format(name))
+    else:
+        return (-1, 'Project {} has already existed!')
+
+def del_project(name):
+    target_prj = Project.objects.filter(name=name)
+    if target_prj:
+        try:
+            target_prj.delete()
+        except Exception as err:
+            return (-1, "Delete Project {} failed: {}!".format(name, err))
+        return (0, "Delete Project {} successfully!".format(name))
+    else:
+        return (0, 'Project {} is NOT existed, no necessary to delete!')
+
 def host_select_options(target_prj, select_host=None):
     options = []
     for host in Host.objects.filter(project=target_prj):
@@ -116,7 +138,6 @@ def ajax_del_tc(request):
     else:
         return json_response(form.errors, -1)
 
-
 def ajax_del_host(request):
     form = AddHostForm(request.POST)
     if form.is_valid():
@@ -173,40 +194,38 @@ def home_page(request):
         
 def project_page(request):
     if request.method == 'POST':
+        return project_page_post(request)
+    else:
+        return project_page_get(request)
+
+def project_page_get(request):
+    prj_name = request.GET.get('project_name', '')
+    form = AddProjectForm()
+    return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'flash': flash(request)})
+
+def project_page_post(request):
+    get_method = request.POST.get('method', None)
+    if get_method:
+        if get_method == 'delete':
+            err_code, msg = del_project(request.POST['project_name'])
+            err_type = 'danger' if err_code else 'success'
+            flash(request, {'type': err_type, 'msg': msg})
+        else:
+            flash(request, {'type': 'danger', 'msg': 'Unsupport project operation {}!'.format(get_method)})
+    else:
         form = AddProjectForm(request.POST)
         if form.is_valid():
             prj_name = form.cleaned_data['project_name']
             prj_owner = form.cleaned_data['project_owner']
-            target_prj = Project.objects.filter(name=prj_name)
-            if not target_prj:
-                try:
-                    Project.objects.create(name=prj_name, owner=prj_owner)
-                    flash(request, {'type': 'success', 'msg': "Create Project {} successfully!".format(prj_name)})
-                except Exception as err:
-                    flash(request, {'type': 'danger', 'msg': "Save Project {} failed: {}!".format(prj_name, err)})
-            else:
-                flash(request, {'type': 'danger', 'msg': 'Project {} has laready existed!'.format(prj_name)})
+            err_code, msg = add_project(prj_name, prj_owner)
+            err_type = 'danger' if err_code else 'success'
+            flash(request, {'type': err_type, 'msg': msg})
         else:
             flash_err = ''
             for field, msg in form.errors.items():
                 flash_err += "{}:{}".format(field, msg)
             flash(request, {'type': 'danger', 'msg': flash_err})
-        return redirect('tbd_project')
-    else:
-        prj_name = request.GET.get('project_name', '')
-        get_method = request.GET.get('method', None)
-        form = AddProjectForm()
-        if get_method:
-            if get_method.lower() == 'delete':
-                target_prj = Project.objects.filter(name=prj_name)
-                if target_prj:
-                    try:
-                        target_prj.delete()
-                        flash(request, {'type': 'success', 'msg': "Delete Project {} successfully!".format(prj_name)})
-                    except Exception as err:
-                        flash(request, {'type': 'danger', 'msg': "Delete Project {} failed: {}!".format(prj_name, err)})
-                return redirect('tbd_project')
-        return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'flash': flash(request)})
+    return redirect('tbd_project')
 
 def build_page(request):
     if request.method == 'POST':
@@ -304,8 +323,8 @@ def testdata_page(request):
         testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj_name})
         form = {'crash':crash_form, 'host': host_form, 'testcase': testcase_form}
         projects = Project.objects.all()
-        testcases = None
-        hosts = None
+        testcases = json.dumps(None)
+        hosts = json.dumps(None)
         builds = []
         crashes = []
         target_prj = None

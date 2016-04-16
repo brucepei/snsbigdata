@@ -1,9 +1,11 @@
 (function($) {
-    $.fn.getAttributes = function() {
+    $.fn.getDataAttrs = function() {
         var attributes = {}; 
         if( this.length ) {
             $.each( this[0].attributes, function( index, attr ) {
-                attributes[ attr.name ] = attr.value;
+                if (attr.name.indexOf("data-") == 0 && attr.name.length > 5) {
+                    attributes[ attr.name.substr(5) ] = attr.value;
+                }
             } ); 
         }
         return attributes;
@@ -23,6 +25,16 @@ var get_cookie = function (name) {
         }
     }  
     return cookieValue;  
+};
+
+var get_size = function (obj){  
+    var n, count = 0;
+    for(n in obj){
+        if(obj.hasOwnProperty(n)){
+            count++;
+        }
+    }  
+    return count;  
 };
 
 var alert_box = function(title, body) {
@@ -108,9 +120,12 @@ $("select[name='td_build_version']").change( function() {
 });
 
 var update_select_options = function($selector, items) {
+    if (!items) {
+        return;
+    }
     var first_option = $selector.find('option').first().html();
     $selector.empty();
-    $selector.append('<option>' + first_option + '</option>')
+    $selector.append('<option>' + first_option + '</option>');
     for(var i=0; i < items.length; i++) {
         var val = items[i][0];
         var display_val = items[i][1];
@@ -185,20 +200,13 @@ $('button.del_btn').click(function(){
     var url = $(this).attr('action');
     var $select = $(this).parent().find("select");
     var $del_option = $select.find("option:selected");
-    var del_attrs = $del_option.getAttributes();
-    var data_attrs = {};
-    var data_count = 0;
-    var all_attrs = $del_option.getAttributes();
+    
+    var data_attrs = $del_option.getDataAttrs();
+    var data_count = get_size(data_attrs);
     var $inputs = $(this).closest('tr').nextUntil('tr.crash_head').find('input[type="hidden"]');
     $inputs.each(function(){
         data_attrs[$(this).attr('name')] = $(this).val();
     });
-    for (attr_name in all_attrs) {
-        if (attr_name.indexOf("data-") == 0) {
-            data_attrs[attr_name.substr(5)] = all_attrs[attr_name];
-            data_count++;
-        }
-    }
     if (url) {
         if (data_count) {
             confirm_box("Delete?", "Do you confirm you really want to delete it?", function() {
@@ -216,9 +224,18 @@ $('button.del_btn').click(function(){
 });
 
 $('a>span.glyphicon-remove').click(function(){
-    var goto_url = $(this).parent().attr('href');
+    var $a_link = $(this).parent();
     confirm_box("Delete?", "Do you confirm you really want to delete it?", function() {
-        window.location.href = goto_url;
+        var data_attrs = $a_link.getDataAttrs();
+        data_attrs['csrfmiddlewaretoken'] = get_cookie('csrftoken');
+        var goto_url = data_attrs.url;
+        delete data_attrs.url;
+        var $form = $('<form action="' + goto_url + '" method="post"></form>');
+        for (attr in data_attrs) {
+            $form.append('<input type="hidden" name="' + attr + '" value="' + data_attrs[attr] + '"/>');
+        }
+        $form.submit();
+        //window.location.href = goto_url;
     });
     return false;
 });

@@ -119,9 +119,10 @@ class TBDProjectTest(TC):
         self.assertEqual(saved_projects.count(), 1)
 
         request = HttpRequest()
+        request.method = 'POST'
         request.session = {}
-        request.GET['method'] = 'delete'
-        request.GET['project_name'] = 'unit_test_prj'
+        request.POST['method'] = 'delete'
+        request.POST['project_name'] = 'unit_test_prj'
         resp = project_page(request)
         
         saved_projects = Project.objects.all()
