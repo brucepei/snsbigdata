@@ -43,12 +43,18 @@
                         </h4>
                     </div>
                 </div>
-                <table id="id_build_table" class="table table-hover" contenteditable="false">
+                <h4>Sort by:
+                    <select name="td_sort_by" class="selectpicker">
+                        <option value="Host"{% if sort_by == 'Host' %} selected{% endif %}>Host</option>
+                        <option value="TestCase"{% if sort_by == 'TestCase' %} selected{% endif %}>TestCase</option>
+                    </select>
+                </h4>
+                <table id="id_build_table" class="table table-striped table-hover" contenteditable="false">
                     <caption class="text-center">Test Data</caption>
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Host</th>
+                            <th>{{ sort_by }}</th>
                             <th>TotalCrash</th>
                             <th>OpenCrash</th>
                             <th>ValidCrash</th>
@@ -56,8 +62,37 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for item in page.items %}
+                        <tr>
+                            <td>{{ item.no }}</td>
+                            <td>{{ item.name }}{% if sort_by == 'Host' %}({{ item.ip }}){% else %}({{ item.platform }}){% endif %}</td>
+                            <td>{{ item.total_crash }}</td>
+                            <td>{{ item.open_crash }}</td>
+                            <td>{{ item.valid_crash }}</td>
+                            <td>
+                                <a href="#"><span class="glyphicon glyphicon-share-alt" aria-hidden="true">JIRA</span></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
+                {% if page.list %}
+                <ul class="pagination">
+                    <li>
+                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&page={{ page.previous }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                    {% for p in page.list %}
+                    <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&page={{ p }}">{{ p }}</a></li>
+                    {% endfor %}
+                    <li>
+                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&page={{ page.next }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                </ul>
+                {% endif %}
                 {% if flash %}
                 <div class="alert alert-{{ flash.type }}"  role="alert">
                     <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}

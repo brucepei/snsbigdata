@@ -148,9 +148,11 @@ def build_select_options(target_prj, select_version=None):
         ))
     return options
 
-def host_select_options(target_prj, select_host=None):
+def host_select_options(target_prj, select_host=None, hosts=None):
     options = []
-    for host in Host.objects.filter(project=target_prj):
+    if not hosts:
+        hosts = Host.objects.filter(project=target_prj)
+    for host in hosts:
         is_select = False
         if select_host and host.name == select_host:
             is_select = True
@@ -161,9 +163,11 @@ def host_select_options(target_prj, select_host=None):
         ))
     return options
 
-def testcase_select_options(target_prj, select_tc_name=None, select_tc_platform=None):
+def testcase_select_options(target_prj, select_tc_name=None, select_tc_platform=None, testcases=None):
     options = []
-    for tc in TestCase.objects.filter(project=target_prj):
+    if not testcases:
+        testcases = TestCase.objects.filter(project=target_prj)
+    for tc in testcases:
         is_select = False
         if select_tc_name and select_tc_platform and tc.name == select_tc_name and tc.platform == select_tc_platform:
             is_select = True
@@ -419,6 +423,7 @@ def testdata_page_post(request):
 def testdata_page_get(request):
     prj_name = request.GET.get('project_name', '')
     version = request.GET.get('version', '')
+    sort_by = request.GET.get('sort_by', 'Host')
     page_data = None
     cur_page = request.GET.get('page', 1)
     crash_form = AddCrashForm(initial={'crash_project_name': prj_name, 'crash_build_version': version})
@@ -436,15 +441,32 @@ def testdata_page_get(request):
         target_prj = Project.objects.filter(name=prj_name)
         if target_prj:
             target_prj = target_prj[0]
-            hosts = json.dumps(host_select_options(target_prj))
-            testcases = json.dumps(testcase_select_options(target_prj))
+            all_hosts = Host.objects.filter(project=target_prj)
+            all_testcases = TestCase.objects.filter(project=target_prj)
+            hosts = json.dumps(host_select_options(target_prj, None, all_hosts))
+            testcases = json.dumps(testcase_select_options(target_prj, None, all_testcases))
             builds = json.dumps(build_select_options(target_prj, version))
             if version:
                 target_build = Build.objects.filter(project=target_prj, version=version)
                 if target_build:
                     target_build = target_build[0]
-                    crashes = Crash.objects.filter(build=target_build).order_by('-create')
-                    page_data = slice_page(crashes, cur_page)
-    return render(request, 'tbd/testdata.html', {'page': page_data, 'flash': flash(request), 
+                    if sort_by == 'Host':
+                        all_items = all_hosts
+                    else:
+                        all_items = all_testcases
+                    for item in all_items:
+                        if sort_by == 'Host':
+                            crashes = Crash.objects.filter(build=target_build, host=item)
+                        else:
+                            crashes = Crash.objects.filter(build=target_build, testcase=item)
+                        item.total_crash = len(crashes)
+                        item.valid_crash = 0
+                        item.open_crash = 0
+                        for crash in crashes:
+                            if crash.jira:
+                                item.valid_crash += 1
+                                item.open_crash += 1
+                    page_data = slice_page(all_items, cur_page)
+    return render(request, 'tbd/testdata.html', {'page': page_data, 'flash': flash(request), 'sort_by': sort_by,
         'form': form, 'project': target_prj, 'build': target_build, 'builds': builds, 'projects': projects,
         'testcases': testcases, 'hosts': hosts})

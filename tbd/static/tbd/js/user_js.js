@@ -134,6 +134,18 @@ $("select[name='td_build_version']").change( function() {
     }
 });
 
+$("select[name='td_sort_by']").change( function() {
+    var prj_name = $("select[name='td_project_name']").find("option:selected").attr('data-name');
+    var build_version = $("select[name='td_build_version']").find("option:selected").attr('data-version');
+    var sort_by = $(this).val();
+    cur_url = window.location.href;
+    if(cur_url.indexOf('/testdata')) {
+        if (sort_by) {
+            window.location.href = '/testdata?project_name=' + prj_name + "&version=" + build_version + "&sort_by=" + sort_by;
+        }
+    }
+});
+
 $("select[name='td_host']").change( function() {
     var host_name = $(this).find("option:selected").attr('data-host_name');
     if (host_name) {
@@ -184,6 +196,7 @@ $('button.add_btn').click(function(){
                     }
                     return true;
                 });
+                $add_sel.trigger('change');
                 $add_btn.closest('tr').nextUntil('tr.crash_head').toggleClass('hidden');
                 $add_btn.html('Extend');
                 $add_btn.removeClass('btn btn-primary');
