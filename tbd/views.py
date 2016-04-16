@@ -22,6 +22,25 @@ def json_response(json, code=0):
         json = err_str
     return JsonResponse({'code': code, 'result': json})
 
+def splice_page(all_items, cur_page=1, items_in_page=5):
+    page_data = {}
+    if not isinstance(cur_page, int):
+        try:
+            cur_page = int(cur_page)
+        except:
+            print "Cannot translate cur_page {!r} to integer, so reset it to default 1!".format(cur_page)
+            cur_page = 1
+    page_data['cur'] = cur_page
+    total_items = len(all_items)
+    total_page = (total_items + items_in_page - 1) / items_in_page #round 1 once mod > 0 (but not 0.5)
+    page_data['items'] = all_items[(cur_page - 1) * items_in_page : cur_page * items_in_page]
+    page_data['list'] = xrange(1, total_page + 1) if total_page else []
+    page_data['previous'] = cur_page - 1 if cur_page > 1 else 1
+    page_data['next'] = cur_page + 1 if cur_page < total_page else total_page
+    for no, item in enumerate(page_data['items']):
+        setattr(item, 'no', no + 1 + items_in_page * (cur_page-1))
+    return page_data
+
 def add_project(name, owner):
     target_prj = Project.objects.filter(name=name)
     if not target_prj:
@@ -31,18 +50,49 @@ def add_project(name, owner):
             return (-1, "Save Project {} failed: {}!".format(name, err))
         return (0, "Create Project {} successfully!".format(name))
     else:
-        return (-1, 'Project {} has already existed!')
+        return (1, 'Project {} has already existed!'.format(name))
+
+def add_build(prj_name, version, **build_attrs):
+    target_prj = Project.objects.filter(name=prj_name)
+    if target_prj:
+        target_prj = target_prj[0]
+        target_build = Build.objects.filter(project=target_prj, version=version)
+        if not target_build:
+            try:
+                Build.objects.create(project=target_prj, version=version, **build_attrs)
+            except Exception as err:
+                return (-1, "Save Build {} in Project {} failed: {}!".format(version, prj_name, err))
+            return (0, "Create Build {} in Project {} successfully!".format(version, prj_name))
+        else:
+            return (1, 'Build {} in Project {} is already existed!'.format(version, prj_name))
+    else:
+        return (-1, 'Project {} does NOT exist when create Build {}!'.format(prj_name, version))
 
 def del_project(name):
     target_prj = Project.objects.filter(name=name)
     if target_prj:
         try:
-            target_prj.delete()
+            target_prj[0].delete()
         except Exception as err:
             return (-1, "Delete Project {} failed: {}!".format(name, err))
         return (0, "Delete Project {} successfully!".format(name))
     else:
-        return (0, 'Project {} is NOT existed, no necessary to delete!')
+        return (0, 'Project {} is NOT existed, no necessary to delete!'.format(name))
+
+def del_build(prj_name, version):
+    target_prj = Project.objects.filter(name=prj_name)
+    if target_prj:
+        target_build = Build.objects.filter(project=target_prj[0], version=version)
+        if target_build:
+            try:
+                target_build[0].delete()
+            except Exception as err:
+                return (-1, "Delete Build {} in Project {} failed: {}!".format(version, prj_name, err))
+            return (0, "Delete Build {} in Project {} successfully!".format(version, prj_name))
+        else:
+            return (0, 'Build {} in Project {} is NOT existed, no necessary to delete!'.format(version, prj_name))
+    else:
+        return (-1, 'Project {} is NOT existed when delete Build {}!'.format(prj_name, version))
 
 def host_select_options(target_prj, select_host=None):
     options = []
@@ -200,8 +250,10 @@ def project_page(request):
 
 def project_page_get(request):
     prj_name = request.GET.get('project_name', '')
+    cur_page = request.GET.get('page', 1)
     form = AddProjectForm()
-    return render(request, 'tbd/project.html', {'form': form, 'projects': Project.objects.all(), 'flash': flash(request)})
+    page_data = splice_page(Project.objects.all().order_by('-create'), cur_page)
+    return render(request, 'tbd/project.html', {'form': form, 'page': page_data, 'flash': flash(request)})
 
 def project_page_post(request):
     get_method = request.POST.get('method', None)
@@ -229,77 +281,59 @@ def project_page_post(request):
 
 def build_page(request):
     if request.method == 'POST':
+        return build_page_post(request)
+    else:
+        return build_page_get(request)
+
+def build_page_post(request):
+    get_method = request.POST.get('method', None)
+    if get_method:
+        prj_name = request.POST.get('project_name', '')
+        if get_method == 'delete':
+            err_code, msg = del_build(prj_name, request.POST['version'])
+            err_type = 'danger' if err_code else 'success'
+            flash(request, {'type': err_type, 'msg': msg})
+        else:
+            flash(request, {'type': 'danger', 'msg': 'Unsupport Build operation {}!'.format(get_method)})
+    else:
         form = AddBuildForm(request.POST)
         if form.is_valid():
             prj_name = form.cleaned_data['build_project_name']
-            target_prj = Project.objects.filter(name=prj_name)
-            if target_prj:
-                target_prj = target_prj[0]
-                version = form.cleaned_data['build_version']
-                short_name = form.cleaned_data['build_name']
-                server_path = form.cleaned_data['build_server_path']
-                crash_path = form.cleaned_data['build_crash_path']
-                local_path = form.cleaned_data['build_local_path']
-                use_server = form.cleaned_data['build_use_server']
-                try:
-                    Build.objects.create(project=target_prj, version=version, short_name=short_name, server_path=server_path,
-                        crash_path=crash_path, local_path=local_path, use_server=use_server)
-                    flash(request, {'type': 'success', 'msg': "Create Build {} successfully!".format(version)})
-                except Exception as err:
-                    flash(request, {'type': 'danger', 'msg': "Save Build {} failed: {}!".format(version, err)})
-            else:
-                flash(request, {'type': 'danger', 'msg': 'Project {} does NOT exist when create Build!'.format(prj_name)})
+            version = form.cleaned_data['build_version']
+            err_code, msg = add_build(prj_name, version, short_name=form.cleaned_data['build_name'],
+                server_path=form.cleaned_data['build_server_path'], crash_path=form.cleaned_data['build_crash_path'],
+                local_path=form.cleaned_data['build_local_path'], use_server=form.cleaned_data['build_use_server'])
+            err_type = 'danger' if err_code else 'success'
+            flash(request, {'type': err_type, 'msg': msg})
         else:
             prj_name = request.POST.get('build_project_name', '')
             flash_err = ''
             for field, msg in form.errors.items():
                 flash_err += "{}:{}".format(field, msg)
             flash(request, {'type': 'danger', 'msg': flash_err})
-        redirect_url = reverse('tbd_build')
-        if prj_name:
-            redirect_url += '?project_name=' + prj_name
-        return redirect(redirect_url)
-    else:
-        prj_name = request.GET.get('project_name', '')
-        get_method = request.GET.get('method', None)
-        target_version = request.GET.get('version', None)
-        page_data = {}
-        cur_page = request.GET.get('page', 1)
-        try:
-            cur_page = int(cur_page)
-        except:
-            cur_page = 1
-        page_data['cur'] = cur_page
-        total_page = None
-        items_in_page = 5
-        form = AddBuildForm(initial={'build_project_name': prj_name})
-        projects = Project.objects.all()
-        builds = []
-        target_prj = None
-        if prj_name:
-            target_prj = Project.objects.filter(name=prj_name)
-            if target_prj:
-                target_prj = target_prj[0]
-                if target_version and get_method:
-                    if get_method.lower() == 'delete':
-                        target_build = Build.objects.filter(project=target_prj, version=target_version)
-                        if target_build:
-                            try:
-                                target_build[0].delete()
-                                flash(request, {'type': 'success', 'msg': "Delete Version {} in Project {} successfully!".format(target_version, prj_name)})
-                            except Exception as err:
-                                flash(request, {'type': 'danger', 'msg': "Delete Version {} in Project {} failed: {}!".format(target_version, prj_name, err)})
-                builds = Build.objects.filter(project=target_prj).order_by('-create')
-                total_builds = len(builds)
-                total_page = (total_builds+items_in_page-1)/items_in_page
-                builds = builds[(cur_page-1)*items_in_page:cur_page*items_in_page]
-        page_data['list'] = xrange(1, total_page+1) if total_page else []
-        page_data['previous'] = cur_page - 1 if cur_page > 1 else 1
-        page_data['next'] = cur_page + 1 if cur_page < total_page else total_page
-        for no, build in enumerate(builds):
-            setattr(build, 'no', no + 1 + items_in_page * (cur_page-1))
-        return render(request, 'tbd/build.html', {'page': page_data, 'flash': flash(request), 
-            'form': form, 'project': target_prj, 'builds': builds, 'projects': projects})
+    redirect_url = reverse('tbd_build')
+    if prj_name:
+        redirect_url += '?project_name=' + prj_name
+    return redirect(redirect_url)
+
+def build_page_get(request):
+    prj_name = request.GET.get('project_name', '')
+    get_method = request.GET.get('method', None)
+    target_version = request.GET.get('version', None)
+    cur_page = request.GET.get('page', 1)
+    page_data = None
+    form = AddBuildForm(initial={'build_project_name': prj_name})
+    projects = Project.objects.all()
+    target_prj = None
+    if prj_name:
+        target_prj = Project.objects.filter(name=prj_name)
+        if target_prj:
+            target_prj = target_prj[0]
+            builds = Build.objects.filter(project=target_prj).order_by('-create')
+            page_data = splice_page(builds, cur_page)
+    return render(request, 'tbd/build.html', {'page': page_data, 'flash': flash(request), 
+        'form': form, 'project': target_prj, 'projects': projects})
+
 
 def testdata_page(request):
     if request.method == 'POST':

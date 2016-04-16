@@ -42,7 +42,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for blt in builds %}
+                        {% for blt in page.items %}
                         <tr class="build_head{% cycle ' striped' '' %}">
                             <td>{{ blt.no }}</td>
                             <td>{{ blt.version }}</td>
@@ -50,7 +50,7 @@
                             <td>{{ blt.use_server }}</td>
                             <td>{{ blt.create }}</td>
                             <td>
-                                <a href="{% url 'tbd_build' %}?method=delete&project_name={{project.name|iriencode}}&version={{blt.version|iriencode}}"><span class="glyphicon glyphicon-remove" aria-hidden="true">del?</span></a>
+                                <a href="#" data-url="{% url 'tbd_build' %}" data-method="delete" data-project_name="{{project.name}}" data-version="{{blt.version}}"><span class="glyphicon glyphicon-remove" aria-hidden="true">del?</span></a>
                                 <a href="{% url 'tbd_testdata' %}?project_name={{project.name|iriencode}}&version={{blt.version|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true">TestData</span></a>
                             </td>
                         </tr>
@@ -70,7 +70,7 @@
                     </tbody>
                 </table>
                 {% if page.list %}
-                    <ul class="pagination">
+                <ul class="pagination">
                     <li>
                       <a href="{% url 'tbd_build' %}?project_name={{ project.name }}&page={{ page.previous }}" aria-label="Previous">
                         <span aria-hidden="true">&laquo;</span>
@@ -84,8 +84,8 @@
                         <span aria-hidden="true">&raquo;</span>
                       </a>
                     </li>
-                {% endif %}
                 </ul>
+                {% endif %}
                 {% if flash %}
                 <div class="alert alert-{{ flash.type }}"  role="alert">
                     <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}

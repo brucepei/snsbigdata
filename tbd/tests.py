@@ -153,7 +153,7 @@ class TBDTestBuild(TC):
         self.assertEqual(saved_builds.count(), 0)
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/build.html', request=request, context={'form': form}))
         
-    def test_build_post_add_project_with_invalid_input(self):
+    def test_build_post_add_build_with_invalid_input(self):
         prj = Project(name="unit_project", owner="tester")
         prj.save()
         #name [a-zA-Z]\w{0,39}, owner \w{1,20}
@@ -177,7 +177,7 @@ class TBDTestBuild(TC):
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp['location'], '/build?project_name='+prj.name)
 
-    def test_project_post_add_project_with_valid_input(self):
+    def test_build_post_add_build_with_valid_input(self):
         prj = Project(name="unit_project", owner="tester")
         prj.save()
         #name [a-zA-Z]\w{0,39}, owner \w{1,20}
@@ -213,7 +213,7 @@ class TBDTestBuild(TC):
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp['location'], '/build?project_name='+prj.name)
         
-    def test_project_post_delete_project(self):
+    def test_build_post_delete_build(self):
         request = HttpRequest()
         request.session = {}
         request.method = 'POST'
@@ -234,19 +234,20 @@ class TBDTestBuild(TC):
         self.assertEqual(saved_builds.count(), 1)
 
         request = HttpRequest()
+        request.method = 'POST'
         request.session = {}
-        request.GET['method'] = 'delete'
-        request.GET['project_name'] = prj.name
-        request.GET['version'] = version
+        request.POST['method'] = 'delete'
+        request.POST['project_name'] = prj.name
+        request.POST['version'] = version
         resp = build_page(request)
         
         saved_builds = Build.objects.all()
         form = AddBuildForm(initial={'build_project_name': prj.name})
-        page = {'list': []}
+        page = None
         flash_data = {'type': 'success', 'msg': "Delete Version {} in Project {} successfully!".format(version, prj.name)}
         self.assertEqual(saved_builds.count(), 0)
-        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/build.html', request=request, context={
-            'page': page, 'project': prj, 'projects': Project.objects.all(), 'flash': flash_data, 'form': form}))
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['location'], '/build?project_name=unit_project')
 
 class TBDTestTestData(TC):
     def test_testdata_url_handler(self):

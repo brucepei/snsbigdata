@@ -19,9 +19,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for prj in projects %}
+                        {% for prj in page.items %}
                         <tr>
-                            <td>{{ forloop.counter }}</td>
+                            <td>{{ prj.no }}</td>
                             <td>{{ prj.name }}</td>
                             <td>{{ prj.owner }}</td>
                             <td>{{ prj.build_set.all | length }}</td>
@@ -34,6 +34,23 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% if page.list %}
+                <ul class="pagination">
+                    <li>
+                      <a href="{% url 'tbd_project' %}?page={{ page.previous }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                    {% for p in page.list %}
+                    <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_project' %}?page={{ p }}">{{ p }}</a></li>
+                    {% endfor %}
+                    <li>
+                      <a href="{% url 'tbd_project' %}?page={{ page.next }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                </ul>
+                {% endif %}
                 {% if flash %}
                 <div class="alert alert-{{ flash.type }}"  role="alert">
                     <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
