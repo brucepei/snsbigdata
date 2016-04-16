@@ -79,8 +79,8 @@
                                         <select name="td_host" class="selectpicker">
                                             <option>--select host--</option>
                                         </select>
-                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax_add_host' %}">Extend</button>
-                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax_del_host' %}">Delete</button>
+                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax' 'add_host' %}">Extend</button>
+                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax' 'del_host' %}">Delete</button>
                                     </td>
                                 </tr>
                                 <tr class="hidden info">
@@ -97,8 +97,8 @@
                                         <select name="td_testcase" class="selectpicker">
                                             <option>--select testcase--</option>
                                         </select>
-                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax_add_tc' %}">Extend</button>
-                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax_del_tc' %}">Delete</button>
+                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax' 'add_tc'%}">Extend</button>
+                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax' 'del_tc' %}">Delete</button>
                                     </td>
                                 </tr>
                                 <tr class="hidden info">

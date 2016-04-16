@@ -21,8 +21,43 @@ def json_response(json, code=0):
             err_str += "<span>{}</span>{}".format(k, v)
         json = err_str
     return JsonResponse({'code': code, 'result': json})
-    
+
+def host_select_options(target_prj, select_host=None):
+    options = []
+    for host in Host.objects.filter(project=target_prj):
+        is_select = False
+        if select_host and host.name == select_host:
+            is_select = True
+        options.append((
+            {'host_name': host.name, 'host_ip': host.ip, 'host_mac': host.mac},
+            "{}({})".format(host.name, host.ip),
+            is_select
+        ))
+    return options
+
+def testcase_select_options(target_prj, select_tc_name=None, select_tc_platform=None):
+    options = []
+    for tc in TestCase.objects.filter(project=target_prj):
+        is_select = False
+        if select_tc_name and select_tc_platform and tc.name == select_tc_name and tc.platform == select_tc_platform:
+            is_select = True
+        options.append((
+            {'testcase_name': tc.name, 'testcase_platform': tc.platform},
+            "{}({})".format(tc.name, tc.platform),
+            is_select
+        ))
+    return options
+
 #ajax views
+def ajax(request, action):
+    global_vars = globals()
+    action = 'ajax_' + action
+    if action in global_vars and callable(global_vars[action]):
+        func = global_vars[action]
+        return func(request)
+    else:
+        return json_response("Unknown ajax action: {!r}!".format(action), -1)
+
 def ajax_get_builds(request):
     prj_name = request.POST.get('project_name', None)
     builds = []
@@ -81,32 +116,7 @@ def ajax_del_tc(request):
     else:
         return json_response(form.errors, -1)
 
-def host_select_options(target_prj, select_host=None):
-    options = []
-    for host in Host.objects.filter(project=target_prj):
-        is_select = False
-        if select_host and host.name == select_host:
-            is_select = True
-        options.append((
-            {'host_name': host.name, 'host_ip': host.ip, 'host_mac': host.mac},
-            "{}({})".format(host.name, host.ip),
-            is_select
-        ))
-    return options
 
-def testcase_select_options(target_prj, select_tc_name=None, select_tc_platform=None):
-    options = []
-    for tc in TestCase.objects.filter(project=target_prj):
-        is_select = False
-        if select_tc_name and select_tc_platform and tc.name == select_tc_name and tc.platform == select_tc_platform:
-            is_select = True
-        options.append((
-            {'testcase_name': tc.name, 'testcase_platform': tc.platform},
-            "{}({})".format(tc.name, tc.platform),
-            is_select
-        ))
-    return options
-    
 def ajax_del_host(request):
     form = AddHostForm(request.POST)
     if form.is_valid():

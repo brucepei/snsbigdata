@@ -23,9 +23,5 @@ urlpatterns = [
     url(r'^project$', tbd.views.project_page, name='tbd_project'),
     url(r'^build$', tbd.views.build_page, name='tbd_build'),
     url(r'^testdata$', tbd.views.testdata_page, name='tbd_testdata'),
-    url(r'^ajax_get_builds$', tbd.views.ajax_get_builds, name='ajax_get_builds'),
-    url(r'^ajax_add_host$', tbd.views.ajax_add_host, name='ajax_add_host'),
-    url(r'^ajax_del_host$', tbd.views.ajax_del_host, name='ajax_del_host'),
-    url(r'^ajax_add_tc$', tbd.views.ajax_add_tc, name='ajax_add_tc'),
-    url(r'^ajax_del_tc$', tbd.views.ajax_del_tc, name='ajax_del_tc'),
+    url(r'^ajax/([^/]+)$', tbd.views.ajax, name='ajax'),
 ]

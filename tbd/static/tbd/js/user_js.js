@@ -78,7 +78,7 @@ $("select[name='project_name']").change( function() {
 
 $("select[name='td_project_name']").change( function() {
     var $td_build_version_sel = $("select[name='td_build_version']");
-    var get_build_url = '/ajax_get_builds'
+    var get_build_url = '/ajax/get_builds'
     var prj_name = $(this).val();
     if (prj_name.indexOf('--') != 0) {
         ajax_post_data(get_build_url, {'project_name': prj_name}, function(builds){
