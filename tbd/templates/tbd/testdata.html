@@ -3,6 +3,8 @@
 {% block nav_testdata_attr %}class="active"{% endblock %}
 {% block user_js %}
 <script type="text/javascript">
+    var projects = {{ projects|safe }};
+    var builds = {{ builds|safe }};
     var hosts = {{ hosts|safe }};
     var testcases = {{ testcases|safe }};
 </script>
@@ -32,19 +34,11 @@
                         <h4>Choose project:
                             <select name="td_project_name" class="selectpicker">
                                 <option>--select project--</option>
-                                {% for prj in projects %}
-                                    <option value="{{prj.name}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>
-                                {% endfor %}
                             </select>
                         </h4>
                         <h4>Choose build:
                             <select name="td_build_version" class="selectpicker">
                                 <option>--select build--</option>
-                                {% if project %}
-                                {% for bld in builds %}
-                                    <option value="{{bld.version}}"{% if build and bld == build %} selected="selected"{% endif %}>{{forloop.counter}}. {{bld.version}}</option>
-                                {% endfor %}
-                                {% endif %}
                             </select>
                         </h4>
                     </div>

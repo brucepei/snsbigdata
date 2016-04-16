@@ -45,6 +45,30 @@ var confirm_box = function(title, body, func) {
     $.messager.confirm(title, body, func);
 }
 
+var update_select_options = function($selector, items) {
+    if (!$selector.length) {
+        return;
+    }
+    var first_option = $selector.find('option').first().html();
+    $selector.empty();
+    $selector.append('<option>' + first_option + '</option>');
+    if (!items) {
+        $selector.selectpicker('refresh');  //clear selector if items is null
+        return;
+    }
+    for(var i=0; i < items.length; i++) {
+        var val = items[i][0];
+        var display_val = items[i][1];
+        var active = items[i][2] ? ' selected' : '';
+        var data_str = '';
+        for (var data_attr in  val) {
+            data_str += 'data-' + data_attr + '="' + val[data_attr] + '" '
+        }
+        $selector.append("<option " + data_str + active + ">" + (i + 1) + '. ' + display_val + "</option>");
+    }
+    $selector.selectpicker('refresh');
+};
+
 var ajax_error_handler = function (xhr, type, msg) {
     alert_box("Ajax error with Code: " + xhr.status, 'Type: ' + type + ', Msg: ' + msg);
 };
@@ -91,55 +115,24 @@ $("select[name='project_name']").change( function() {
 $("select[name='td_project_name']").change( function() {
     var $td_build_version_sel = $("select[name='td_build_version']");
     var get_build_url = '/ajax/get_builds'
-    var prj_name = $(this).val();
-    if (prj_name.indexOf('--') != 0) {
-        ajax_post_data(get_build_url, {'project_name': prj_name}, function(builds){
-            $td_build_version_sel.empty();
-            $td_build_version_sel.append("<option>--select build--</option>")
-            for(var i=0; i < builds.length; i++) {
-                $td_build_version_sel.append("<option value='"+builds[i]+"'>" + (i + 1) + '. ' +builds[i]+"</option>");
-            }
-            $td_build_version_sel.selectpicker('refresh');
-        });
-    } else {
-        $td_build_version_sel.empty();
-        $td_build_version_sel.append("<option>--select build--</option>")
-        $td_build_version_sel.selectpicker('refresh');
+    var prj_name = $(this).find("option:selected").attr('data-name');
+    cur_url = window.location.href;
+    if(cur_url.indexOf('/testdata')) {
+        project_url = prj_name ? '?project_name=' + prj_name : '';
+        window.location.href = '/testdata' + project_url;
     }
 });
 
 $("select[name='td_build_version']").change( function() {
-    var prj_name = $("select[name='td_project_name']").val();
-    var build_version = $(this).val();
+    var prj_name = $("select[name='td_project_name']").find("option:selected").attr('data-name');
+    var build_version = $(this).find("option:selected").attr('data-version');
     cur_url = window.location.href;
     if(cur_url.indexOf('/testdata')) {
-        if (build_version.indexOf('--') != 0) {
+        if (build_version) {
             window.location.href = '/testdata?project_name=' + prj_name + "&version=" + build_version;
         }
     }
 });
-
-var update_select_options = function($selector, items) {
-    if (!items) {
-        return;
-    }
-    var first_option = $selector.find('option').first().html();
-    $selector.empty();
-    $selector.append('<option>' + first_option + '</option>');
-    for(var i=0; i < items.length; i++) {
-        var val = items[i][0];
-        var display_val = items[i][1];
-        var active = items[i][2] ? ' selected' : '';
-        var data_str = '';
-        for (var data_attr in  val) {
-            data_str += 'data-' + data_attr + '="' + val[data_attr] + '" '
-        }
-        $selector.append("<option " + data_str + active + ">" + (i + 1) + '. ' + display_val + "</option>");
-    }
-    $selector.selectpicker('refresh');
-};
-
-
 
 $('button.add_btn').click(function(){
     if ($(this).html() == 'Add') {
@@ -246,12 +239,8 @@ $('tr.build_head').click(function(){
 });
 
 $(function(){
-    var $td_host = $('select[name="td_host"]');
-    if ($td_host.length) {
-        update_select_options($td_host, hosts);
-    }
-    var $td_testcase = $('select[name="td_testcase"]');
-    if ($td_testcase.length) {
-        update_select_options($td_testcase, testcases);
-    }
+    update_select_options($('select[name="td_host"]'), hosts);
+    update_select_options($('select[name="td_testcase"]'), testcases);
+    update_select_options($('select[name="td_project_name"]'), projects);
+    update_select_options($('select[name="td_build_version"]'), builds);
 });

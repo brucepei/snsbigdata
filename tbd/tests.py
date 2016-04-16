@@ -32,7 +32,7 @@ class TBDAjaxTest(TC):
         
         resp = ajax_get_builds(request)
         
-        self.assertEqual(resp.content.decode('utf8'), '{"code": 0, "result": ["unit_build2", "unit_build1"]}')
+        self.assertEqual(resp.content.decode('utf8'), '{"code": 0, "result": [[{"version": "unit_build2", "short_name": ""}, "unit_build2", false], [{"version": "unit_build1", "short_name": ""}, "unit_build1", false]]}')
 
 class TBDHomeTest(TC):
     def test_homepage_url_handler(self):
@@ -282,7 +282,9 @@ class TBDTestTestData(TC):
         page = {'list': [1], 'previous': 1, 'next': 1}
         
         self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/testdata.html', request=request, context={
-            'project': prj1, 'build': build1, 'crashes': [crash1], 'builds': [build1], 'projects': [prj1],
+            'project': prj1, 'build': build1, 'crashes': [crash1],
+            'builds': json.dumps([({'version': build1.version, 'short_name': build1.short_name}, build1.version, True)]),
+            'projects': json.dumps([({'name': prj1.name, 'owner': prj1.owner}, prj1.name, True)]),
             'testcases': json.dumps([({'testcase_name': tc1.name, 'testcase_platform': tc1.platform}, "{}({})".format(tc1.name, tc1.platform), False)]),
             'hosts': json.dumps([({'host_name': host1.name, 'host_ip': host1.ip, 'host_mac': host1.mac}, "{}({})".format(host1.name, host1.ip), False)]), 'form': form}))
         

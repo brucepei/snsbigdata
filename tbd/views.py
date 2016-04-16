@@ -22,7 +22,7 @@ def json_response(json, code=0):
         json = err_str
     return JsonResponse({'code': code, 'result': json})
 
-def splice_page(all_items, cur_page=1, items_in_page=5):
+def slice_page(all_items, cur_page=1, items_in_page=5):
     page_data = {}
     if not isinstance(cur_page, int):
         try:
@@ -94,6 +94,32 @@ def del_build(prj_name, version):
     else:
         return (-1, 'Project {} is NOT existed when delete Build {}!'.format(prj_name, version))
 
+def project_select_options(select_prj_name=None):
+    options = []
+    for prj in Project.objects.all():
+        is_select = False
+        if select_prj_name and prj.name == select_prj_name:
+            is_select = True
+        options.append((
+            {'name': prj.name, 'owner': prj.owner},
+            "{}".format(prj.name),
+            is_select
+        ))
+    return options
+
+def build_select_options(target_prj, select_version=None):
+    options = []
+    for bld in Build.objects.filter(project=target_prj).order_by('-create'):
+        is_select = False
+        if select_version and bld.version == select_version:
+            is_select = True
+        options.append((
+            {'version': bld.version, 'short_name': bld.short_name},
+            "{}".format(bld.version),
+            is_select
+        ))
+    return options
+
 def host_select_options(target_prj, select_host=None):
     options = []
     for host in Host.objects.filter(project=target_prj):
@@ -132,13 +158,13 @@ def ajax(request, action):
 
 def ajax_get_builds(request):
     prj_name = request.POST.get('project_name', None)
-    builds = []
+    builds = None
     if prj_name:
         target_prj = Project.objects.filter(name=prj_name)
         if target_prj:
             target_prj = target_prj[0]
-            builds = Build.objects.filter(project=target_prj).order_by('-create')
-    return json_response([bld.version for bld in builds])
+            builds = build_select_options(target_prj)
+    return json_response(builds)
 
 def ajax_add_tc(request):
     form = AddTestCaseForm(request.POST)
@@ -252,7 +278,7 @@ def project_page_get(request):
     prj_name = request.GET.get('project_name', '')
     cur_page = request.GET.get('page', 1)
     form = AddProjectForm()
-    page_data = splice_page(Project.objects.all().order_by('-create'), cur_page)
+    page_data = slice_page(Project.objects.all().order_by('-create'), cur_page)
     return render(request, 'tbd/project.html', {'form': form, 'page': page_data, 'flash': flash(request)})
 
 def project_page_post(request):
@@ -330,59 +356,46 @@ def build_page_get(request):
         if target_prj:
             target_prj = target_prj[0]
             builds = Build.objects.filter(project=target_prj).order_by('-create')
-            page_data = splice_page(builds, cur_page)
+            page_data = slice_page(builds, cur_page)
     return render(request, 'tbd/build.html', {'page': page_data, 'flash': flash(request), 
         'form': form, 'project': target_prj, 'projects': projects})
 
 
 def testdata_page(request):
     if request.method == 'POST':
-        # form = AddProjectForm(request.POST)
-        # if form.is_valid():
         return redirect('tbd_testdata')
     else:
-        prj_name = request.GET.get('project_name', '')
-        version = request.GET.get('version', '')
-        page_data = {}
-        cur_page = request.GET.get('page', 1)
-        try:
-            cur_page = int(cur_page)
-        except:
-            cur_page = 1
-        page_data['cur'] = cur_page
-        total_page = None
-        items_in_page = 5
-        crash_form = AddCrashForm(initial={'crash_project_name': prj_name, 'crash_build_version': version})
-        host_form = AddHostForm(initial={'host_project_name': prj_name})
-        testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj_name})
-        form = {'crash':crash_form, 'host': host_form, 'testcase': testcase_form}
-        projects = Project.objects.all()
-        testcases = json.dumps(None)
-        hosts = json.dumps(None)
-        builds = []
-        crashes = []
-        target_prj = None
-        target_build = None
-        if prj_name:
-            target_prj = Project.objects.filter(name=prj_name)
-            if target_prj:
-                target_prj = target_prj[0]
-                hosts = json.dumps(host_select_options(target_prj))
-                testcases = json.dumps(testcase_select_options(target_prj))
-                builds = Build.objects.filter(project=target_prj).order_by('-create')
-                if version:
-                    target_build = Build.objects.filter(project=target_prj, version=version)
-                    if target_build:
-                        target_build = target_build[0]
-                        crashes = Crash.objects.filter(build=target_build)
-                total_crashes = len(crashes)
-                total_page = (total_crashes+items_in_page-1)/items_in_page
-                crashes = crashes[(cur_page-1)*items_in_page:cur_page*items_in_page]
-        page_data['list'] = xrange(1, total_page+1) if total_page else []
-        page_data['previous'] = cur_page - 1 if cur_page > 1 else 1
-        page_data['next'] = cur_page + 1 if cur_page < total_page else total_page
-        for no, crash in enumerate(crashes):
-            setattr(crash, 'no', no + 1 + items_in_page * (cur_page-1))
-        return render(request, 'tbd/testdata.html', {'page': page_data, 'flash': flash(request), 
-            'form': form, 'project': target_prj, 'build': target_build, 'crashes': crashes, 'builds': builds, 'projects': projects,
-            'testcases': testcases, 'hosts': hosts})
+        return testdata_page_get(request)
+
+def testdata_page_get(request):
+    prj_name = request.GET.get('project_name', '')
+    version = request.GET.get('version', '')
+    page_data = None
+    cur_page = request.GET.get('page', 1)
+    crash_form = AddCrashForm(initial={'crash_project_name': prj_name, 'crash_build_version': version})
+    host_form = AddHostForm(initial={'host_project_name': prj_name})
+    testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj_name})
+    form = {'crash':crash_form, 'host': host_form, 'testcase': testcase_form}
+    target_prj = None
+    target_build = None
+    projects = json.dumps(project_select_options(prj_name))
+    builds = json.dumps(None)
+    testcases = json.dumps(None)
+    hosts = json.dumps(None)
+    crashes = []
+    if prj_name:
+        target_prj = Project.objects.filter(name=prj_name)
+        if target_prj:
+            target_prj = target_prj[0]
+            hosts = json.dumps(host_select_options(target_prj))
+            testcases = json.dumps(testcase_select_options(target_prj))
+            builds = json.dumps(build_select_options(target_prj, version))
+            if version:
+                target_build = Build.objects.filter(project=target_prj, version=version)
+                if target_build:
+                    target_build = target_build[0]
+                    crashes = Crash.objects.filter(build=target_build).order_by('-create')
+                    page_data = slice_page(crashes, cur_page)
+    return render(request, 'tbd/testdata.html', {'page': page_data, 'flash': flash(request), 
+        'form': form, 'project': target_prj, 'build': target_build, 'builds': builds, 'projects': projects,
+        'testcases': testcases, 'hosts': hosts})
