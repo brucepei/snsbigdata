@@ -284,12 +284,14 @@ class TBDTestTestData(TC):
         host1.valid_crash = 0
         host1.open_crash = 0
         page = {'list': [1], 'previous': 1, 'next': 1, 'cur': 1, 'items': [host1]}
-        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/testdata.html', request=request, context={
-            'project': prj1, 'build': build1, 'sort_by': 'Host', 'page': page, 'form': form,
+        json_vars = {
             'builds': json.dumps([({'version': build1.version, 'short_name': build1.short_name}, build1.version, True)]),
             'projects': json.dumps([({'name': prj1.name, 'owner': prj1.owner}, prj1.name, True)]),
             'testcases': json.dumps([({'testcase_name': tc1.name, 'testcase_platform': tc1.platform}, "{}({})".format(tc1.name, tc1.platform), False)]),
-            'hosts': json.dumps([({'host_name': host1.name, 'host_ip': host1.ip, 'host_mac': host1.mac}, "{}({})".format(host1.name, host1.ip), False)])}
+            'hosts': json.dumps([({'host_name': host1.name, 'host_ip': host1.ip, 'host_mac': host1.mac}, "{}({})".format(host1.name, host1.ip), False)]),
+        }
+        self.assertEqual(resp.content.decode('utf8'), render_to_string('tbd/testdata.html', request=request, context={
+            'project': prj1, 'build': build1, 'sort_by': 'Host', 'page': page, 'form': form, 'json_vars': json_vars}
         ))
         
 class TBDModelTest(TC):

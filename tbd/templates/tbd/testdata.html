@@ -3,10 +3,9 @@
 {% block nav_testdata_attr %}class="active"{% endblock %}
 {% block user_js %}
 <script type="text/javascript">
-    var projects = {{ projects|safe }};
-    var builds = {{ builds|safe }};
-    var hosts = {{ hosts|safe }};
-    var testcases = {{ testcases|safe }};
+    {%for key, val in json_vars.items %}
+    var {{ key }} = {{ val|safe }};
+    {% endfor %}
 </script>
 {% endblock %}
 

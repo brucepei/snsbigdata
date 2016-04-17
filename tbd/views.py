@@ -424,40 +424,37 @@ def testdata_page_get(request):
     prj_name = request.GET.get('project_name', '')
     version = request.GET.get('version', '')
     sort_by = request.GET.get('sort_by', 'Host')
-    page_data = None
     cur_page = request.GET.get('page', 1)
     crash_form = AddCrashForm(initial={'crash_project_name': prj_name, 'crash_build_version': version})
     host_form = AddHostForm(initial={'host_project_name': prj_name})
     testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj_name})
     form = {'crash':crash_form, 'host': host_form, 'testcase': testcase_form}
+    page_data = None
     target_prj = None
     target_build = None
-    projects = json.dumps(project_select_options(prj_name))
-    builds = json.dumps(None)
-    testcases = json.dumps(None)
-    hosts = json.dumps(None)
+    json_vars = {key: 'null' for key in ('builds', 'testcases', 'hosts')}
+    json_vars['projects'] = json.dumps(project_select_options(prj_name))
     if prj_name:
         target_prj = Project.objects.filter(name=prj_name)
         if target_prj:
             target_prj = target_prj[0]
             all_hosts = Host.objects.filter(project=target_prj)
             all_testcases = TestCase.objects.filter(project=target_prj)
-            hosts = json.dumps(host_select_options(target_prj, None, all_hosts))
-            testcases = json.dumps(testcase_select_options(target_prj, None, all_testcases))
-            builds = json.dumps(build_select_options(target_prj, version))
+            json_vars['hosts'] = json.dumps(host_select_options(target_prj, None, all_hosts))
+            json_vars['testcases'] = json.dumps(testcase_select_options(target_prj, None, all_testcases))
+            json_vars['builds'] = json.dumps(build_select_options(target_prj, version))
             if version:
                 target_build = Build.objects.filter(project=target_prj, version=version)
                 if target_build:
                     target_build = target_build[0]
                     if sort_by == 'Host':
                         all_items = all_hosts
+                        key_item = 'host'
                     else:
                         all_items = all_testcases
+                        key_item = 'testcase'
                     for item in all_items:
-                        if sort_by == 'Host':
-                            crashes = Crash.objects.filter(build=target_build, host=item)
-                        else:
-                            crashes = Crash.objects.filter(build=target_build, testcase=item)
+                        crashes = Crash.objects.filter(build=target_build, **{key_item: item})
                         item.total_crash = len(crashes)
                         item.valid_crash = 0
                         item.open_crash = 0
@@ -467,5 +464,5 @@ def testdata_page_get(request):
                                 item.open_crash += 1
                     page_data = slice_page(all_items, cur_page)
     return render(request, 'tbd/testdata.html', {'page': page_data, 'flash': flash(request), 'sort_by': sort_by,
-        'form': form, 'project': target_prj, 'build': target_build, 'builds': builds, 'projects': projects,
-        'testcases': testcases, 'hosts': hosts})
+        'form': form, 'project': target_prj, 'build': target_build, 'json_vars': json_vars,
+    })
