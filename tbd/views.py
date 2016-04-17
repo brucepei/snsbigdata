@@ -41,6 +41,74 @@ def slice_page(all_items, cur_page=1, items_in_page=5):
         setattr(item, 'no', no + 1 + items_in_page * (cur_page-1))
     return page_data
 
+def add_host(prj_name, host_name, host_ip, host_mac, target_prj=None):
+    if not target_prj:
+        target_prj = Project.objects.filter(name=prj_name)
+    if target_prj:
+        target_prj = target_prj[0]
+        target_host = Host.objects.filter(name=host_name, project=target_prj)
+        if not target_host:
+            try:
+                Host.objects.create(name=host_name, ip=host_ip, mac=host_mac, project=target_prj)
+            except Exception as err:
+                return (-1, 'Host {} failed to create: {}'.format(host_name, err))
+            return (0, "succeed to create Host {}".format(host_name))
+        else:
+            return (1, 'Host {} has already existed!'.format(host_name))
+    else:
+        return (-1, 'Project {} does NOT exist!'.format(prj_name))
+        
+def del_host(prj_name, host_name, host_ip, host_mac, target_prj=None):
+    if not target_prj:
+        target_prj = Project.objects.filter(name=prj_name)
+    if target_prj:
+        target_prj = target_prj[0]
+        target_host = Host.objects.filter(name=host_name, project=target_prj)
+        if target_host:
+            try:
+                target_host.delete()
+            except Exception as err:
+                return (-1, 'Host {} failed to delete: {}'.format(host_name, err))
+            return (0, "succeed to delete Host {}".format(host_name))
+        else:
+            return (1, 'Host {} is NOT existed!'.format(host_name))
+    else:
+        return (-1, 'Project {} does NOT exist!'.format(prj_name))
+
+def add_testcase(prj_name, tc_name, tc_platform, target_prj=None):
+    if not target_prj:
+        target_prj = Project.objects.filter(name=prj_name)
+    if target_prj:
+        target_prj = target_prj[0]
+        target_tc = TestCase.objects.filter(name=tc_name, platform=tc_platform, project=target_prj)
+        if not target_tc:
+            try:
+                TestCase.objects.create(name=tc_name, platform=tc_platform, project=target_prj)
+            except Exception as err:
+                return (-1, 'TestCase {}({}) failed to create: {}'.format(tc_name, tc_platform, err))
+            return (0, "succeed to add TestCase {}".format(tc_name))
+        else:
+            return (1, 'TestCase {}({}) has already existed!'.format(tc_name, tc_platform))
+    else:
+        return (-1, 'Project {} does NOT exist!'.format(prj_name))
+
+def del_testcase(prj_name, tc_name, tc_platform, target_prj=None):
+    if not target_prj:
+        target_prj = Project.objects.filter(name=prj_name)
+    if target_prj:
+        target_prj = target_prj[0]
+        target_tc = TestCase.objects.filter(name=tc_name, platform=tc_platform, project=target_prj)
+        if target_tc:
+            try:
+                target_tc.delete()
+            except Exception as err:
+                return (-1, 'TestCase {}({}) failed to delete: {}'.format(tc_name, tc_platform, err))
+            return (0, "succeed to delete TestCase {}".format(tc_name))
+        else:
+            return (1, 'TestCase {}({}) is NOT existed!'.format(tc_name, tc_platform))
+    else:
+        return (-1, 'Project {} does NOT exist!'.format(prj_name))
+
 def add_project(name, owner):
     target_prj = Project.objects.filter(name=name)
     if not target_prj:
@@ -198,103 +266,48 @@ def ajax_get_builds(request):
             builds = build_select_options(target_prj)
     return json_response(builds)
 
-def ajax_add_tc(request):
+def _ajax_op_tc(request, op_func):
     form = AddTestCaseForm(request.POST)
     if form.is_valid():
         prj_name = form.cleaned_data['testcase_project_name']
         tc_name = form.cleaned_data['testcase_name']
         tc_platform = form.cleaned_data['testcase_platform']
-        print "project={}, tc_platform={}, tc_platform={}".format(prj_name, tc_name, tc_platform)
         target_prj = Project.objects.filter(name=prj_name)
-        if target_prj:
-            target_prj = target_prj[0]
-            target_tc = TestCase.objects.filter(name=tc_name, platform=tc_platform, project=target_prj)
-            if not target_tc:
-                try:
-                    TestCase.objects.create(name=tc_name, platform=tc_platform, project=target_prj)
-                except Exception as err:
-                    return json_response('TestCase {}({}) failed to create: {}'.format(tc_name, tc_platform, err), -1)
-                return json_response(testcase_select_options(target_prj, tc_name, tc_platform))
-            else:
-                return json_response('TestCase {}({}) has already existed!'.format(tc_name, tc_platform), -1)
+        err_code, msg = op_func(prj_name, tc_name, tc_platform, target_prj)
+        if err_code:
+            return json_response(msg, err_code)
         else:
-            return json_response('Project {} does NOT exist!'.format(prj_name), -1)
+            return json_response(testcase_select_options(target_prj, tc_name, tc_platform))
     else:
         return json_response(form.errors, -1)
+
+def ajax_add_tc(request):
+    return _ajax_op_tc(request, add_testcase)
 
 def ajax_del_tc(request):
-    form = AddTestCaseForm(request.POST)
-    if form.is_valid():
-        prj_name = form.cleaned_data['testcase_project_name']
-        tc_name = form.cleaned_data['testcase_name']
-        tc_platform = form.cleaned_data['testcase_platform']
-        print "project={}, tc_platform={}, tc_platform={}".format(prj_name, tc_name, tc_platform)
-        target_prj = Project.objects.filter(name=prj_name)
-        if target_prj:
-            target_prj = target_prj[0]
-            target_tc = TestCase.objects.filter(name=tc_name, platform=tc_platform, project=target_prj)
-            if target_tc:
-                try:
-                    target_tc.delete()
-                except Exception as err:
-                    return json_response('TestCase {}({}) failed to delete: {}'.format(tc_name, tc_platform, err), -1)
-                return json_response(testcase_select_options(target_prj))
-            else:
-                return json_response('TestCase {}({}) is NOT existed!'.format(tc_name, tc_platform), -1)
-        else:
-            return json_response('Project {} does NOT exist!'.format(prj_name), -1)
-    else:
-        return json_response(form.errors, -1)
+    return _ajax_op_tc(request, del_testcase)
 
-def ajax_del_host(request):
+def _ajax_op_host(request, op_func):
     form = AddHostForm(request.POST)
     if form.is_valid():
         prj_name = form.cleaned_data['host_project_name']
         host_name = form.cleaned_data['host_name']
         host_ip = form.cleaned_data['host_ip']
         host_mac = form.cleaned_data['host_mac']
-        print "project={}, host_name={}, host_ip={}, host_mac={}".format(prj_name, host_name, host_ip, host_mac)
         target_prj = Project.objects.filter(name=prj_name)
-        if target_prj:
-            target_prj = target_prj[0]
-            target_host = Host.objects.filter(name=host_name, project=target_prj)
-            if target_host:
-                try:
-                    target_host.delete()
-                except Exception as err:
-                    return json_response('Host {} failed to delete: {}'.format(host_name, err), -1)
-                return json_response(host_select_options(target_prj))
-            else:
-                return json_response('Host {} is NOT existed!'.format(host_name), -1)
+        err_code, msg = op_func(prj_name, host_name, host_ip, host_mac, target_prj)
+        if err_code:
+            return json_response(msg, err_code)
         else:
-            return json_response('Project {} does NOT exist!'.format(prj_name), -1)
+            return json_response(host_select_options(target_prj, host_name))
     else:
         return json_response(form.errors, -1)
 
 def ajax_add_host(request):
-    form = AddHostForm(request.POST)
-    if form.is_valid():
-        prj_name = form.cleaned_data['host_project_name']
-        host_name = form.cleaned_data['host_name']
-        host_ip = form.cleaned_data['host_ip']
-        host_mac = form.cleaned_data['host_mac']
-        print "project={}, host_name={}, host_ip={}, host_mac={}".format(prj_name, host_name, host_ip, host_mac)
-        target_prj = Project.objects.filter(name=prj_name)
-        if target_prj:
-            target_prj = target_prj[0]
-            target_host = Host.objects.filter(name=host_name, project=target_prj)
-            if not target_host:
-                try:
-                    Host.objects.create(name=host_name, ip=host_ip, mac=host_mac, project=target_prj)
-                except Exception as err:
-                    return json_response('Host {} failed to create: {}'.format(host_name, err), -1)
-                return json_response(host_select_options(target_prj, host_name))
-            else:
-                return json_response('Host {} has laready existed!'.format(host_name), -1)
-        else:
-            return json_response('Project {} does NOT exist!'.format(prj_name), -1)
-    else:
-        return json_response(form.errors, -1)
+    return _ajax_op_host(request, add_host)
+
+def ajax_del_host(request):
+    return _ajax_op_host(request, del_host)
     
 # Create your views here.
 def home_page(request):
