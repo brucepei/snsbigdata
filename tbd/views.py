@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from tbd.models import Project, Build, Crash, TestCase, Host
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 import json
@@ -309,6 +310,23 @@ def ajax_add_host(request):
 def ajax_del_host(request):
     return _ajax_op_host(request, del_host)
     
+# Create special API here
+@csrf_exempt
+def auto(request, action):
+    global_vars = globals()
+    action = 'auto_' + action
+    if action in global_vars and callable(global_vars[action]):
+        func = global_vars[action]
+        return func(request)
+    else:
+        return json_response("Unknown auto action: {!r}!".format(action), -1)
+    
+def auto_crash_info(request):
+    if request.method == 'POST':
+        prj_name = request.POST.get('project_name', None)
+        print "Got Project {}!".format(prj_name)
+    return json_response("Create crash for Project {!r} done!".format(prj_name))
+
 # Create your views here.
 def home_page(request):
     return render(request, 'tbd/home.html')
