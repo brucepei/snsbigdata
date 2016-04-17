@@ -79,15 +79,15 @@
                 {% if page.list %}
                 <ul class="pagination">
                     <li>
-                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&page={{ page.previous }}" aria-label="Previous">
+                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&sort_by={{ sort_by }}&page={{ page.previous }}" aria-label="Previous">
                         <span aria-hidden="true">&laquo;</span>
                       </a>
                     </li>
                     {% for p in page.list %}
-                    <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&page={{ p }}">{{ p }}</a></li>
+                    <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&sort_by={{ sort_by }}&page={{ p }}">{{ p }}</a></li>
                     {% endfor %}
                     <li>
-                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&page={{ page.next }}" aria-label="Next">
+                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&sort_by={{ sort_by }}&page={{ page.next }}" aria-label="Next">
                         <span aria-hidden="true">&raquo;</span>
                       </a>
                     </li>

@@ -118,7 +118,8 @@ $("select[name='td_project_name']").change( function() {
     var prj_name = $(this).find("option:selected").attr('data-name');
     cur_url = window.location.href;
     if(cur_url.indexOf('/testdata')) {
-        project_url = prj_name ? '?project_name=' + prj_name : '';
+        var sort_by = $("select[name='td_sort_by']").val();
+        project_url = prj_name ? '?project_name=' + prj_name + "&sort_by=" + sort_by : "?sort_by=" + sort_by;
         window.location.href = '/testdata' + project_url;
     }
 });
@@ -129,7 +130,8 @@ $("select[name='td_build_version']").change( function() {
     cur_url = window.location.href;
     if(cur_url.indexOf('/testdata')) {
         if (build_version) {
-            window.location.href = '/testdata?project_name=' + prj_name + "&version=" + build_version;
+            var sort_by = $("select[name='td_sort_by']").val();
+            window.location.href = '/testdata?project_name=' + prj_name + "&version=" + build_version + "&sort_by=" + sort_by;
         }
     }
 });

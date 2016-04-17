@@ -436,7 +436,6 @@ def testdata_page_get(request):
     builds = json.dumps(None)
     testcases = json.dumps(None)
     hosts = json.dumps(None)
-    crashes = []
     if prj_name:
         target_prj = Project.objects.filter(name=prj_name)
         if target_prj:
