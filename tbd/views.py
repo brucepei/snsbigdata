@@ -43,108 +43,104 @@ def slice_page(all_items, cur_page=1, items_in_page=5):
     return page_data
 
 def add_host(prj_name, host_name, host_ip, host_mac, target_prj=None):
-    if not target_prj:
-        target_prj = Project.objects.filter(name=prj_name)
+    target_prj = [target_prj] if target_prj else Project.objects.filter(name=prj_name)
     if target_prj:
         target_prj = target_prj[0]
         target_host = Host.objects.filter(name=host_name, project=target_prj)
         if not target_host:
             try:
-                Host.objects.create(name=host_name, ip=host_ip, mac=host_mac, project=target_prj)
+                target_host = Host.objects.create(name=host_name, ip=host_ip, mac=host_mac, project=target_prj)
             except Exception as err:
-                return (-1, 'Host {} failed to create: {}'.format(host_name, err))
-            return (0, "succeed to create Host {}".format(host_name))
+                return (-1, 'Host {} failed to create: {}'.format(host_name, err), None)
+            return (0, "succeed to create Host {}".format(host_name), target_host)
         else:
-            return (1, 'Host {} has already existed!'.format(host_name))
+            return (1, 'Host {} has already existed!'.format(host_name), target_host[0])
     else:
-        return (-1, 'Project {} does NOT exist!'.format(prj_name))
+        return (-1, 'Project {} does NOT exist!'.format(prj_name), None)
         
 def del_host(prj_name, host_name, host_ip, host_mac, target_prj=None):
-    if not target_prj:
-        target_prj = Project.objects.filter(name=prj_name)
+    target_prj = [target_prj] if target_prj else Project.objects.filter(name=prj_name)
     if target_prj:
         target_prj = target_prj[0]
         target_host = Host.objects.filter(name=host_name, project=target_prj)
         if target_host:
             try:
-                target_host.delete()
+                target_host[0].delete()
             except Exception as err:
-                return (-1, 'Host {} failed to delete: {}'.format(host_name, err))
-            return (0, "succeed to delete Host {}".format(host_name))
+                return (-1, 'Host {} failed to delete: {}'.format(host_name, err), None)
+            return (0, "succeed to delete Host {}".format(host_name), target_host[0])
         else:
-            return (1, 'Host {} is NOT existed!'.format(host_name))
+            return (1, 'Host {} is NOT existed!'.format(host_name), None)
     else:
-        return (-1, 'Project {} does NOT exist!'.format(prj_name))
+        return (-1, 'Project {} does NOT exist!'.format(prj_name), None)
 
 def add_testcase(prj_name, tc_name, tc_platform, target_prj=None):
-    if not target_prj:
-        target_prj = Project.objects.filter(name=prj_name)
+    target_prj = [target_prj] if target_prj else Project.objects.filter(name=prj_name)
     if target_prj:
         target_prj = target_prj[0]
         target_tc = TestCase.objects.filter(name=tc_name, platform=tc_platform, project=target_prj)
         if not target_tc:
             try:
-                TestCase.objects.create(name=tc_name, platform=tc_platform, project=target_prj)
+                target_tc = TestCase.objects.create(name=tc_name, platform=tc_platform, project=target_prj)
             except Exception as err:
-                return (-1, 'TestCase {}({}) failed to create: {}'.format(tc_name, tc_platform, err))
-            return (0, "succeed to add TestCase {}".format(tc_name))
+                return (-1, 'TestCase {}({}) failed to create: {}'.format(tc_name, tc_platform, err), None)
+            return (0, "succeed to add TestCase {}".format(tc_name), target_tc)
         else:
-            return (1, 'TestCase {}({}) has already existed!'.format(tc_name, tc_platform))
+            return (1, 'TestCase {}({}) has already existed!'.format(tc_name, tc_platform), target_tc[0])
     else:
-        return (-1, 'Project {} does NOT exist!'.format(prj_name))
+        return (-1, 'Project {} does NOT exist!'.format(prj_name), None)
 
 def del_testcase(prj_name, tc_name, tc_platform, target_prj=None):
-    if not target_prj:
-        target_prj = Project.objects.filter(name=prj_name)
+    target_prj = [target_prj] if target_prj else Project.objects.filter(name=prj_name)
     if target_prj:
         target_prj = target_prj[0]
         target_tc = TestCase.objects.filter(name=tc_name, platform=tc_platform, project=target_prj)
         if target_tc:
             try:
-                target_tc.delete()
+                target_tc[0].delete()
             except Exception as err:
-                return (-1, 'TestCase {}({}) failed to delete: {}'.format(tc_name, tc_platform, err))
-            return (0, "succeed to delete TestCase {}".format(tc_name))
+                return (-1, 'TestCase {}({}) failed to delete: {}'.format(tc_name, tc_platform, err), None)
+            return (0, "succeed to delete TestCase {}".format(tc_name), target_tc[0])
         else:
-            return (1, 'TestCase {}({}) is NOT existed!'.format(tc_name, tc_platform))
+            return (1, 'TestCase {}({}) is NOT existed!'.format(tc_name, tc_platform), None)
     else:
-        return (-1, 'Project {} does NOT exist!'.format(prj_name))
+        return (-1, 'Project {} does NOT exist!'.format(prj_name), None)
 
 def add_project(name, owner):
     target_prj = Project.objects.filter(name=name)
     if not target_prj:
         try:
-            Project.objects.create(name=name, owner=owner)
+            target_prj = Project.objects.create(name=name, owner=owner)
         except Exception as err:
-            return (-1, "Save Project {} failed: {}!".format(name, err))
-        return (0, "Create Project {} successfully!".format(name))
+            return (-1, "Save Project {} failed: {}!".format(name, err), None)
+        return (0, "Create Project {} successfully!".format(name), target_prj)
     else:
-        return (1, 'Project {} has already existed!'.format(name))
+        return (1, 'Project {} has already existed!'.format(name), target_prj[0])
 
-def add_build(prj_name, version, **build_attrs):
-    target_prj = Project.objects.filter(name=prj_name)
+def add_build(prj_name, version, target_prj=None, **build_attrs):
+    target_prj = [target_prj] if target_prj else Project.objects.filter(name=prj_name)
     if target_prj:
         target_prj = target_prj[0]
         target_build = Build.objects.filter(project=target_prj, version=version)
         if not target_build:
             try:
-                Build.objects.create(project=target_prj, version=version, **build_attrs)
+                target_build = Build.objects.create(project=target_prj, version=version, **build_attrs)
             except Exception as err:
-                return (-1, "Save Build {} in Project {} failed: {}!".format(version, prj_name, err))
-            return (0, "Create Build {} in Project {} successfully!".format(version, prj_name))
+                return (-1, "Save Build {} in Project {} failed: {}!".format(version, prj_name, err), None)
+            return (0, "Create Build {} in Project {} successfully!".format(version, prj_name), target_build)
         else:
-            return (1, 'Build {} in Project {} is already existed!'.format(version, prj_name))
+            return (1, 'Build {} in Project {} is already existed!'.format(version, prj_name), target_build[0])
     else:
-        return (-1, 'Project {} does NOT exist when create Build {}!'.format(prj_name, version))
+        return (-1, 'Project {} does NOT exist when create Build {}!'.format(prj_name, version), None)
 
-def add_crash(prj_name, version, path, **crash_attrs):
-    target_prj = Project.objects.filter(name=prj_name)
+def add_crash(prj_name, version, path, target_prj=None, target_build=None, target_host=None, target_tc=None, **crash_attrs):
+    target_prj = [target_prj] if target_prj else Project.objects.filter(name=prj_name)
     if target_prj:
         target_prj = target_prj[0]
-        if 'host_name' in crash_attrs and 'testcase_name' in crash_attrs and 'testcase_platform' in crash_attrs:
-            target_tc = TestCase.objects.filter(name=crash_attrs['testcase_name'], platform=crash_attrs['testcase_platform'], project=target_prj)
-            target_host = Host.objects.filter(name=crash_attrs['host_name'], project=target_prj)
-            target_build = Build.objects.filter(project=target_prj, version=version)
+        if (target_host or 'host_name' in crash_attrs) and (target_tc or ('testcase_name' in crash_attrs and 'testcase_platform' in crash_attrs)):
+            target_tc = [target_tc] if target_tc else TestCase.objects.filter(name=crash_attrs['testcase_name'], platform=crash_attrs['testcase_platform'], project=target_prj)
+            target_host = [target_host] if target_host else Host.objects.filter(name=crash_attrs['host_name'], project=target_prj)
+            target_build = [target_build] if target_build else Build.objects.filter(project=target_prj, version=version)
             if target_tc and target_host and target_build:
                 target_tc = target_tc[0]
                 target_host = target_host[0]
@@ -152,18 +148,18 @@ def add_crash(prj_name, version, path, **crash_attrs):
                 target_crash = Crash.objects.filter(build=target_build, path=path, testcase=target_tc, host=target_host)
                 if not target_crash:
                     try:
-                        Crash.objects.create(build=target_build, path=path, testcase=target_tc, host=target_host)
+                        target_crash = Crash.objects.create(build=target_build, path=path, testcase=target_tc, host=target_host)
                     except Exception as err:
-                        return (-1, "Save Crash {} in Project {} Build {} failed: {}!".format(path, prj_name, version, err))
-                    return (0, "Create Crash {} in Project {} Build {} successfully!".format(path, prj_name, version))
+                        return (-1, "Save Crash {} in Project {} Build {} failed: {}!".format(path, prj_name, version, err), None)
+                    return (0, "Create Crash {} in Project {} Build {} successfully!".format(path, prj_name, version), target_crash)
                 else:
-                    return (1, "Crash {} in Project {} Build {} is already existed!".format(path, prj_name, version))
+                    return (1, "Crash {} in Project {} Build {} is already existed!".format(path, prj_name, version), target_crash[0])
             else:
-                return (-1, 'Build {}/Host {}/TestCase {} is NOT existed in Project {} when create crash {}!'.format(version, crash_attrs['host_name'], crash_attrs['testcase_name'], prj_name, path))
+                return (-1, 'Build {}/Host {}/TestCase {} is NOT existed in Project {} when create crash {}!'.format(version, crash_attrs['host_name'], crash_attrs['testcase_name'], prj_name, path), None)
         else:
-            return (-1, 'Not found host_name/testcase_name/testcase_platform in Project {} when create crash {}!'.format(version, prj_name, path))
+            return (-1, 'Not found host_name/testcase_name/testcase_platform in Project {} when create crash {}!'.format(version, prj_name, path), None)
     else:
-        return (-1, 'Project {} does NOT exist when create Build {}!'.format(prj_name, version))
+        return (-1, 'Project {} does NOT exist when create Build {}!'.format(prj_name, version), None)
 
 def del_project(name):
     target_prj = Project.objects.filter(name=name)
@@ -172,24 +168,24 @@ def del_project(name):
             target_prj[0].delete()
         except Exception as err:
             return (-1, "Delete Project {} failed: {}!".format(name, err))
-        return (0, "Delete Project {} successfully!".format(name))
+        return (0, "Delete Project {} successfully!".format(name), target_prj[0])
     else:
-        return (0, 'Project {} is NOT existed, no necessary to delete!'.format(name))
+        return (1, 'Project {} is NOT existed, no necessary to delete!'.format(name), None)
 
-def del_build(prj_name, version):
-    target_prj = Project.objects.filter(name=prj_name)
+def del_build(prj_name, version, target_prj=None):
+    target_prj = [target_prj] if target_prj else Project.objects.filter(name=prj_name)
     if target_prj:
         target_build = Build.objects.filter(project=target_prj[0], version=version)
         if target_build:
             try:
                 target_build[0].delete()
             except Exception as err:
-                return (-1, "Delete Build {} in Project {} failed: {}!".format(version, prj_name, err))
-            return (0, "Delete Build {} in Project {} successfully!".format(version, prj_name))
+                return (-1, "Delete Build {} in Project {} failed: {}!".format(version, prj_name, err), None)
+            return (0, "Delete Build {} in Project {} successfully!".format(version, prj_name), target_build[0])
         else:
-            return (0, 'Build {} in Project {} is NOT existed, no necessary to delete!'.format(version, prj_name))
+            return (1, 'Build {} in Project {} is NOT existed, no necessary to delete!'.format(version, prj_name), None)
     else:
-        return (-1, 'Project {} is NOT existed when delete Build {}!'.format(prj_name, version))
+        return (-1, 'Project {} is NOT existed when delete Build {}!'.format(prj_name, version), None)
 
 def project_select_options(select_prj_name=None):
     options = []
@@ -274,7 +270,7 @@ def _ajax_op_tc(request, op_func):
         tc_name = form.cleaned_data['testcase_name']
         tc_platform = form.cleaned_data['testcase_platform']
         target_prj = Project.objects.filter(name=prj_name)
-        err_code, msg = op_func(prj_name, tc_name, tc_platform, target_prj)
+        err_code, msg, _ = op_func(prj_name, tc_name, tc_platform, target_prj)
         if err_code:
             return json_response(msg, err_code)
         else:
@@ -296,7 +292,7 @@ def _ajax_op_host(request, op_func):
         host_ip = form.cleaned_data['host_ip']
         host_mac = form.cleaned_data['host_mac']
         target_prj = Project.objects.filter(name=prj_name)
-        err_code, msg = op_func(prj_name, host_name, host_ip, host_mac, target_prj)
+        err_code, msg, _ = op_func(prj_name, host_name, host_ip, host_mac, target_prj)
         if err_code:
             return json_response(msg, err_code)
         else:
@@ -310,7 +306,7 @@ def ajax_add_host(request):
 def ajax_del_host(request):
     return _ajax_op_host(request, del_host)
     
-# Create special API here
+# Create auto API here, no CSRF
 @csrf_exempt
 def auto(request, action):
     global_vars = globals()
@@ -322,10 +318,33 @@ def auto(request, action):
         return json_response("Unknown auto action: {!r}!".format(action), -1)
     
 def auto_crash_info(request):
+    err_code = None
+    msg = None
     if request.method == 'POST':
         prj_name = request.POST.get('project_name', None)
-        print "Got Project {}!".format(prj_name)
-    return json_response("Create crash for Project {!r} done!".format(prj_name))
+        prj_owner = request.POST.get('project_owner', '')
+        build_version = request.POST.get('build_version', None)
+        path = request.POST.get('path', None)
+        host_name = request.POST.get('host_name', None)
+        host_ip = request.POST.get('host_ip', '')
+        host_mac = request.POST.get('host_mac', '')
+        tc_name = request.POST.get('testcase_name', None)
+        tc_platform = request.POST.get('testcase_platform', None)
+        if path and prj_name and prj_owner and build_version and host_name and tc_name and tc_platform:
+            err_code, msg, prj = add_project(prj_name, prj_owner)
+            if prj:
+                err_code, msg, build = add_build(prj_name, build_version, prj)
+                if build:
+                    err_code, msg, tc = add_testcase(prj_name, tc_name, tc_platform, prj)
+                    if tc:
+                        err_code, msg, host = add_host(prj_name, host_name, host_ip, host_mac, prj)
+                        if host:
+                            err_code, msg, crash = add_crash(prj_name, build_version, path, prj, build, host, tc)
+                            if crash:
+                                return json_response(msg, err_code)
+        else:
+            return json_response("Need necessary arguments when auto create crash!", -1)
+    return json_response(msg, err_code)
 
 # Create your views here.
 def home_page(request):
@@ -348,7 +367,7 @@ def project_page_post(request):
     get_method = request.POST.get('method', None)
     if get_method:
         if get_method == 'delete':
-            err_code, msg = del_project(request.POST['project_name'])
+            err_code, msg, _ = del_project(request.POST['project_name'])
             err_type = 'danger' if err_code else 'success'
             flash(request, {'type': err_type, 'msg': msg})
         else:
@@ -358,7 +377,7 @@ def project_page_post(request):
         if form.is_valid():
             prj_name = form.cleaned_data['project_name']
             prj_owner = form.cleaned_data['project_owner']
-            err_code, msg = add_project(prj_name, prj_owner)
+            err_code, msg, _ = add_project(prj_name, prj_owner)
             err_type = 'danger' if err_code else 'success'
             flash(request, {'type': err_type, 'msg': msg})
         else:
@@ -379,7 +398,7 @@ def build_page_post(request):
     if get_method:
         prj_name = request.POST.get('project_name', '')
         if get_method == 'delete':
-            err_code, msg = del_build(prj_name, request.POST['version'])
+            err_code, msg, _ = del_build(prj_name, request.POST['version'])
             err_type = 'danger' if err_code else 'success'
             flash(request, {'type': err_type, 'msg': msg})
         else:
@@ -389,7 +408,7 @@ def build_page_post(request):
         if form.is_valid():
             prj_name = form.cleaned_data['build_project_name']
             version = form.cleaned_data['build_version']
-            err_code, msg = add_build(prj_name, version, short_name=form.cleaned_data['build_name'],
+            err_code, msg, _ = add_build(prj_name, version, short_name=form.cleaned_data['build_name'],
                 server_path=form.cleaned_data['build_server_path'], crash_path=form.cleaned_data['build_crash_path'],
                 local_path=form.cleaned_data['build_local_path'], use_server=form.cleaned_data['build_use_server'])
             err_type = 'danger' if err_code else 'success'
@@ -434,7 +453,7 @@ def testdata_page_post(request):
     if form.is_valid():
         prj_name = form.cleaned_data['crash_project_name']
         version = form.cleaned_data['crash_build_version']
-        err_code, msg = add_crash(prj_name, version, form.cleaned_data['crash_path'],
+        err_code, msg, _ = add_crash(prj_name, version, form.cleaned_data['crash_path'],
             host_name=form.cleaned_data['crash_host_name'], testcase_name=form.cleaned_data['crash_testcase_name'],
             testcase_platform=form.cleaned_data['crash_testcase_platform'])
         err_type = 'danger' if err_code else 'success'
