@@ -269,12 +269,11 @@ def _ajax_op_tc(request, op_func):
         prj_name = form.cleaned_data['testcase_project_name']
         tc_name = form.cleaned_data['testcase_name']
         tc_platform = form.cleaned_data['testcase_platform']
-        target_prj = Project.objects.filter(name=prj_name)
-        err_code, msg, _ = op_func(prj_name, tc_name, tc_platform, target_prj)
+        err_code, msg, tc = op_func(prj_name, tc_name, tc_platform)
         if err_code:
             return json_response(msg, err_code)
         else:
-            return json_response(testcase_select_options(target_prj, tc_name, tc_platform))
+            return json_response(testcase_select_options(tc.project, tc_name, tc_platform))
     else:
         return json_response(form.errors, -1)
 
@@ -291,12 +290,11 @@ def _ajax_op_host(request, op_func):
         host_name = form.cleaned_data['host_name']
         host_ip = form.cleaned_data['host_ip']
         host_mac = form.cleaned_data['host_mac']
-        target_prj = Project.objects.filter(name=prj_name)
-        err_code, msg, _ = op_func(prj_name, host_name, host_ip, host_mac, target_prj)
+        err_code, msg, host = op_func(prj_name, host_name, host_ip, host_mac)
         if err_code:
             return json_response(msg, err_code)
         else:
-            return json_response(host_select_options(target_prj, host_name))
+            return json_response(host_select_options(host.project, host_name))
     else:
         return json_response(form.errors, -1)
 
