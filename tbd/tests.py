@@ -280,7 +280,7 @@ class TBDTestTestData(TC):
         testcase_form = AddTestCaseForm(initial={'testcase_project_name': prj1.name})
         form = {'crash':crash_form, 'host': host_form, 'testcase': testcase_form}
         host1.no = 1
-        host1.total_crash = 1
+        host1.total_dump = 1
         host1.valid_crash = 0
         host1.open_crash = 0
         page = {'list': [1], 'previous': 1, 'next': 1, 'cur': 1, 'items': [host1]}

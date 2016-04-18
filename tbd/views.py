@@ -439,6 +439,9 @@ def build_page_get(request):
             target_prj = target_prj[0]
             builds = Build.objects.filter(project=target_prj).order_by('-create')
             page_data = slice_page(builds, cur_page)
+            for item in page_data['items']:
+                crashes = Crash.objects.filter(build=item)
+                item.total_dump = len(crashes)
     return render(request, 'tbd/build.html', {'page': page_data, 'flash': flash(request), 
         'form': form, 'project': target_prj, 'projects': projects})
 
@@ -505,7 +508,7 @@ def testdata_page_get(request):
                         key_item = 'testcase'
                     for item in all_items:
                         crashes = Crash.objects.filter(build=target_build, **{key_item: item})
-                        item.total_crash = len(crashes)
+                        item.total_dump = len(crashes)
                         item.valid_crash = 0
                         item.open_crash = 0
                         for crash in crashes:

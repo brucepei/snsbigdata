@@ -37,6 +37,7 @@
                             <th>Version</th>
                             <th>ShortName</th>
                             <th>UseServer</th>
+                            <th>TotalDump</th>
                             <th>Create</th>
                             <th>Operation</th>
                         </tr>
@@ -48,6 +49,7 @@
                             <td>{{ blt.version }}</td>
                             <td>{{ blt.short_name }}</td>
                             <td>{{ blt.use_server }}</td>
+                            <td>{{ blt.total_dump }}</td>
                             <td>{{ blt.create }}</td>
                             <td>
                                 <a href="#" data-url="{% url 'tbd_build' %}" data-method="delete" data-project_name="{{project.name}}" data-version="{{blt.version}}"><span class="glyphicon glyphicon-remove" aria-hidden="true">del?</span></a>

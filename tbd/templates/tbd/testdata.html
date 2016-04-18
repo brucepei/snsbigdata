@@ -54,7 +54,7 @@
                         <tr>
                             <th>ID</th>
                             <th>{{ sort_by }}</th>
-                            <th>TotalCrash</th>
+                            <th>TotalDump</th>
                             <th>OpenCrash</th>
                             <th>ValidCrash</th>
                             <th>Operation</th>
@@ -65,7 +65,7 @@
                         <tr>
                             <td>{{ item.no }}</td>
                             <td>{{ item.name }}{% if sort_by == 'Host' %}({{ item.ip }}){% else %}({{ item.platform }}){% endif %}</td>
-                            <td>{{ item.total_crash }}</td>
+                            <td>{{ item.total_dump }}</td>
                             <td>{{ item.open_crash }}</td>
                             <td>{{ item.valid_crash }}</td>
                             <td>
