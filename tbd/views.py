@@ -167,7 +167,7 @@ def del_project(name):
         try:
             target_prj[0].delete()
         except Exception as err:
-            return (-1, "Delete Project {} failed: {}!".format(name, err))
+            return (-1, "Delete Project {} failed: {}!".format(name, err), None)
         return (0, "Delete Project {} successfully!".format(name), target_prj[0])
     else:
         return (1, 'Project {} is NOT existed, no necessary to delete!'.format(name), None)
