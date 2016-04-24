@@ -99,6 +99,9 @@ class JIRA(models.Model):
         
     def is_cnss(self):
         return self.category == self.CNSS
+    
+    def __unicode__(self):
+        return "JIRA {}".format(self.jira_id)
         
 class Crash(models.Model):
     path = models.CharField(unique=True, default='', max_length=255)
@@ -127,6 +130,7 @@ class Crash(models.Model):
         null = True
     )
     
-
+    def __unicode__(self):
+        return "Crash {}({})".format(self.host.name, self.path)
         
             
