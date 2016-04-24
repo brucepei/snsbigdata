@@ -253,6 +253,10 @@ def ajax(request, action):
     else:
         return json_response("Unknown ajax action: {!r}!".format(action), -1)
 
+def ajax_edit_running_prj(request):
+    print request.POST
+    return json_response('Not implement', -1)
+
 def ajax_get_builds(request):
     prj_name = request.POST.get('project_name', None)
     builds = None
@@ -346,7 +350,9 @@ def auto_crash_info(request):
 
 # Create your views here.
 def home_page(request):
-    return render(request, 'tbd/home.html')
+    cur_page = request.GET.get('page', 1)
+    page_data = slice_page(Project.objects.all().order_by('-create'), cur_page)
+    return render(request, 'tbd/home.html', {'page': page_data})
         
 def project_page(request):
     if request.method == 'POST':
@@ -355,7 +361,6 @@ def project_page(request):
         return project_page_get(request)
 
 def project_page_get(request):
-    prj_name = request.GET.get('project_name', '')
     cur_page = request.GET.get('page', 1)
     form = AddProjectForm()
     page_data = slice_page(Project.objects.all().order_by('-create'), cur_page)

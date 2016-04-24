@@ -4,8 +4,45 @@
 
 {% block content %}
     <div class="container">
-        <div class="page-header">
-            <h1>Hello, any question, please contact with <a href="mailto:lpei@qti.qualcomm.com">lpei</a>!</h1>
-        </div>
+        <table id="id_project_running_table" class="table table-hover">
+            <caption class="text-center">Project Running Information</caption>
+            <thead>
+                <td>ID</td>
+                <td>Name</td>
+                <td>OS type</td>
+                <td>OS verison</td>
+                <td>Board type</td>
+                <td>Chip MCN</td>
+            </thead>
+            <tbody>
+                {% for prj in page.items %}
+                <tr>
+                    <td>{{ prj.no }}</td>
+                    <td>{{ prj.name }}</td>
+                    <td>{{ prj.attr.os_type }}</td>
+                    <td>{{ prj.attr.os_ver }}</td>
+                    <td>{{ prj.attr.board_type }}</td>
+                    <td>{{ prj.attr.chip_mcn }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if page.list %}
+        <ul class="pagination">
+            <li>
+              <a href="{% url 'tbd_home' %}?page={{ page.previous }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            {% for p in page.list %}
+            <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_home' %}?page={{ p }}">{{ p }}</a></li>
+            {% endfor %}
+            <li>
+              <a href="{% url 'tbd_home' %}?page={{ page.next }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+        </ul>
+        {% endif %}
     </div>
 {% endblock %}

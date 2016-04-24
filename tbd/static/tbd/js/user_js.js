@@ -270,9 +270,30 @@ $('tr.build_head').click(function(){
     $(this).nextUntil('tr.build_head').toggleClass('hidden');
 });
 
+
+
 $(function(){
-    update_select_options($('select[name="td_host"]'), hosts);
-    update_select_options($('select[name="td_testcase"]'), testcases);
-    update_select_options($('select[name="td_project_name"]'), projects);
-    update_select_options($('select[name="td_build_version"]'), builds);
+    if (typeof hosts != 'undefined') {
+        update_select_options($('select[name="td_host"]'), hosts);
+    }
+    if (typeof testcases != 'undefined') {
+        update_select_options($('select[name="td_testcase"]'), testcases);
+    }
+    if (typeof projects != 'undefined') {
+        update_select_options($('select[name="td_project_name"]'), projects);
+    }
+    if (typeof builds != 'undefined') {
+        update_select_options($('select[name="td_build_version"]'), builds);
+    }
+    if ($('#id_project_running_table').length > 0) {
+        $('#id_project_running_table').Tabledit({
+            url: '/ajax/edit_running_prj',
+            columns: {
+                identifier: [0, 'id'],
+                editable: [[1, 'name'], [2, 'os_type', '{"1": "Win10", "2": "Win8.1", "3": "Win7"}'], [3, 'os_ver'], [4, 'board_type'], [5, 'chip_mcn']]
+            },
+            restoreButton: false
+        });
+        $('#id_project_running_table').append("<input class='tabledit-input' type='hidden' name='" + 'csrfmiddlewaretoken' + "' value='" + get_cookie('csrftoken') + "'/>")
+    }
 });
