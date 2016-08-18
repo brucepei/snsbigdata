@@ -2,12 +2,54 @@ from __future__ import unicode_literals
 from django.utils import timezone
 from django.db import models
 
+class AttrLookup(object):
+    def __init__(self, func, instance=None):
+        self._func = func
+        self._instance = instance
+
+    def __get__(self, instance, owner):
+        return AttrLookup(self._func, instance)
+
+    def __getitem__(self, argument):
+        return self._func(self._instance, argument)
+
+    def __call__(self, argument=None):
+        if argument is None:
+            return self
+        else:
+            return self._func(self._instance, argument)
+
 # Create your models here.
 class Project(models.Model):
     name = models.CharField(unique=True, default='', max_length=30)
     owner = models.CharField(unique=False, default='', max_length=30)
     create = models.DateTimeField(unique=False, auto_now_add=True)
+    _attr = models.TextField(unique=False, default='')
     
+    @AttrLookup
+    def attr(self,  name,  value=None):
+        print "!!!!!!!!!!! attr get {}".format(name)
+        attr_list = self._attr.split(';')
+        is_updated = False
+        for i,  k_v in enumerate(attr_list):
+            if k_v.startswith(name+'='):
+                if value is None:
+                    get_val = k_v[len(name)+1:]
+                    if get_val:
+                        return get_val
+                    else:
+                        attr_list[i] = ''
+                        is_updated = True
+                else:
+                    attr_list[i] = "{}={}".format(name,  value)
+                    is_updated = True
+        if (value is not None) and (not is_updated):
+            is_updated = True
+            attr_list.append('{}={}'.format(name,  value))
+        if is_updated:
+            self._attr = ';'.join(attr_list)
+        return ''
+
     def __unicode__(self):
         return "Project {}({})".format(self.name, self.owner)
 
