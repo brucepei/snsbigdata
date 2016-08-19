@@ -289,10 +289,21 @@ $(function(){
         $('#id_project_running_table').Tabledit({
             url: '/ajax/edit_running_prj',
             columns: {
-                identifier: [0, 'id'],
-                editable: [[1, 'name'], [2, 'os_type', '{"1": "Win10", "2": "Win8.1", "3": "Win7"}'], [3, 'os_ver'], [4, 'board_type'], [5, 'chip_mcn']]
+                identifier: [1, 'name'],
+                editable: [[2, 'running_build', '{}'], [3, 'total_devices']]
             },
-            restoreButton: false
+            restoreButton: false,
+            onSuccess: function (data, textStatus, jqXHR) {
+                console.log(data);
+                console.log(textStatus);
+                console.log(jqXHR);
+            },
+            onDraw: function () {
+                console.log("onDraw!");
+                $('#id_project_running_table tr').each(function() {
+                    $(this).find("td.tabledit-view-mode select").append($(this).find("td.hidden>select>option"));
+                });
+            }
         });
         $('#id_project_running_table').append("<input class='tabledit-input' type='hidden' name='" + 'csrfmiddlewaretoken' + "' value='" + get_cookie('csrftoken') + "'/>")
     }

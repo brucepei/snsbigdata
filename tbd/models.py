@@ -13,11 +13,11 @@ class AttrLookup(object):
     def __getitem__(self, argument):
         return self._func(self._instance, argument)
 
-    def __call__(self, argument=None):
-        if argument is None:
+    def __call__(self, *args):
+        if len(args) == 0:
             return self
         else:
-            return self._func(self._instance, argument)
+            return self._func(self._instance, *args)
 
 # Create your models here.
 class Project(models.Model):
@@ -28,7 +28,6 @@ class Project(models.Model):
     
     @AttrLookup
     def attr(self,  name,  value=None):
-        print "!!!!!!!!!!! attr get {}".format(name)
         attr_list = self._attr.split(';')
         is_updated = False
         for i,  k_v in enumerate(attr_list):
@@ -36,6 +35,7 @@ class Project(models.Model):
                 if value is None:
                     get_val = k_v[len(name)+1:]
                     if get_val:
+                        print "!!!!!!!!!!! attr get {}={}".format(name, get_val)
                         return get_val
                     else:
                         attr_list[i] = ''
@@ -48,6 +48,7 @@ class Project(models.Model):
             attr_list.append('{}={}'.format(name,  value))
         if is_updated:
             self._attr = ';'.join(attr_list)
+            print "!!!!!!!!!!! attr set {}={}, new _attr={}!".format(name, value, self._attr)
         return ''
 
     def __unicode__(self):

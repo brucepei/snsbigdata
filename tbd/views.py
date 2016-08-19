@@ -254,8 +254,34 @@ def ajax(request, action):
         return json_response("Unknown ajax action: {!r}!".format(action), -1)
 
 def ajax_edit_running_prj(request):
-    print request.POST
-    return json_response('Not implement', -1)
+    err_code = None
+    msg = None
+    if request.method == 'POST':
+        action = request.POST.get('action', None)
+        prj_name = request.POST.get('name', None)
+        running_build = request.POST.get('running_build', None)
+        total_device = request.POST.get('total_devices', 0)
+        target_prj = None
+        if prj_name and running_build:
+            target_prj = Project.objects.filter(name=prj_name)
+            if target_prj:
+                target_prj = target_prj[0]
+                build = Build.objects.filter(project=target_prj, version=running_build)
+                if build:
+                    print "Edit Project {} Build {}!".format(prj_name, running_build)
+                    target_prj.attr('running_build', running_build)
+                    err_code = 0
+                    msg = "Edit Project {} with runing build {}!".format(prj_name, running_build)
+                else:
+                    err_code = -1
+                    msg = "No build {} in Project {}!".format(running_build, prj_name)
+            else:
+                err_code = -1
+                msg = "Not found Project {}!".format(prj_name)
+        else:
+            err_code = -1
+            msg = "Not get Project {} or running build {} info!".format(prj_name, running_build)
+    return json_response(msg, err_code)
 
 def ajax_get_builds(request):
     prj_name = request.POST.get('project_name', None)
@@ -351,7 +377,8 @@ def auto_crash_info(request):
 # Create your views here.
 def home_page(request):
     cur_page = request.GET.get('page', 1)
-    page_data = slice_page(Project.objects.all().order_by('-create'), cur_page)
+    item_per_page = 20
+    page_data = slice_page(Project.objects.all().order_by('-create'), cur_page, item_per_page)
     return render(request, 'tbd/home.html', {'page': page_data})
         
 def project_page(request):

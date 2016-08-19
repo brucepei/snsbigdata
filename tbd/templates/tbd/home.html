@@ -9,9 +9,10 @@
             <thead>
                 <td>ID</td>
                 <td>Name</td>
-                <td>OS type</td>
-                <td>OS verison</td>
-                <td>Board type</td>
+                <td>Running Build</td>
+                <td>Total Device</td>
+                <td>Total hours</td>
+                <td>Crash</td>
                 <td>MTBF</td>
             </thead>
             <tbody>
@@ -19,10 +20,18 @@
                 <tr>
                     <td>{{ prj.no }}</td>
                     <td>{{ prj.name }}</td>
-                    <td>{{ prj.attr.os_type }}</td>
-                    <td>{{ prj.attr.os_ver }}</td>
-                    <td>{{ prj.attr.board_type }}</td>
-                    <td>{{ prj.attr.chip_mcn }}</td>
+                    <td>{{ prj.attr.running_build }}</td>
+                    <td>{{ prj.attr.total_devices }}</td>
+                    <td>{{ prj.attr.total_hours }}</td>
+                    <td>{{ prj.attr.crash_num }}</td>
+                    <td class="hidden">
+                        <select class="hidden" name="build_list" value>
+                            <option value>--no build--</option>
+                        {% for build in prj.build_set.all %}
+                            <option value="{{ build.version }}">{{ build.version }}</option>
+                        {% endfor %}
+                        </select>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
