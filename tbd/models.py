@@ -30,6 +30,8 @@ class Project(models.Model):
     def attr(self,  name,  value=None):
         attr_list = self._attr.split(';')
         is_updated = False
+        if value is not None:
+            value = str(value)
         for i,  k_v in enumerate(attr_list):
             if k_v.startswith(name+'='):
                 if value is None:
@@ -44,11 +46,13 @@ class Project(models.Model):
                     attr_list[i] = "{}={}".format(name,  value)
                     is_updated = True
         if (value is not None) and (not is_updated):
-            is_updated = True
-            attr_list.append('{}={}'.format(name,  value))
+            if len(value):
+                is_updated = True
+                attr_list.append('{}={}'.format(name,  value))
         if is_updated:
-            self._attr = ';'.join(attr_list)
+            self._attr = ';'.join([i for i in attr_list if i])
             print "!!!!!!!!!!! attr set {}={}, new _attr={}!".format(name, value, self._attr)
+            return value
         return ''
 
     def __unicode__(self):

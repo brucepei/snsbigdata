@@ -258,9 +258,11 @@ def ajax_edit_running_prj(request):
     msg = None
     if request.method == 'POST':
         action = request.POST.get('action', None)
+        if action != 'edit':
+            print "Not support action {}!".format(action)
         prj_name = request.POST.get('name', None)
         running_build = request.POST.get('running_build', None)
-        total_device = request.POST.get('total_devices', 0)
+        total_devices = request.POST.get('total_devices', 0)
         target_prj = None
         if prj_name and running_build:
             target_prj = Project.objects.filter(name=prj_name)
@@ -270,6 +272,8 @@ def ajax_edit_running_prj(request):
                 if build:
                     print "Edit Project {} Build {}!".format(prj_name, running_build)
                     target_prj.attr('running_build', running_build)
+                    target_prj.attr('total_devices',  total_devices)
+                    target_prj.save()
                     err_code = 0
                     msg = "Edit Project {} with runing build {}!".format(prj_name, running_build)
                 else:
