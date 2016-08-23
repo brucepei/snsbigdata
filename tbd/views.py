@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from tbd.models import Project, Build, Crash, TestCase, Host
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
+import time
 import json
 
 #internal func
@@ -253,29 +254,82 @@ def ajax(request, action):
     else:
         return json_response("Unknown ajax action: {!r}!".format(action), -1)
 
+def ajax_running_project_list(request):
+    cs_date = "/Date({})/".format(int(time.time() * 1000))
+    records = [
+        {'prj_name': 'TF1.1.5', 'running_build': 1, 'cs_date': cs_date, 'os_type': 1,'os_ver': '100432','board_type': 'NFA425','total_devices': 13, 'total_hours': 33, 'crash_num': 0, 'mtbf': 33},
+        {'prj_name': 'TF1.1.7', 'running_build': 2, 'cs_date': cs_date, 'os_type': 2,'os_ver': '100632','board_type': 'NFA435','total_devices': 10, 'total_hours': 32, 'crash_num': 1, 'mtbf': 32},
+        {'prj_name': 'TF2.1.5', 'running_build': 3, 'cs_date': cs_date, 'os_type': 3,'os_ver': '100532','board_type': 'NFA435A','total_devices': 11, 'total_hours': 31, 'crash_num': 2, 'mtbf': 15},
+        {'prj_name': 'TF2.0.5', 'running_build': 1, 'cs_date': cs_date, 'os_type': 0,'os_ver': '', 'board_type': 'NFA425A','total_devices': 13, 'total_hours': 30, 'crash_num': 3, 'mtbf': 10},
+    ]
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': 10})
+
+def ajax_running_project_update(request):
+    print request.POST
+    return JsonResponse({'Result': 'OK'})
+
+def ajax_running_project_list_builds(request):
+    print request.POST
+    options = []
+    if request.method == 'POST':
+        prj_name = request.POST.get('prj_name', None)
+        options = [
+            {
+               "DisplayText": prj_name + "_1.1.1",
+               "Value":"1"
+            },
+            {
+               "DisplayText": prj_name + "_1.1.2",
+               "Value":"2"
+            },
+            {
+               "DisplayText": prj_name + "_1.1.3",
+               "Value":"3"
+            }
+        ]
+    return JsonResponse({'Result': 'OK', 'Options': options})
+    
+def ajax_StudentList(request):
+    cs_date = "/Date({})/".format(int(time.time() * 1000))
+    records = [
+        {'StudentId': 1, 'Name': 'TF1.1.5',},
+        {'StudentId': 2, 'Name': 'TF2.2.5',},
+    ]
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': 10})
+
+def ajax_UpdateStudent(request):
+    print request.POST
+    return JsonResponse({'Result': 'OK'})
+
 def ajax_edit_running_prj(request):
     err_code = None
     msg = None
     if request.method == 'POST':
         action = request.POST.get('action', None)
+        print request.POST
         if action != 'edit':
             print "Not support action {}!".format(action)
         prj_name = request.POST.get('name', None)
         running_build = request.POST.get('running_build', None)
         total_devices = request.POST.get('total_devices', 0)
         target_prj = None
-        if prj_name and running_build:
+        if prj_name:
             target_prj = Project.objects.filter(name=prj_name)
             if target_prj:
                 target_prj = target_prj[0]
-                build = Build.objects.filter(project=target_prj, version=running_build)
-                if build:
-                    print "Edit Project {} Build {}!".format(prj_name, running_build)
-                    target_prj.attr('running_build', running_build)
-                    target_prj.attr('total_devices',  total_devices)
-                    target_prj.save()
+                build = None
+                if running_build:
+                    build = Build.objects.filter(project=target_prj, version=running_build)
+                if build or (not running_build):
+                    save1 = target_prj.attr('running_build', running_build) 
+                    save2 = target_prj.attr('total_devices',  total_devices)
+                    if save1 or save2:
+                        msg = "Change Project {} to runing_build={}, total_devices={}!".format(prj_name, running_build, total_devices)
+                        target_prj.save()
+                    else:
+                        msg = "Not change for Project {}".format(prj_name)
                     err_code = 0
-                    msg = "Edit Project {} with runing build {}!".format(prj_name, running_build)
+                    print msg
                 else:
                     err_code = -1
                     msg = "No build {} in Project {}!".format(running_build, prj_name)
@@ -284,7 +338,7 @@ def ajax_edit_running_prj(request):
                 msg = "Not found Project {}!".format(prj_name)
         else:
             err_code = -1
-            msg = "Not get Project {} or running build {} info!".format(prj_name, running_build)
+            msg = "Not get Project {} info!".format(prj_name)
     return json_response(msg, err_code)
 
 def ajax_get_builds(request):
@@ -380,10 +434,11 @@ def auto_crash_info(request):
 
 # Create your views here.
 def home_page(request):
-    cur_page = request.GET.get('page', 1)
-    item_per_page = 20
-    page_data = slice_page(Project.objects.all().order_by('-create'), cur_page, item_per_page)
-    return render(request, 'tbd/home.html', {'page': page_data})
+    #cur_page = request.GET.get('page', 1)
+    #item_per_page = 20
+    #page_data = slice_page(Project.objects.all().order_by('-create'), cur_page, item_per_page)
+    #return render(request, 'tbd/home.html', {'page': page_data})
+    return render(request, 'tbd/home.html')
         
 def project_page(request):
     if request.method == 'POST':

@@ -30,6 +30,7 @@ class Project(models.Model):
     def attr(self,  name,  value=None):
         attr_list = self._attr.split(';')
         is_updated = False
+        is_found = False
         if value is not None:
             value = str(value)
         for i,  k_v in enumerate(attr_list):
@@ -37,22 +38,29 @@ class Project(models.Model):
                 if value is None:
                     get_val = k_v[len(name)+1:]
                     if get_val:
-                        print "!!!!!!!!!!! attr get {}={}".format(name, get_val)
+                        print "!!!!!!!!!!! attr get {}={} in project {} attr={}!".format(name, get_val, self.name, self._attr)
                         return get_val
                     else:
                         attr_list[i] = ''
                         is_updated = True
                 else:
-                    attr_list[i] = "{}={}".format(name,  value)
-                    is_updated = True
-        if (value is not None) and (not is_updated):
+                    orig_val = k_v[len(name)+1:]
+                    is_found = True
+                    if orig_val != value:
+                        attr_list[i] = "{}={}".format(name,  value)
+                        is_updated = True
+                break
+        if (value is not None) and (not is_found):
             if len(value):
                 is_updated = True
                 attr_list.append('{}={}'.format(name,  value))
         if is_updated:
             self._attr = ';'.join([i for i in attr_list if i])
-            print "!!!!!!!!!!! attr set {}={}, new _attr={}!".format(name, value, self._attr)
-            return value
+            print "!!!!!!!!!!! attr set {}={}, new _attr={} in project {}!".format(name, value, self._attr, self.name)
+            if value is None:
+                self.save()
+                return ''
+            return True
         return ''
 
     def __unicode__(self):

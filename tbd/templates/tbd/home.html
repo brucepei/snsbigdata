@@ -4,6 +4,9 @@
 
 {% block content %}
     <div class="container">
+        <div id="StudentTableContainer"></div>
+        <div id="RunningProjectContainer"></div>
+        <!--
         <table id="id_project_running_table" class="table table-hover">
             <caption class="text-center">Project Running Information</caption>
             <thead>
@@ -25,10 +28,14 @@
                     <td>{{ prj.attr.total_hours }}</td>
                     <td>{{ prj.attr.crash_num }}</td>
                     <td class="hidden">
-                        <select class="hidden" name="build_list" value>
+                        <select class="hidden" name="build_list" value="{{ prj.attr.running_build }}">
                             <option value>--no build--</option>
                         {% for build in prj.build_set.all %}
+                            {% if prj.attr.running_build == build.version %}
+                            <option value="{{ build.version }}" selected>{{ build.version }}</option>
+                            {% else %}
                             <option value="{{ build.version }}">{{ build.version }}</option>
+                            {% endif %}
                         {% endfor %}
                         </select>
                     </td>
@@ -53,5 +60,142 @@
             </li>
         </ul>
         {% endif %}
+        -->
     </div>
+{% endblock %}
+{% block user_js %}
+<script type="text/javascript">
+    var cachedBuildOptions = {};
+    $(function(){
+        $('#StudentTableContainer').jtable({
+            title: 'The Student List',
+            paging: true, //Enable paging
+            pageSize: 10, //Set page size (default: 10)
+            sorting: true, //Enable sorting
+            defaultSorting: 'Name ASC', //Set default sorting
+            actions: {
+                listAction: '/ajax/StudentList',
+                //deleteAction: '/Demo/DeleteStudent',
+                updateAction: '/ajax/UpdateStudent',
+                //createAction: '/Demo/CreateStudent'
+            },
+            fields: {
+                StudentId: {
+                    key: true,
+                    create: false,
+                    edit: false,
+                    list: false
+                },
+                Name: {
+                    title: 'Name',
+                    width: '23%'
+                }
+            }
+        });
+ 
+        //Load student list from server
+        $('#StudentTableContainer').jtable('load');
+        
+        
+        
+        $('#RunningProjectContainer').jtable({
+            title: 'Project Running Information',
+            ajaxSettings: {
+                beforeSend: function(xhr, settings){
+                    xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
+                }
+            },
+            paging: true,
+            pageSize: 20,
+            selecting: false,
+            actions: {
+                listAction: '/ajax/running_project_list',
+                //createAction: '/ajax/CreatePerson',
+                updateAction: '/ajax/running_project_update',
+                //deleteAction: '/ajax/DeletePerson'
+            },
+            fields: {
+                prj_name: {
+                    key: true,
+                    title: 'Project',
+                    width: '10%',
+                    edit: false
+                },
+                running_build: {
+                    title: 'Build',
+                    width: '30%',
+                    options: function (data) {
+                        console.log(data);
+                        if ('prj_name' in data.record) {
+                            if (data.record.prj_name in cachedBuildOptions) {
+                                console.log("return cached build for project " + data.record.prj_name + "!");
+                                return cachedBuildOptions[data.record.prj_name];
+                            }
+                        }
+                        else {
+                            console.log("%Error%: not found project name when request build list!");
+                            return [];
+                        }
+                        var options = [];
+                        $.ajax({
+                            url: '/ajax/running_project_list_builds',
+                            type: 'POST',
+                            dataType: 'json',
+                            data: {'prj_name': data.record.prj_name},
+                            async: false,
+                            beforeSend: function(xhr, settings){
+                                xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
+                            },
+                            success: function (data) {
+                                if (data.Result != 'OK') {
+                                    alert(data.Message);
+                                    return;
+                                }
+                                console.log(data);
+                                options = data.Options;
+                            }
+                        });
+                        return cachedBuildOptions[data.record.prj_name] = options; //Cache results and return options
+                    }
+                },
+                cs_date: {
+                    title: 'CS',
+                    width: '10%',
+                    type: 'date',
+                    displayFormat: 'yy/mm/dd',
+                },
+                os_type: {
+                    title: 'OS_Type',
+                    width: '10%',
+                    options: { '1': 'Win10 RS', '2': 'Win10 TH2', '3': 'Win7', '4': 'LE', '5': 'LA' }
+                },
+                os_ver: {
+                    title: 'OS_Ver',
+                    width: '10%'
+                },
+                board_type: {
+                    title: 'Board',
+                    width: '10%'
+                },
+                total_devices: {
+                    title: 'Devices',
+                    width: '5%'
+                },
+                total_hours: {
+                    title: 'Hours',
+                    width: '5%'
+                },
+                crash_num: {
+                    title: 'Crash',
+                    width: '5%'
+                },
+                mtbf: {
+                    title: 'MTBF',
+                    width: '5%'
+                }
+            }
+        });
+        $('#RunningProjectContainer').jtable('load', {});
+    });
+</script>
 {% endblock %}

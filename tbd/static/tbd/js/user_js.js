@@ -301,7 +301,9 @@ $(function(){
             onDraw: function () {
                 console.log("onDraw!");
                 $('#id_project_running_table tr').each(function() {
-                    $(this).find("td.tabledit-view-mode select").append($(this).find("td.hidden>select>option"));
+                    var $tableedit_select = $(this).find("td.tabledit-view-mode select");
+                    $tableedit_select.append($(this).find("td.hidden>select>option"));
+                    
                 });
             }
         });

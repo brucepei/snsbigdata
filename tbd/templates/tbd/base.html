@@ -7,6 +7,8 @@
         <title>{% block title %}No title{% endblock %}</title>
         <link href="/static/css/bootstrap.min.css" rel="stylesheet">
         <link href="/static/css/bootstrap-select.min.css" rel="stylesheet">
+        <link href="/static/css/jquery-ui.min.css" rel="stylesheet">
+        <link href="/static/css/jtable/themes/lightcolor/gray/jtable.min.css" rel="stylesheet"/>
         <link href="/static/tbd/css/user_style.css" rel="stylesheet">
         {% block user_style %}{% endblock %}
         <link rel="shortcut icon" href="/static/images/favicon.ico" type="image/x-icon" />
@@ -41,11 +43,14 @@
         </div>
         {% block content %}{% endblock %}
         <script src="/static/js/jquery-1.11.3.min.js"></script>
+        <script src="/static/js/jquery-ui.min.js"></script>
         <script src="/static/js/bootstrap.min.js"></script>
         <script src="/static/js/bootstrap-select.min.js"></script>
         <script src="/static/js/jquery.bootstrap.min.js"></script>
         <script src="/static/js/jquery.tabledit.min.js"></script>
+        <script src="/static/js/jquery.jtable.js"></script>
         <script src="/static/tbd/js/user_js.js"></script>
+        
         {% block user_js %}{% endblock %}
     </body>
 </html>
