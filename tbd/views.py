@@ -255,52 +255,65 @@ def ajax(request, action):
         return json_response("Unknown ajax action: {!r}!".format(action), -1)
 
 def ajax_running_project_list(request):
+    print "request list:" + repr(request)
     cs_date = "/Date({})/".format(int(time.time() * 1000))
-    records = [
-        {'prj_name': 'TF1.1.5', 'running_build': 1, 'cs_date': cs_date, 'os_type': 1,'os_ver': '100432','board_type': 'NFA425','total_devices': 13, 'total_hours': 33, 'crash_num': 0, 'mtbf': 33},
-        {'prj_name': 'TF1.1.7', 'running_build': 2, 'cs_date': cs_date, 'os_type': 2,'os_ver': '100632','board_type': 'NFA435','total_devices': 10, 'total_hours': 32, 'crash_num': 1, 'mtbf': 32},
-        {'prj_name': 'TF2.1.5', 'running_build': 3, 'cs_date': cs_date, 'os_type': 3,'os_ver': '100532','board_type': 'NFA435A','total_devices': 11, 'total_hours': 31, 'crash_num': 2, 'mtbf': 15},
-        {'prj_name': 'TF2.0.5', 'running_build': 1, 'cs_date': cs_date, 'os_type': 0,'os_ver': '', 'board_type': 'NFA425A','total_devices': 13, 'total_hours': 30, 'crash_num': 3, 'mtbf': 10},
-    ]
-    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': 10})
+    projects = Project.objects.all().order_by('-create')
+    records = []
+    for prj in projects:
+        record = {'prj_id': prj.id,
+                  'prj_name': prj.name,
+                  'running_build': prj.attr('running_build'),
+                  'cs_date': prj.attr('cs_date'),
+                  'os_type': prj.attr('os_type'),
+                  'os_ver': prj.attr('os_ver'),
+                  'board_type': prj.attr('board_type'),
+                  'total_devices': prj.attr('total_devices'),
+                  'total_hours': prj.attr('total_hours'),
+                  'crash_num': prj.attr('crash_num'),
+                  'mtbf': prj.attr('mtbf')
+        }
+        records.append(record)
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': len(records)})
 
 def ajax_running_project_update(request):
     print request.POST
+    if request.method == 'POST':
+        prj_id = request.POST.get('prj_id', None)
+        prj_name = request.POST.get('prj_name', None)
+        if prj_id:
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                if target_prj:
+                    if prj_name != target_prj.name:
+                        target_prj.name = prj_name
+                    for attr in ('running_build', 'cs_date', 'os_type', 'os_ver', 'board_type',
+                                 'total_devices', 'total_hours', 'crash_num', 'mtbf'):
+                        attr_val = request.POST.get(attr, None)
+                        if attr_val is not None:
+                            if attr == 'cs_date':
+                                print attr_val
+                                continue
+                            target_prj.attr(attr, attr_val)
+                    target_prj.save()
     return JsonResponse({'Result': 'OK'})
 
 def ajax_running_project_list_builds(request):
     print request.POST
     options = []
     if request.method == 'POST':
-        prj_name = request.POST.get('prj_name', None)
-        options = [
-            {
-               "DisplayText": prj_name + "_1.1.1",
-               "Value":"1"
-            },
-            {
-               "DisplayText": prj_name + "_1.1.2",
-               "Value":"2"
-            },
-            {
-               "DisplayText": prj_name + "_1.1.3",
-               "Value":"3"
-            }
-        ]
+        prj_id = request.POST.get('prj_id', None)
+        if prj_id:
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                for bld in Build.objects.filter(project=target_prj).order_by('-create'):
+                    options.append({
+                        "DisplayText": bld.short_name,
+                        "Value": bld.version
+                    })
     return JsonResponse({'Result': 'OK', 'Options': options})
     
-def ajax_StudentList(request):
-    cs_date = "/Date({})/".format(int(time.time() * 1000))
-    records = [
-        {'StudentId': 1, 'Name': 'TF1.1.5',},
-        {'StudentId': 2, 'Name': 'TF2.2.5',},
-    ]
-    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': 10})
-
-def ajax_UpdateStudent(request):
-    print request.POST
-    return JsonResponse({'Result': 'OK'})
-
 def ajax_edit_running_prj(request):
     err_code = None
     msg = None
