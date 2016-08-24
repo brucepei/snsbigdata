@@ -23,13 +23,14 @@
                             <select name="project_name" class="selectpicker">
                                 <option>--select project--</option>
                                 {% for prj in projects %}
-                                    <option value="{{prj.name}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>
+                                    <option value="{{prj.id}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>
                                 {% endfor %}
                             </select>
                         </h4>
                     </div>
                 </div>
-                <table id="id_build_table" class="table table-hover" contenteditable="false">
+                <div id="BuildContainer"></div>
+                <!--<table id="id_build_table" class="table table-hover" contenteditable="false">
                     <caption class="text-center">Build List</caption>
                     <thead>
                         <tr>
@@ -107,8 +108,84 @@
                             </table>
                         </fieldset>
                     </form>
-                </div>
+                </div>-->
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block user_js %}
+<script type="text/javascript">
+    var cachedBuildOptions = {};
+    $(function(){
+        $('#BuildContainer').jtable({
+            title: 'Build List',
+            ajaxSettings: {
+                beforeSend: function(xhr, settings){
+                    xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
+                }
+            },
+            paging: true,
+            pageSize: 20,
+            selecting: false,
+            actions: {
+                listAction: '/ajax/build_list',
+                createAction: '/ajax/build_create?prj_id={% if project %}{{ project.id }}{% endif %}',
+                updateAction: '/ajax/build_update',
+                deleteAction: '/ajax/build_delete'
+            },
+            fields: {
+                build_id: {
+                    key: true,
+                    list: false
+                },
+                build_version: {
+                    title: 'Build Version',
+                    width: '40%'
+                },
+                build_name: {
+                    title: 'Build Name',
+                    width: '20%'
+                },
+                crash_num: {
+                    title: 'Total Crash',
+                    width: '15%',
+                    display: function(data) {
+                        console.log(data);
+                        if ('crash_num' in data.record) {
+                            crash_num = data.record.crash_num;
+                            build_id = data.record.build_id;
+                            return '<a href="{% url "tbd_testdata" %}?build_id=' + build_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + ' crashes</span></a>';
+                        }
+                        return 0;
+                    },
+                    create: false
+                },
+                build_server_path: {
+                    title: 'Build Server Path',
+                    list: false
+                },
+                build_use_server: {
+                    title: 'Upgrade by Server Path',
+                    list: false
+                },
+                build_local_path: {
+                    title: 'Build Local Path',
+                    list: false
+                },
+                build_crash_path: {
+                    title: 'Upload Crash Path',
+                    list: false
+                },
+                create_time: {
+                    title: 'Create Time',
+                    width: '25%',
+                    create: false,
+                    edit: false
+                }
+            }
+        });
+        $('#BuildContainer').jtable('load', {'prj_id': {% if project %}{{ project.id }}{% else %}null{% endif %}});
+    });
+</script>
 {% endblock %}

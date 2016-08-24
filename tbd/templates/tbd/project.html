@@ -7,69 +7,6 @@
         <div class="row">
             <div class="col-md-12">
                 <div id="ProjectContainer"></div>
-<!--                <table id="id_project_table" class="table table-striped table-hover" contenteditable="false">
-                    <caption class="text-center">Project List</caption>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Owner</th>
-                            <th>Builds</th>
-                            <th>CreateTime</th>
-                            <th>Operation</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for prj in page.items %}
-                        <tr>
-                            <td>{{ prj.no }}</td>
-                            <td>{{ prj.name }}</td>
-                            <td>{{ prj.owner }}</td>
-                            <td>{{ prj.build_set.all | length }}</td>
-                            <td>{{ prj.create }}</td>
-                            <td>
-                                <a href="#" data-url="{% url 'tbd_project' %}" data-method="delete" data-project_name="{{prj.name}}"><span class="glyphicon glyphicon-remove" aria-hidden="true">del?</span></a>
-                                <a href="{% url 'tbd_build' %}?project_name={{prj.name|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true">build</span></a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% if page.list %}
-                <ul class="pagination">
-                    <li>
-                      <a href="{% url 'tbd_project' %}?page={{ page.previous }}" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                      </a>
-                    </li>
-                    {% for p in page.list %}
-                    <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_project' %}?page={{ p }}">{{ p }}</a></li>
-                    {% endfor %}
-                    <li>
-                      <a href="{% url 'tbd_project' %}?page={{ page.next }}" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                      </a>
-                    </li>
-                </ul>
-                {% endif %}
-                {% if flash %}
-                <div class="alert alert-{{ flash.type }}"  role="alert">
-                    <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
-                </div>
-                {% endif %}
-                <form action="{% url 'tbd_project' %}" method="post">
-                    <fieldset>
-                        <legend contenteditable="false">Add Project</legend>
-                        <table>
-                            {% csrf_token %}
-                            {{ form }}
-                            <tr>
-                                <td><button class="btn" type="reset" contenteditable="false">Reset</button></td>
-                                <td><button class="btn" name="add" type="submit" contenteditable="false">Submit</button></td>
-                            </tr>
-                        </table>
-                    </fieldset>
-                </form>-->
             </div>
         </div>
     </div>
@@ -92,7 +29,7 @@
             actions: {
                 listAction: '/ajax/project_list',
                 createAction: '/ajax/project_create',
-                //updateAction: '/ajax/running_project_update',
+                //updateAction: '/ajax/project_update',
                 deleteAction: '/ajax/project_delete'
             },
             fields: {
@@ -116,7 +53,7 @@
                         if ('build_num' in data.record) {
                             build_num = data.record.build_num;
                             prj_id = data.record.prj_id;
-                            return '<a href="{% url "tbd_build" %}?project_id=' + prj_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + build_num + ' builds</span></a>';
+                            return '<a href="{% url "tbd_build" %}?prj_id=' + prj_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + build_num + ' builds</span></a>';
                         }
                         return 0;
                     },

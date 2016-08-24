@@ -256,25 +256,28 @@ def ajax(request, action):
 
 def ajax_running_project_list(request):
     print "request list:" + repr(request)
-    projects = Project.objects.all().order_by('-create')
     records = []
-    for prj in projects:
-        record = {'prj_id': prj.id,
-                  'prj_name': prj.name,
-                  'prj_owner': prj.owner,
-                  'running_build': prj.attr('running_build'),
-                  'os_type': prj.attr('os_type'),
-                  'os_ver': prj.attr('os_ver'),
-                  'board_type': prj.attr('board_type'),
-                  'total_devices': prj.attr('total_devices'),
-                  'total_hours': prj.attr('total_hours'),
-                  'crash_num': prj.attr('crash_num'),
-                  'mtbf': prj.attr('mtbf'),
-                  'cs_date': prj.attr('cs_date'),
-                  'last_update': prj.last_update,
-        }
-        records.append(record)
-    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': len(records)})
+    if request.method == 'POST':
+        start_index = int(request.GET.get('jtStartIndex', 0))
+        page_size = int(request.GET.get('jtPageSize', 20))
+        projects = Project.objects.all().order_by('-create')[start_index: page_size+start_index]
+        for prj in projects:
+            record = {'prj_id': prj.id,
+                      'prj_name': prj.name,
+                      'prj_owner': prj.owner,
+                      'running_build': prj.attr('running_build'),
+                      'os_type': prj.attr('os_type'),
+                      'os_ver': prj.attr('os_ver'),
+                      'board_type': prj.attr('board_type'),
+                      'total_devices': prj.attr('total_devices'),
+                      'total_hours': prj.attr('total_hours'),
+                      'crash_num': prj.attr('crash_num'),
+                      'mtbf': prj.attr('mtbf'),
+                      'cs_date': prj.attr('cs_date'),
+                      'last_update': prj.last_update,
+            }
+            records.append(record)
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.count()})
 
 def ajax_running_project_update(request):
     print request.POST
@@ -327,18 +330,21 @@ def ajax_running_project_list_builds(request):
     return JsonResponse({'Result': 'OK', 'Options': options})
     
 def ajax_project_list(request):
-    print "request project list:" + repr(request.POST)
-    projects = Project.objects.all().order_by('-create')
+    print "request project list:" + repr(request)
     records = []
-    for prj in projects:
-        record = {'prj_id': prj.id,
-                  'prj_name': prj.name,
-                  'prj_owner': prj.owner,
-                  'build_num': Build.objects.filter(project=prj).count(),
-                  'create_time': prj.create,
-        }
-        records.append(record)
-    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': len(records)})
+    if request.method == 'POST':
+        start_index = int(request.GET.get('jtStartIndex', 0))
+        page_size = int(request.GET.get('jtPageSize', 20))
+        projects = Project.objects.all().order_by('-create')[start_index: page_size+start_index]
+        for prj in projects:
+            records.append({
+                'prj_id': prj.id,
+                'prj_name': prj.name,
+                'prj_owner': prj.owner,
+                'build_num': Build.objects.filter(project=prj).count(),
+                'create_time': prj.create,
+            })
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.count()})
 
 def ajax_project_delete(request):
     print "request project delete:" + repr(request.POST)
@@ -382,6 +388,85 @@ def ajax_project_create(request):
                 message = "Save Project {} failed: {}!".format(name, err)
         else:
             message = 'Project {} has already existed!'.format(name)
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK', "Record": record})
+    
+def ajax_build_list(request):
+    print "request build list:" + repr(request)
+    records = []
+    total_count = 0
+    if request.method == 'POST':
+        prj_id = request.POST.get('prj_id', None)
+        if prj_id:
+            start_index = int(request.GET.get('jtStartIndex', 0))
+            page_size = int(request.GET.get('jtPageSize', 20))
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                total_count = Build.objects.filter(project=target_prj).count()
+                for bld in Build.objects.filter(project=target_prj).order_by('-create')[start_index: page_size+start_index]:
+                    records.append({
+                        'build_id': bld.id,
+                        'build_version': bld.version,
+                        'build_name': bld.short_name,
+                        'build_server_path': bld.server_path,
+                        'build_local_path': bld.local_path,
+                        'build_crash_path': bld.crash_path,
+                        'build_use_server': bld.use_server,
+                        'crash_num': Crash.objects.filter(build=bld).count(),
+                        'create_time': bld.create,
+                    })
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
+    
+def ajax_build_create(request):
+    print "request build create:" + repr(request.POST)
+    message = None
+    record = None
+    if request.method == 'POST':
+        prj_id = request.GET.get('prj_id', None)
+        if prj_id:
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                build_version = request.POST.get('build_version', None)
+                if build_version:
+                    target_build = Build.objects.filter(project=target_prj, version=build_version)
+                    if not target_build:
+                        try:
+                            target_build = Build.objects.create(
+                                project=target_prj,
+                                version=build_version,
+                                short_name=request.POST.get('build_name', build_version),
+                                server_path=request.POST.get('build_server_path', None),
+                                local_path=request.POST.get('build_local_path', None),
+                                crash_path=request.POST.get('build_crash_path', None),
+                                use_server=request.POST.get('build_use_server', False),
+                            )
+                            record = {
+                                'build_id': target_build.id,
+                                'build_version': target_build.version,
+                                'build_name': target_build.short_name,
+                                'build_server_path': target_build.server_path,
+                                'build_local_path': target_build.local_path,
+                                'build_crash_path': target_build.crash_path,
+                                'build_use_server': target_build.use_server,
+                                'crash_num': 0,
+                                'create_time': target_build.create,
+                            }
+                        except Exception as err:
+                            message = "Save Build {} in Project {} failed: {}!".format(build_version, target_prj.name, err)
+                    else:
+                        message = 'Build {} has already existed!'.format(build_version)
+                else:
+                    message = 'Lack necessary arguement: build version!'
+            else:
+                message = 'Project id {} does NOT existed!'.format(prj_id)
+        else:
+            message = 'Lack necessary arguement: project id!'
     else:
         message = "Incorrect request method: {}, only support POST now!".format(request.method)
     if message:
@@ -489,10 +574,11 @@ def home_page(request):
     return render(request, 'tbd/home.html')
         
 def project_page(request):
-    if request.method == 'POST':
-        return project_page_post(request)
-    else:
-        return project_page_get(request)
+    #if request.method == 'POST':
+    #    return project_page_post(request)
+    #else:
+    #    return project_page_get(request)
+    return render(request, 'tbd/project.html')
 
 def project_page_get(request):
     cur_page = request.GET.get('page', 1)
@@ -525,10 +611,18 @@ def project_page_post(request):
     return redirect('tbd_project')
 
 def build_page(request):
-    if request.method == 'POST':
-        return build_page_post(request)
-    else:
-        return build_page_get(request)
+    #if request.method == 'POST':
+    #    return build_page_post(request)
+    #else:
+    #    return build_page_get(request)
+    prj_id = request.GET.get('prj_id', '')
+    projects = Project.objects.all()
+    target_prj = None
+    if prj_id:
+        target_prj = Project.objects.filter(id=prj_id)
+        if target_prj:
+            target_prj = target_prj[0]
+    return render(request, 'tbd/build.html', {'project': target_prj, 'projects': projects})
 
 def build_page_post(request):
     get_method = request.POST.get('method', None)
