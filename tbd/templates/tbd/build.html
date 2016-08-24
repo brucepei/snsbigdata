@@ -30,85 +30,6 @@
                     </div>
                 </div>
                 <div id="BuildContainer"></div>
-                <!--<table id="id_build_table" class="table table-hover" contenteditable="false">
-                    <caption class="text-center">Build List</caption>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Version</th>
-                            <th>ShortName</th>
-                            <th>UseServer</th>
-                            <th>TotalDump</th>
-                            <th>Create</th>
-                            <th>Operation</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for blt in page.items %}
-                        <tr class="build_head{% cycle ' striped' '' %}">
-                            <td>{{ blt.no }}</td>
-                            <td>{{ blt.version }}</td>
-                            <td>{{ blt.short_name }}</td>
-                            <td>{{ blt.use_server }}</td>
-                            <td>{{ blt.total_dump }}</td>
-                            <td>{{ blt.create }}</td>
-                            <td>
-                                <a href="#" data-url="{% url 'tbd_build' %}" data-method="delete" data-project_name="{{project.name}}" data-version="{{blt.version}}"><span class="glyphicon glyphicon-remove" aria-hidden="true">del?</span></a>
-                                <a href="{% url 'tbd_testdata' %}?project_name={{project.name|iriencode}}&version={{blt.version|iriencode}}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true">TestData</span></a>
-                            </td>
-                        </tr>
-                        <tr class="hidden info">
-                            <td colspan="2">Server Installer Path:</td>
-                            <td colspan="8" contenteditable="true">{{ blt.server_path }}</td>
-                        </tr>
-                        <tr class="hidden info">
-                            <td colspan="2">Crash Path:</td>
-                            <td colspan="8" contenteditable="true">{{ blt.crash_path }}</td>
-                        </tr>
-                        <tr class="hidden info">
-                            <td colspan="2">Local Installer Path:</td>
-                            <td colspan="8" contenteditable="true">{{ blt.local_path }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% if page.list %}
-                <ul class="pagination">
-                    <li>
-                      <a href="{% url 'tbd_build' %}?project_name={{ project.name }}&page={{ page.previous }}" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                      </a>
-                    </li>
-                    {% for p in page.list %}
-                    <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_build' %}?project_name={{ project.name }}&page={{ p }}">{{ p }}</a></li>
-                    {% endfor %}
-                    <li>
-                      <a href="{% url 'tbd_build' %}?project_name={{ project.name }}&page={{ page.next }}" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                      </a>
-                    </li>
-                </ul>
-                {% endif %}
-                {% if flash %}
-                <div class="alert alert-{{ flash.type }}"  role="alert">
-                    <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
-                </div>
-                {% endif %}
-                <div>
-                    <form action="{% url 'tbd_build' %}" method="post">
-                        <fieldset>
-                            <legend contenteditable="false">Add Build</legend>
-                            <table>
-                                {% csrf_token %}
-                                {{ form }}
-                                <tr>
-                                    <td><button class="btn" type="reset" contenteditable="false">Reset</button></td>
-                                    <td><button class="btn" name="add" type="submit" contenteditable="false">Submit</button></td>
-                                </tr>
-                            </table>
-                        </fieldset>
-                    </form>
-                </div>-->
             </div>
         </div>
     </div>
@@ -116,7 +37,6 @@
 
 {% block user_js %}
 <script type="text/javascript">
-    var cachedBuildOptions = {};
     $(function(){
         $('#BuildContainer').jtable({
             title: 'Build List',
@@ -143,7 +63,7 @@
                     title: 'Build Version',
                     width: '40%'
                 },
-                build_name: {
+                build_short_name: {
                     title: 'Build Name',
                     width: '20%'
                 },
@@ -159,7 +79,8 @@
                         }
                         return 0;
                     },
-                    create: false
+                    create: false,
+                    edit: false
                 },
                 build_server_path: {
                     title: 'Build Server Path',
@@ -167,7 +88,9 @@
                 },
                 build_use_server: {
                     title: 'Upgrade by Server Path',
-                    list: false
+                    list: false,
+                    type: 'radiobutton',
+                    options: ['True', 'False']
                 },
                 build_local_path: {
                     title: 'Build Local Path',

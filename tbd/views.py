@@ -412,11 +412,11 @@ def ajax_build_list(request):
                     records.append({
                         'build_id': bld.id,
                         'build_version': bld.version,
-                        'build_name': bld.short_name,
+                        'build_short_name': bld.short_name,
                         'build_server_path': bld.server_path,
                         'build_local_path': bld.local_path,
                         'build_crash_path': bld.crash_path,
-                        'build_use_server': bld.use_server,
+                        'build_use_server': 'True' if bld.use_server else 'False',
                         'crash_num': Crash.objects.filter(build=bld).count(),
                         'create_time': bld.create,
                     })
@@ -436,20 +436,21 @@ def ajax_build_create(request):
                 if build_version:
                     target_build = Build.objects.filter(project=target_prj, version=build_version)
                     if not target_build:
+                        use_server = True if request.POST.get('build_use_server', 'False').lower() == 'true' else False,
                         try:
                             target_build = Build.objects.create(
                                 project=target_prj,
                                 version=build_version,
-                                short_name=request.POST.get('build_name', build_version),
+                                short_name=request.POST.get('build_short_name', build_version),
                                 server_path=request.POST.get('build_server_path', None),
                                 local_path=request.POST.get('build_local_path', None),
                                 crash_path=request.POST.get('build_crash_path', None),
-                                use_server=request.POST.get('build_use_server', False),
+                                use_server=use_server,
                             )
                             record = {
                                 'build_id': target_build.id,
                                 'build_version': target_build.version,
-                                'build_name': target_build.short_name,
+                                'build_short_name': target_build.short_name,
                                 'build_server_path': target_build.server_path,
                                 'build_local_path': target_build.local_path,
                                 'build_crash_path': target_build.crash_path,
@@ -473,7 +474,72 @@ def ajax_build_create(request):
         return JsonResponse({'Result': 'ERROR', 'Message': message})
     else:
         return JsonResponse({'Result': 'OK', "Record": record})
-    
+
+def ajax_build_update(request):
+    print "request build update:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        build_id = request.POST.get('build_id', None)
+        if build_id:
+            target_build = Build.objects.filter(id=build_id)
+            if target_build:
+                target_build = target_build[0]
+                is_set = False
+                for attr in ('build_server_path', 'build_local_path', 'build_crash_path',
+                             'build_use_server', 'build_short_name', 'build_version'):
+                    attr_val = request.POST.get(attr, None)
+                    if attr_val is not None:
+                        if attr == 'build_use_server':
+                            attr_val = True if attr_val.lower() == 'true' else False
+                        attr_name = attr[6:]
+                        orig_val = getattr(target_build, attr_name, None)
+                        if orig_val != attr_val:
+                            setattr(target_build, attr_name, attr_val)
+                            is_set = True
+                if is_set:
+                    try:
+                        target_build.save()
+                    except Exception as err:
+                        message = "Save Build {} in Project {} failed: {}!".format(build_version, target_prj.name, err)
+                    print "Change build, save {}!".format(target_build.version)
+                else:
+                    print "Not change build, don't save!"
+            else:
+                message = 'Build id {} does NOT existed!'.format(build_id)
+        else:
+            message = 'Lack necessary arguement: build id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
+
+def ajax_build_delete(request):
+    print "request build delete:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        build_id = request.POST.get('build_id', None)
+        if build_id:
+            target_build = Build.objects.filter(id=build_id)
+            if target_build:
+                target_build = target_build[0]
+                try:
+                    target_build.delete()
+                except Exception as err:
+                    message = "Delete Build {} failed: {}!".format(target_build.version, err)
+            else:
+                message = 'Build id {} is NOT existed, no necessary to delete!'.format(build_id)
+        else:
+            message = 'Lack necessary arguement: build id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
+
+
 def ajax_get_builds(request):
     prj_name = request.POST.get('project_name', None)
     builds = None
@@ -639,7 +705,7 @@ def build_page_post(request):
         if form.is_valid():
             prj_name = form.cleaned_data['build_project_name']
             version = form.cleaned_data['build_version']
-            err_code, msg, _ = add_build(prj_name, version, short_name=form.cleaned_data['build_name'],
+            err_code, msg, _ = add_build(prj_name, version, short_name=form.cleaned_data['build_short_name'],
                 server_path=form.cleaned_data['build_server_path'], crash_path=form.cleaned_data['build_crash_path'],
                 local_path=form.cleaned_data['build_local_path'], use_server=form.cleaned_data['build_use_server'])
             err_type = 'danger' if err_code else 'success'
