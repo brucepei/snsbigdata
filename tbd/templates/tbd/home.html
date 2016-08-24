@@ -4,62 +4,11 @@
 
 {% block content %}
     <div class="container">
-        <div id="RunningProjectContainer"></div>
-        <!--
-        <table id="id_project_running_table" class="table table-hover">
-            <caption class="text-center">Project Running Information</caption>
-            <thead>
-                <td>ID</td>
-                <td>Name</td>
-                <td>Running Build</td>
-                <td>Total Device</td>
-                <td>Total hours</td>
-                <td>Crash</td>
-                <td>MTBF</td>
-            </thead>
-            <tbody>
-                {% for prj in page.items %}
-                <tr>
-                    <td>{{ prj.no }}</td>
-                    <td>{{ prj.name }}</td>
-                    <td>{{ prj.attr.running_build }}</td>
-                    <td>{{ prj.attr.total_devices }}</td>
-                    <td>{{ prj.attr.total_hours }}</td>
-                    <td>{{ prj.attr.crash_num }}</td>
-                    <td class="hidden">
-                        <select class="hidden" name="build_list" value="{{ prj.attr.running_build }}">
-                            <option value>--no build--</option>
-                        {% for build in prj.build_set.all %}
-                            {% if prj.attr.running_build == build.version %}
-                            <option value="{{ build.version }}" selected>{{ build.version }}</option>
-                            {% else %}
-                            <option value="{{ build.version }}">{{ build.version }}</option>
-                            {% endif %}
-                        {% endfor %}
-                        </select>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if page.list %}
-        <ul class="pagination">
-            <li>
-              <a href="{% url 'tbd_home' %}?page={{ page.previous }}" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-            {% for p in page.list %}
-            <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_home' %}?page={{ p }}">{{ p }}</a></li>
-            {% endfor %}
-            <li>
-              <a href="{% url 'tbd_home' %}?page={{ page.next }}" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-              </a>
-            </li>
-        </ul>
-        {% endif %}
-        -->
+        <div class="row">
+            <div class="col-md-12">
+                <div id="RunningProjectContainer"></div>
+            </div>
+        </div>
     </div>
 {% endblock %}
 {% block user_js %}
@@ -88,15 +37,15 @@
                     list: false
                 },
                 prj_name: {
-                    title: 'Project',
+                    title: 'Project Name',
                     width: '15%',
                 },
                 prj_owner: {
-                    title: 'Owner',
+                    title: 'Tester',
                     width: '5%',
                 },
                 running_build: {
-                    title: 'Build',
+                    title: 'Running Build',
                     width: '30%',
                     options: function (data) {
                         console.log(data);
@@ -162,7 +111,7 @@
                     width: '5%'
                 },
                 cs_date: {
-                    title: 'CS',
+                    title: 'CS Date',
                     width: '10%',
                     type: 'date',
                     displayFormat: 'yy/mm/dd'

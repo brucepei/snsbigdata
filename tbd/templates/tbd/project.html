@@ -6,7 +6,8 @@
     <div class="container">
         <div class="row">
             <div class="col-md-12">
-                <table id="id_project_table" class="table table-striped table-hover" contenteditable="false">
+                <div id="ProjectContainer"></div>
+<!--                <table id="id_project_table" class="table table-striped table-hover" contenteditable="false">
                     <caption class="text-center">Project List</caption>
                     <thead>
                         <tr>
@@ -68,8 +69,67 @@
                             </tr>
                         </table>
                     </fieldset>
-                </form>
+                </form>-->
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block user_js %}
+<script type="text/javascript">
+    var cachedBuildOptions = {};
+    $(function(){
+        $('#ProjectContainer').jtable({
+            title: 'Project List',
+            ajaxSettings: {
+                beforeSend: function(xhr, settings){
+                    xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
+                }
+            },
+            paging: true,
+            pageSize: 20,
+            selecting: false,
+            actions: {
+                listAction: '/ajax/project_list',
+                createAction: '/ajax/project_create',
+                //updateAction: '/ajax/running_project_update',
+                deleteAction: '/ajax/project_delete'
+            },
+            fields: {
+                prj_id: {
+                    key: true,
+                    list: false
+                },
+                prj_name: {
+                    title: 'Project',
+                    width: '40%'
+                },
+                prj_owner: {
+                    title: 'Tester',
+                    width: '20%'
+                },
+                build_num: {
+                    title: 'Total Build',
+                    width: '15%',
+                    display: function(data) {
+                        console.log(data);
+                        if ('build_num' in data.record) {
+                            build_num = data.record.build_num;
+                            prj_id = data.record.prj_id;
+                            return '<a href="{% url "tbd_build" %}?project_id=' + prj_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + build_num + ' builds</span></a>';
+                        }
+                        return 0;
+                    },
+                    create: false
+                },
+                create_time: {
+                    title: 'Create Time',
+                    width: '25%',
+                    create: false
+                }
+            }
+        });
+        $('#ProjectContainer').jtable('load', {});
+    });
+</script>
 {% endblock %}

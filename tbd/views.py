@@ -256,7 +256,6 @@ def ajax(request, action):
 
 def ajax_running_project_list(request):
     print "request list:" + repr(request)
-    cs_date = "/Date({})/".format(int(time.time() * 1000))
     projects = Project.objects.all().order_by('-create')
     records = []
     for prj in projects:
@@ -323,50 +322,73 @@ def ajax_running_project_list_builds(request):
                 for bld in Build.objects.filter(project=target_prj).order_by('-create'):
                     options.append({
                         "DisplayText": bld.short_name,
-                        "Value": bld.version
+                        "Value": bld.id
                     })
     return JsonResponse({'Result': 'OK', 'Options': options})
     
-def ajax_edit_running_prj(request):
-    err_code = None
-    msg = None
-    if request.method == 'POST':
-        action = request.POST.get('action', None)
-        print request.POST
-        if action != 'edit':
-            print "Not support action {}!".format(action)
-        prj_name = request.POST.get('name', None)
-        running_build = request.POST.get('running_build', None)
-        total_devices = request.POST.get('total_devices', 0)
-        target_prj = None
-        if prj_name:
-            target_prj = Project.objects.filter(name=prj_name)
-            if target_prj:
-                target_prj = target_prj[0]
-                build = None
-                if running_build:
-                    build = Build.objects.filter(project=target_prj, version=running_build)
-                if build or (not running_build):
-                    save1 = target_prj.attr('running_build', running_build) 
-                    save2 = target_prj.attr('total_devices',  total_devices)
-                    if save1 or save2:
-                        msg = "Change Project {} to runing_build={}, total_devices={}!".format(prj_name, running_build, total_devices)
-                        target_prj.save()
-                    else:
-                        msg = "Not change for Project {}".format(prj_name)
-                    err_code = 0
-                    print msg
-                else:
-                    err_code = -1
-                    msg = "No build {} in Project {}!".format(running_build, prj_name)
-            else:
-                err_code = -1
-                msg = "Not found Project {}!".format(prj_name)
-        else:
-            err_code = -1
-            msg = "Not get Project {} info!".format(prj_name)
-    return json_response(msg, err_code)
+def ajax_project_list(request):
+    print "request project list:" + repr(request.POST)
+    projects = Project.objects.all().order_by('-create')
+    records = []
+    for prj in projects:
+        record = {'prj_id': prj.id,
+                  'prj_name': prj.name,
+                  'prj_owner': prj.owner,
+                  'build_num': Build.objects.filter(project=prj).count(),
+                  'create_time': prj.create,
+        }
+        records.append(record)
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': len(records)})
 
+def ajax_project_delete(request):
+    print "request project delete:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        prj_id = request.POST.get('prj_id', None)
+        target_prj = Project.objects.filter(id=prj_id)
+        if target_prj:
+            try:
+                target_prj[0].delete()
+            except Exception as err:
+                message = "Delete Project {} failed: {}!".format(target_prj[0].name, err)
+        else:
+            message = 'Project id {} is NOT existed, no necessary to delete!'.format(prj_id)
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
+
+def ajax_project_create(request):
+    print "request project create:" + repr(request.POST)
+    message = None
+    record = None
+    if request.method == 'POST':
+        prj_name = request.POST.get('prj_name', None)
+        prj_owner = request.POST.get('prj_owner', None)
+        target_prj = Project.objects.filter(name=prj_name)
+        if not target_prj:
+            try:
+                target_prj = Project.objects.create(name=prj_name, owner=prj_owner)
+                record = {
+                    'prj_id': target_prj.id,
+                    'prj_name': target_prj.name,
+                    'prj_owner': target_prj.owner,
+                    'build_num': 0,
+                    'create_time': target_prj.create,
+                }
+            except Exception as err:
+                message = "Save Project {} failed: {}!".format(name, err)
+        else:
+            message = 'Project {} has already existed!'.format(name)
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK', "Record": record})
+    
 def ajax_get_builds(request):
     prj_name = request.POST.get('project_name', None)
     builds = None
