@@ -262,15 +262,17 @@ def ajax_running_project_list(request):
     for prj in projects:
         record = {'prj_id': prj.id,
                   'prj_name': prj.name,
+                  'prj_owner': prj.owner,
                   'running_build': prj.attr('running_build'),
-                  'cs_date': prj.attr('cs_date'),
                   'os_type': prj.attr('os_type'),
                   'os_ver': prj.attr('os_ver'),
                   'board_type': prj.attr('board_type'),
                   'total_devices': prj.attr('total_devices'),
                   'total_hours': prj.attr('total_hours'),
                   'crash_num': prj.attr('crash_num'),
-                  'mtbf': prj.attr('mtbf')
+                  'mtbf': prj.attr('mtbf'),
+                  'cs_date': prj.attr('cs_date'),
+                  'last_update': prj.last_update,
         }
         records.append(record)
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': len(records)})
@@ -280,27 +282,38 @@ def ajax_running_project_update(request):
     if request.method == 'POST':
         prj_id = request.POST.get('prj_id', None)
         prj_name = request.POST.get('prj_name', None)
+        prj_owner = request.POST.get('prj_owner', None)
         if prj_id:
             target_prj = Project.objects.filter(id=prj_id)
             if target_prj:
                 target_prj = target_prj[0]
                 if target_prj:
+                    is_set = False
                     if prj_name != target_prj.name:
                         target_prj.name = prj_name
+                        is_set = True
+                    if prj_owner != target_prj.owner:
+                        target_prj.owner = prj_owner
+                        is_set = True
                     for attr in ('running_build', 'cs_date', 'os_type', 'os_ver', 'board_type',
-                                 'total_devices', 'total_hours', 'crash_num', 'mtbf'):
+                                 'total_devices', 'total_hours', 'crash_num', 'mtbf', 'last_update'):
                         attr_val = request.POST.get(attr, None)
                         if attr_val is not None:
-                            if attr == 'cs_date':
-                                print attr_val
-                                continue
-                            target_prj.attr(attr, attr_val)
-                    target_prj.save()
+                            if target_prj.attr(attr, attr_val):
+                                is_set = True
+                    if is_set:
+                        target_prj.save()
+                        print "Change project, save {}!".format(prj_name)
+                    else:
+                        print "Not change project, don't save!"
     return JsonResponse({'Result': 'OK'})
 
 def ajax_running_project_list_builds(request):
     print request.POST
-    options = []
+    options = [{
+        "DisplayText": '--no build--',
+        "Value": ''
+    }]
     if request.method == 'POST':
         prj_id = request.POST.get('prj_id', None)
         if prj_id:

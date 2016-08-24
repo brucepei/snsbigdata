@@ -24,6 +24,7 @@ class Project(models.Model):
     name = models.CharField(unique=True, default='', max_length=30)
     owner = models.CharField(unique=False, default='', max_length=30)
     create = models.DateTimeField(unique=False, auto_now_add=True)
+    last_update = models.DateTimeField(unique=False, auto_now=True)
     _attr = models.TextField(unique=False, default='')
     
     @AttrLookup
@@ -33,6 +34,7 @@ class Project(models.Model):
         is_found = False
         if value is not None:
             value = str(value)
+        print "Ready to call attr({}, {}) in project {}!".format(name, value, self.name)
         for i,  k_v in enumerate(attr_list):
             if k_v.startswith(name+'='):
                 if value is None:

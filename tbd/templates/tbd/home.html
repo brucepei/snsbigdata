@@ -89,7 +89,11 @@
                 },
                 prj_name: {
                     title: 'Project',
-                    width: '10%',
+                    width: '15%',
+                },
+                prj_owner: {
+                    title: 'Owner',
+                    width: '5%',
                 },
                 running_build: {
                     title: 'Build',
@@ -128,24 +132,18 @@
                         return cachedBuildOptions[data.record.prj_id] = options; //Cache results and return options
                     }
                 },
-                cs_date: {
-                    title: 'CS',
-                    width: '10%',
-                    type: 'date',
-                    displayFormat: 'yy/mm/dd',
-                },
                 os_type: {
                     title: 'OS_Type',
-                    width: '10%',
-                    options: { '1': 'Win10 RS', '2': 'Win10 TH2', '3': 'Win7', '4': 'LE', '5': 'LA' }
+                    options: { '1': 'Win10 RS', '2': 'Win10 TH2', '3': 'Win7', '4': 'LE', '5': 'LA' },
+                    list: false
                 },
                 os_ver: {
                     title: 'OS_Ver',
-                    width: '10%'
+                    list: false
                 },
                 board_type: {
                     title: 'Board',
-                    width: '10%'
+                    list: false
                 },
                 total_devices: {
                     title: 'Devices',
@@ -162,6 +160,17 @@
                 mtbf: {
                     title: 'MTBF',
                     width: '5%'
+                },
+                cs_date: {
+                    title: 'CS',
+                    width: '10%',
+                    type: 'date',
+                    displayFormat: 'yy/mm/dd'
+                },
+                last_update: {
+                    title: 'Update Time',
+                    width: '20%',
+                    edit: false
                 }
             }
         });
