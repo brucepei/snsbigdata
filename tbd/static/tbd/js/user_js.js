@@ -109,6 +109,32 @@ $("select[name='project_name']").change( function() {
         if ($(this).val().indexOf('--') != 0) {
             window.location.href = '/build?prj_id=' + $(this).val()
         }
+    } else if (cur_url.indexOf('/host') > -1) {
+        if ($(this).val().indexOf('--') != 0) {
+            window.location.href = '/host?prj_id=' + $(this).val()
+        }
+    } else if (cur_url.indexOf('/testcase') > -1) {
+        if ($(this).val().indexOf('--') != 0) {
+            window.location.href = '/testcase?prj_id=' + $(this).val()
+        }
+    }
+});
+
+$("select[name='build_version']").change( function() {
+    cur_url = window.location.href
+    prj_id = $("select[name='project_name']").val();
+    if (cur_url.indexOf('/build') > -1) {
+        if ($(this).val().indexOf('--') != 0) {
+            window.location.href = '/build?prj_id=' + prj_id + "&build_id=" + $(this).val()
+        }
+    } else if (cur_url.indexOf('/host') > -1) {
+        if ($(this).val().indexOf('--') != 0) {
+            window.location.href = '/host?prj_id=' + prj_id + "&build_id=" + $(this).val()
+        }
+    } else if (cur_url.indexOf('/testcase') > -1) {
+        if ($(this).val().indexOf('--') != 0) {
+            window.location.href = '/testcase?prj_id=' + prj_id + "&build_id=" + $(this).val()
+        }
     }
 });
 

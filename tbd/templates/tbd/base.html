@@ -23,7 +23,9 @@
                         <li {% block nav_home_attr %}{% endblock %}><a href="{% url 'tbd_home' %}">Home</a></li>
                         <li {% block nav_project_attr %}{% endblock %}><a href="{% url 'tbd_project' %}">Project</a></li>
                         <li {% block nav_build_attr %}{% endblock %}><a href="{% url 'tbd_build' %}">Build</a></li>
-                        <li {% block nav_testdata_attr %}{% endblock %}><a href="{% url 'tbd_testdata' %}">TestData</a></li>
+                        <li {% block nav_host_attr %}{% endblock %}><a href="{% url 'tbd_host' %}">Host</a></li>
+                        <li {% block nav_testcase_attr %}{% endblock %}><a href="{% url 'tbd_testcase' %}">TestCase</a></li>
+                        <li {% block nav_testdata_attr %}{% endblock %}><a href="{% url 'tbd_testdata' %}">Crash</a></li>
                         <li class="disabled"><a href="#">To-Do</a></li>
                         <li class="dropdown pull-right">
                             <a href="#" data-toggle="dropdown" class="dropdown-toggle">
@@ -48,7 +50,7 @@
         <script src="/static/js/bootstrap-select.min.js"></script>
 <!--        <script src="/static/js/jquery.bootstrap.min.js"></script>-->
         <script src="/static/js/jquery.tabledit.min.js"></script>
-        <script src="/static/js/jquery.jtable.js"></script>
+        <script src="/static/js/jquery.jtable.min.js"></script>
         <script src="/static/tbd/js/user_js.js"></script>
         
         {% block user_js %}{% endblock %}

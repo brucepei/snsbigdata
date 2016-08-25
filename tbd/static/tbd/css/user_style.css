@@ -6,4 +6,11 @@
     .path_input {
         width: 600px;
     }
+    
+    div.filtering {
+        margin-bottom: 5px;
+        border: 1px solid #999;
+        padding: 10px;
+        background-color: #EEE;
+    }
 }

@@ -342,6 +342,8 @@ def ajax_project_list(request):
                 'prj_name': prj.name,
                 'prj_owner': prj.owner,
                 'build_num': Build.objects.filter(project=prj).count(),
+                'host_num': Host.objects.filter(project=prj).count(),
+                'testcase_num': TestCase.objects.filter(project=prj).count(),
                 'create_time': prj.create,
             })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.count()})
@@ -382,6 +384,8 @@ def ajax_project_create(request):
                     'prj_name': target_prj.name,
                     'prj_owner': target_prj.owner,
                     'build_num': 0,
+                    'host_num': 0,
+                    'testcase_num': 0,
                     'create_time': target_prj.create,
                 }
             except Exception as err:
@@ -401,6 +405,7 @@ def ajax_build_list(request):
     total_count = 0
     if request.method == 'POST':
         prj_id = request.POST.get('prj_id', None)
+        build_id = request.POST.get('prj_id', None)
         if prj_id:
             start_index = int(request.GET.get('jtStartIndex', 0))
             page_size = int(request.GET.get('jtPageSize', 20))
@@ -500,7 +505,7 @@ def ajax_build_update(request):
                     try:
                         target_build.save()
                     except Exception as err:
-                        message = "Save Build {} in Project {} failed: {}!".format(build_version, target_prj.name, err)
+                        message = "Save Build {} failed: {}!".format(target_build.version, err)
                     print "Change build, save {}!".format(target_build.version)
                 else:
                     print "Not change build, don't save!"
@@ -532,6 +537,137 @@ def ajax_build_delete(request):
                 message = 'Build id {} is NOT existed, no necessary to delete!'.format(build_id)
         else:
             message = 'Lack necessary arguement: build id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
+
+def ajax_host_list(request):
+    print "request host list:" + repr(request.POST)
+    records = []
+    total_count = 0
+    if request.method == 'POST':
+        prj_id = request.POST.get('prj_id', None)
+        build_id = request.POST.get('build_id', None)
+        target_build = None
+        if build_id:
+            target_build = Build.objects.filter(id=build_id)
+            if target_build:
+                target_build = target_build[0]
+        if prj_id:
+            start_index = int(request.GET.get('jtStartIndex', 0))
+            page_size = int(request.GET.get('jtPageSize', 20))
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                total_count = Host.objects.filter(project=target_prj).count()
+                for host in Host.objects.filter(project=target_prj).order_by('name')[start_index: page_size+start_index]:
+                    if target_build:
+                        crash_num = Crash.objects.filter(host=host, build=target_build).count()
+                        print "crash num {}, in host {} build {}!".format(crash_num, host.name, target_build.version)
+                    else:
+                        crash_num = Crash.objects.filter(host=host).count()
+                        print "crash num {}, in host {}!".format(crash_num, host.name)
+                    records.append({
+                        'host_id': host.id,
+                        'host_name': host.name,
+                        'host_ip': host.ip,
+                        'host_mac': host.mac,
+                        'crash_num': crash_num,
+                    })
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
+
+def ajax_host_create(request):
+    print "request build create:" + repr(request.POST)
+    message = None
+    record = None
+    if request.method == 'POST':
+        prj_id = request.GET.get('prj_id', None)
+        if prj_id:
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                host_name = request.POST.get('host_name', None)
+                host_ip = request.POST.get('host_ip', None)
+                host_mac = request.POST.get('host_mac', None)
+                try:
+                    target_host = Host.objects.create(project=target_prj, name=host_name, ip=host_ip, mac=host_mac)
+                    record = {
+                        'id': target_host.id,
+                        'name': target_host.name,
+                        'ip': target_host.ip,
+                        'mac': target_host.mac,
+                        'crash_num': 0,
+                    }
+                except Exception as err:
+                    message = "Save Host {} failed: {}!".format(host_name, err)
+            else:
+                message = 'Project id {} does NOT exist!'.format(prj_id)
+        else:
+            message = 'Lack necessary arguement: project id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK', "Record": record})
+    
+def ajax_host_update(request):
+    print "request host update:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        host_id = request.POST.get('host_id', None)
+        if host_id:
+            target_host = Host.objects.filter(id=host_id)
+            if target_host:
+                target_host = target_host[0]
+                is_set = False
+                for attr in ('host_name', 'host_ip', 'host_mac'):
+                    attr_val = request.POST.get(attr, None)
+                    if attr_val is not None:
+                        attr_name = attr[5:]
+                        orig_val = getattr(target_host, attr_name, None)
+                        if orig_val != attr_val:
+                            setattr(target_host, attr_name, attr_val)
+                            is_set = True
+                if is_set:
+                    try:
+                        target_host.save()
+                    except Exception as err:
+                        message = "Save Host {} failed: {}!".format(target_host.name, err)
+                    print "Change Host, save {}!".format(target_host.name)
+                else:
+                    print "Not change host, don't save!"
+            else:
+                message = 'Host id {} does NOT exist!'.format(host_id)
+        else:
+            message = 'Lack necessary arguement: host id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
+
+def ajax_host_delete(request):
+    print "request host delete:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        host_id = request.POST.get('host_id', None)
+        if host_id:
+            target_host = Host.objects.filter(id=host_id)
+            if target_host:
+                target_host = target_host[0]
+                try:
+                    target_host.delete()
+                except Exception as err:
+                    message = "Delete Host {} failed: {}!".format(target_host.name, err)
+            else:
+                message = 'Host id {} is NOT existed, no necessary to delete!'.format(host_id)
+        else:
+            message = 'Lack necessary arguement: host id!'
     else:
         message = "Incorrect request method: {}, only support POST now!".format(request.method)
     if message:
@@ -684,11 +820,30 @@ def build_page(request):
     prj_id = request.GET.get('prj_id', '')
     projects = Project.objects.all()
     target_prj = None
+    builds = []
     if prj_id:
         target_prj = Project.objects.filter(id=prj_id)
         if target_prj:
             target_prj = target_prj[0]
     return render(request, 'tbd/build.html', {'project': target_prj, 'projects': projects})
+
+def host_page(request):
+    prj_id = request.GET.get('prj_id', '')
+    build_id = request.GET.get('build_id', '')
+    projects = Project.objects.all()
+    target_prj = None
+    target_build = None
+    builds = []
+    if prj_id:
+        target_prj = Project.objects.filter(id=prj_id)
+        if target_prj:
+            target_prj = target_prj[0]
+            builds = Build.objects.filter(project=target_prj).order_by('-create')
+    if build_id:
+        target_build = Build.objects.filter(id=build_id)
+        if target_build:
+            target_build = target_build[0]
+    return render(request, 'tbd/host.html', {'project': target_prj, 'projects': projects, 'build': target_build, 'builds': builds})
 
 def build_page_post(request):
     get_method = request.POST.get('method', None)

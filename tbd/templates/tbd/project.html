@@ -38,15 +38,15 @@
                 },
                 prj_name: {
                     title: 'Project',
-                    width: '40%'
+                    width: '30%'
                 },
                 prj_owner: {
                     title: 'Tester',
-                    width: '20%'
+                    width: '10%'
                 },
                 build_num: {
-                    title: 'Total Build',
-                    width: '15%',
+                    title: 'Total Builds',
+                    width: '10%',
                     display: function(data) {
                         console.log(data);
                         if ('build_num' in data.record) {
@@ -58,9 +58,37 @@
                     },
                     create: false
                 },
+                host_num: {
+                    title: 'Total Hosts',
+                    width: '10%',
+                    display: function(data) {
+                        console.log(data);
+                        if ('build_num' in data.record) {
+                            host_num = data.record.host_num;
+                            prj_id = data.record.prj_id;
+                            return '<a href="{% url "tbd_host" %}?prj_id=' + prj_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + host_num + ' hosts</span></a>';
+                        }
+                        return 0;
+                    },
+                    create: false
+                },
+                testcase_num: {
+                    title: 'Total Cases',
+                    width: '10%',
+                    display: function(data) {
+                        console.log(data);
+                        if ('build_num' in data.record) {
+                            testcase_num = data.record.testcase_num;
+                            prj_id = data.record.prj_id;
+                            return '<a href="{% url "tbd_testcase" %}?prj_id=' + prj_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + testcase_num + ' tc</span></a>';
+                        }
+                        return 0;
+                    },
+                    create: false
+                },
                 create_time: {
                     title: 'Create Time',
-                    width: '25%',
+                    width: '20%',
                     create: false
                 }
             }

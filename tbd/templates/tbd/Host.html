@@ -1,6 +1,6 @@
 ﻿{% extends 'tbd/base.html' %}
 {% block title %}Build - SBD{% endblock %}
-{% block nav_build_attr %}class="active"{% endblock %}
+{% block nav_host_attr %}class="active"{% endblock %}
 
 {% block content %}
     <div class="container">
@@ -29,12 +29,19 @@
                                     <option value="{{prj.id}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>
                                 {% endfor %}
                             </select>
+                            Build: 
+                            <select name="build_version" class="selectpicker">
+                                <option value>--select build--</option>
+                                {% for bld in builds %}
+                                    <option value="{{bld.id}}"{% if build and build == bld %} selected="selected"{% endif %}>{{forloop.counter}}. {{bld.short_name}}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <div id="BuildContainer"></div>
+                        <div id="HostContainer"></div>
                     </div>
                 </div>
             </div>
@@ -45,8 +52,8 @@
 {% block user_js %}
 <script type="text/javascript">
     $(function(){
-        $('#BuildContainer').jtable({
-            title: 'Build List',
+        $('#HostContainer').jtable({
+            title: 'Host List',
             ajaxSettings: {
                 beforeSend: function(xhr, settings){
                     xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
@@ -56,22 +63,26 @@
             pageSize: 20,
             selecting: false,
             actions: {
-                listAction: '/ajax/build_list',
-                createAction: '/ajax/build_create?prj_id={% if project %}{{ project.id }}{% endif %}',
-                updateAction: '/ajax/build_update',
-                deleteAction: '/ajax/build_delete'
+                listAction: '/ajax/host_list',
+                createAction: '/ajax/host_create?prj_id={% if project %}{{ project.id }}{% endif %}',
+                updateAction: '/ajax/host_update',
+                deleteAction: '/ajax/host_delete'
             },
             fields: {
-                build_id: {
+                host_id: {
                     key: true,
                     list: false
                 },
-                build_version: {
-                    title: 'Build Version',
+                host_name: {
+                    title: 'Hostname',
                     width: '40%'
                 },
-                build_short_name: {
-                    title: 'Build Name',
+                host_ip: {
+                    title: 'IP address',
+                    width: '20%'
+                },
+                host_mac: {
+                    title: 'Mac address',
                     width: '20%'
                 },
                 crash_num: {
@@ -81,42 +92,19 @@
                         console.log(data);
                         if ('crash_num' in data.record) {
                             crash_num = data.record.crash_num;
-                            build_id = data.record.build_id;
-                            return '<a href="{% url "tbd_testdata" %}?build_id=' + build_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + ' crashes</span></a>';
+                            return '<a href="{% url "tbd_testdata" %}?prj_id={% if project %}{{ project.id }}{% endif %}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + ' crashes</span></a>';
                         }
                         return 0;
                     },
                     create: false,
                     edit: false
-                },
-                build_server_path: {
-                    title: 'Build Server Path',
-                    list: false
-                },
-                build_use_server: {
-                    title: 'Upgrade by Server Path',
-                    list: false,
-                    type: 'checkbox',
-                    values: { 'false': 'False', 'true': 'True' },
-                    defaultValue: 'false'
-                },
-                build_local_path: {
-                    title: 'Build Local Path',
-                    list: false
-                },
-                build_crash_path: {
-                    title: 'Upload Crash Path',
-                    list: false
-                },
-                create_time: {
-                    title: 'Create Time',
-                    width: '25%',
-                    create: false,
-                    edit: false
                 }
             }
         });
-        $('#BuildContainer').jtable('load', {'prj_id': {% if project %}{{ project.id }}{% else %}null{% endif %}});
+        $('#HostContainer').jtable('load', {
+            'prj_id': {% if project %}{{ project.id }}{% else %}null{% endif %},
+            'build_id': {% if build %}{{ build.id }}{% else %}null{% endif %}
+        });
     });
 </script>
 {% endblock %}
