@@ -89,8 +89,9 @@
                 build_use_server: {
                     title: 'Upgrade by Server Path',
                     list: false,
-                    type: 'radiobutton',
-                    options: ['True', 'False']
+                    type: 'checkbox',
+                    values: { 'false': 'False', 'true': 'True' },
+                    defaultValue: 'false'
                 },
                 build_local_path: {
                     title: 'Build Local Path',

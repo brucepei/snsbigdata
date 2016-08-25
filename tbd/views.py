@@ -416,7 +416,7 @@ def ajax_build_list(request):
                         'build_server_path': bld.server_path,
                         'build_local_path': bld.local_path,
                         'build_crash_path': bld.crash_path,
-                        'build_use_server': 'True' if bld.use_server else 'False',
+                        'build_use_server': 'true' if bld.use_server else 'false',
                         'crash_num': Crash.objects.filter(build=bld).count(),
                         'create_time': bld.create,
                     })
@@ -488,9 +488,9 @@ def ajax_build_update(request):
                 for attr in ('build_server_path', 'build_local_path', 'build_crash_path',
                              'build_use_server', 'build_short_name', 'build_version'):
                     attr_val = request.POST.get(attr, None)
+                    if attr == 'build_use_server':
+                        attr_val = True if attr_val and attr_val.lower() == 'true' else False
                     if attr_val is not None:
-                        if attr == 'build_use_server':
-                            attr_val = True if attr_val.lower() == 'true' else False
                         attr_name = attr[6:]
                         orig_val = getattr(target_build, attr_name, None)
                         if orig_val != attr_val:
