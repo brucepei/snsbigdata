@@ -1,0 +1,108 @@
+﻿{% extends 'tbd/base.html' %}
+{% block title %}Build - SBD{% endblock %}
+{% block nav_testcase_attr %}class="active"{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>
+                          <h1>
+                          {% if project %}
+                          {{ project.name }} <small>{{ project.owner }}</small>
+                          {% else %}
+                          No project selection <small>anonymous</small>
+                          {% endif %}
+                          </h1>
+                        </p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="filtering">
+                            Project:
+                            <select name="project_name" class="selectpicker">
+                                <option value>--select project--</option>
+                                {% for prj in projects %}
+                                    <option value="{{prj.id}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>
+                                {% endfor %}
+                            </select>
+                            Build: 
+                            <select name="build_version" class="selectpicker">
+                                <option value>--select build--</option>
+                                {% for bld in builds %}
+                                    <option value="{{bld.id}}"{% if build and build == bld %} selected="selected"{% endif %}>{{forloop.counter}}. {{bld.short_name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="TestCaseContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block user_js %}
+<script type="text/javascript">
+    $(function(){
+        $('#TestCaseContainer').jtable({
+            title: 'TestCase List',
+            ajaxSettings: {
+                beforeSend: function(xhr, settings){
+                    xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
+                }
+            },
+            paging: true,
+            pageSize: 20,
+            selecting: false,
+            actions: {
+                listAction: '/ajax/testcase_list',
+                createAction: '/ajax/testcase_create?prj_id={% if project %}{{ project.id }}{% endif %}',
+                updateAction: '/ajax/testcase_update',
+                deleteAction: '/ajax/testcase_delete'
+            },
+            fields: {
+                testcase_id: {
+                    key: true,
+                    list: false
+                },
+                testcase_name: {
+                    title: 'TestCase Name',
+                    width: '50%'
+                },
+                testcase_platform: {
+                    title: 'Test Platform',
+                    width: '25%',
+                    type: 'radiobutton',
+                    options: {{ testcase_platform_choice | safe }}
+                },
+                crash_num: {
+                    title: 'Total Crash',
+                    width: '25%',
+                    display: function(data) {
+                        console.log(data);
+                        if ('crash_num' in data.record) {
+                            crash_num = data.record.crash_num;
+                            return '<a href="{% url "tbd_testdata" %}?prj_id={% if project %}{{ project.id }}{% endif %}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + ' crashes</span></a>';
+                        }
+                        return 0;
+                    },
+                    create: false,
+                    edit: false
+                }
+            }
+        });
+        $('#TestCaseContainer').jtable('load', {
+            'prj_id': {% if project %}{{ project.id }}{% else %}null{% endif %},
+            'build_id': {% if build %}{{ build.id }}{% else %}null{% endif %}
+        });
+    });
+</script>
+{% endblock %}

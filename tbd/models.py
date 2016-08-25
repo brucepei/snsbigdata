@@ -108,19 +108,21 @@ class Host(models.Model):
         return "Host {}(IPv4{})".format(self.name, self.ip)
         
 class TestCase(models.Model):
-    PHOENIX = 'PH'
-    VEGA    = 'VE'
-    WPA     = 'WP'
-    GARNET  = 'GA'
+    PHOENIX = 'PHO'
+    VEGA    = 'VEG'
+    WPA     = 'WPA'
+    GARNET  = 'GAR'
+    PAT     = 'PAT'
     PLATFORM_CHOICE = (
-        ('', '--select testcase--'),
+        ('', 'N/A'),
         (PHOENIX, 'Phoenix XML'),
         (VEGA, 'Vega XML'),
         (GARNET, 'Garnet XML'),
         (WPA, 'WPA Perl'),
+        (PAT, 'PAT Python'),
     )
     name = models.CharField(default='', max_length=80)
-    platform = models.CharField(default='', choices=PLATFORM_CHOICE, max_length=2)
+    platform = models.CharField(default='', choices=PLATFORM_CHOICE, max_length=3)
     
     project = models.ForeignKey(
         Project,
@@ -130,7 +132,7 @@ class TestCase(models.Model):
     )
     
     class Meta:
-        unique_together = ("project", "name", "platform")
+        unique_together = ("project", "name")
         
     def __unicode__(self):
         return "TestCase {}({})".format(self.name, self.platform)

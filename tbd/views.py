@@ -675,6 +675,134 @@ def ajax_host_delete(request):
     else:
         return JsonResponse({'Result': 'OK'})
 
+def ajax_testcase_list(request):
+    print "request testcase list:" + repr(request.POST)
+    records = []
+    total_count = 0
+    if request.method == 'POST':
+        prj_id = request.POST.get('prj_id', None)
+        build_id = request.POST.get('build_id', None)
+        target_build = None
+        if build_id:
+            target_build = Build.objects.filter(id=build_id)
+            if target_build:
+                target_build = target_build[0]
+        if prj_id:
+            start_index = int(request.GET.get('jtStartIndex', 0))
+            page_size = int(request.GET.get('jtPageSize', 20))
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                total_count = TestCase.objects.filter(project=target_prj).count()
+                for tc in TestCase.objects.filter(project=target_prj).order_by('name')[start_index: page_size+start_index]:
+                    if target_build:
+                        crash_num = Crash.objects.filter(testcase=tc, build=target_build).count()
+                        print "crash num {}, in testcase {} build {}!".format(crash_num, tc.name, target_build.version)
+                    else:
+                        crash_num = Crash.objects.filter(testcase=tc).count()
+                        print "crash num {}, in testcase {}!".format(crash_num, tc.name)
+                    records.append({
+                        'testcase_id': tc.id,
+                        'testcase_name': tc.name,
+                        'testcase_platform': tc.platform,
+                        'crash_num': crash_num,
+                    })
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
+
+def ajax_testcase_create(request):
+    print "request testcase create:" + repr(request.POST)
+    message = None
+    record = None
+    if request.method == 'POST':
+        prj_id = request.GET.get('prj_id', None)
+        if prj_id:
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                testcase_name = request.POST.get('testcase_name', None)
+                testcase_platform = request.POST.get('testcase_platform', None)
+                try:
+                    target_testcase = TestCase.objects.create(project=target_prj, name=testcase_name, platform=testcase_platform)
+                    record = {
+                        'id': target_testcase.id,
+                        'name': target_testcase.name,
+                        'platform': target_testcase.platform,
+                        'crash_num': 0,
+                    }
+                except Exception as err:
+                    message = "Save TestCase {} failed: {}!".format(testcase_name, err)
+            else:
+                message = 'Project id {} does NOT exist!'.format(prj_id)
+        else:
+            message = 'Lack necessary arguement: project id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK', "Record": record})
+    
+def ajax_testcase_update(request):
+    print "request testcase update:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        testcase_id = request.POST.get('testcase_id', None)
+        if testcase_id:
+            target_testcase = TestCase.objects.filter(id=testcase_id)
+            if target_testcase:
+                target_testcase = target_testcase[0]
+                is_set = False
+                for attr in ('testcase_name', 'testcase_platform'):
+                    attr_val = request.POST.get(attr, None)
+                    if attr_val is not None:
+                        attr_name = attr[9:]
+                        orig_val = getattr(target_testcase, attr_name, None)
+                        if orig_val != attr_val:
+                            setattr(target_testcase, attr_name, attr_val)
+                            is_set = True
+                if is_set:
+                    try:
+                        target_testcase.save()
+                    except Exception as err:
+                        message = "Save TestCase {} failed: {}!".format(target_testcase.name, err)
+                    print "Change TestCase, save {}!".format(target_testcase.name)
+                else:
+                    print "Not change Testcase, don't save!"
+            else:
+                message = 'TestCase id {} does NOT exist!'.format(testcase_id)
+        else:
+            message = 'Lack necessary arguement: testcase id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
+
+def ajax_testcase_delete(request):
+    print "request testcase delete:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        testcase_id = request.POST.get('testcase_id', None)
+        if testcase_id:
+            target_testcase = TestCase.objects.filter(id=testcase_id)
+            if target_testcase:
+                target_testcase = target_testcase[0]
+                try:
+                    target_testcase.delete()
+                except Exception as err:
+                    message = "Delete TestCase {} failed: {}!".format(target_testcase.name, err)
+            else:
+                message = 'TestCase id {} is NOT existed, no necessary to delete!'.format(testcase_id)
+        else:
+            message = 'Lack necessary arguement: testcase id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
+
 
 def ajax_get_builds(request):
     prj_name = request.POST.get('project_name', None)
@@ -844,6 +972,28 @@ def host_page(request):
         if target_build:
             target_build = target_build[0]
     return render(request, 'tbd/host.html', {'project': target_prj, 'projects': projects, 'build': target_build, 'builds': builds})
+
+def testcase_page(request):
+    prj_id = request.GET.get('prj_id', '')
+    build_id = request.GET.get('build_id', '')
+    projects = Project.objects.all()
+    target_prj = None
+    target_build = None
+    builds = []
+    if prj_id:
+        target_prj = Project.objects.filter(id=prj_id)
+        if target_prj:
+            target_prj = target_prj[0]
+            builds = Build.objects.filter(project=target_prj).order_by('-create')
+    if build_id:
+        target_build = Build.objects.filter(id=build_id)
+        if target_build:
+            target_build = target_build[0]
+    return render(request, 'tbd/testcase.html', {
+        'project': target_prj, 'projects': projects,
+        'build': target_build, 'builds': builds,
+        'testcase_platform_choice': json.dumps(dict(TestCase.PLATFORM_CHOICE)),
+    })
 
 def build_page_post(request):
     get_method = request.POST.get('method', None)
