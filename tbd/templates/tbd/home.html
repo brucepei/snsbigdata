@@ -100,15 +100,36 @@
                 },
                 total_hours: {
                     title: 'Hours',
-                    width: '5%'
+                    width: '5%',
+                    edit: false,
+                    create: false
                 },
                 crash_num: {
                     title: 'Crash',
-                    width: '5%'
+                    width: '5%',
+                    edit: false,
+                    create: false
                 },
                 mtbf: {
                     title: 'MTBF',
-                    width: '5%'
+                    width: '5%',
+                    display: function(data) {
+                        console.log(data);
+                        if ('crash_num' in data.record && 'total_hours' in data.record) {
+                            var crash_num = parseInt(data.record.crash_num);
+                            var total_hours = parseInt(data.record.total_hours);
+                            var mtbf = null;
+                            if (crash_num > 0) {
+                                mtbf = (total_hours/crash_num).toFixed(2);
+                            } else if (total_hours > 0) {
+                                mtbf = total_hours.toFixed(2)
+                            }
+                            return mtbf;
+                        }
+                        return '';
+                    },
+                    edit: false,
+                    create: false
                 },
                 cs_date: {
                     title: 'CS Date',

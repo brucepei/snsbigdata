@@ -3,7 +3,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from tbd.models import Project, Build, Crash, TestCase, Host
+from tbd.models import Project, Build, Crash, TestCase, Host, JIRA
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 import time
 import json
@@ -262,17 +262,24 @@ def ajax_running_project_list(request):
         page_size = int(request.GET.get('jtPageSize', 20))
         projects = Project.objects.all().order_by('-create')[start_index: page_size+start_index]
         for prj in projects:
+            running_build_id = prj.attr('running_build')
+            target_build = None
+            crash_num = 0
+            if running_build_id:
+                target_build = Build.objects.filter(id=running_build_id)
+                if target_build:
+                    target_build = target_build[0]
+                    crash_num = Crash.objects.filter(build=target_build).count()
             record = {'prj_id': prj.id,
                       'prj_name': prj.name,
                       'prj_owner': prj.owner,
-                      'running_build': prj.attr('running_build'),
+                      'running_build': running_build_id,
                       'os_type': prj.attr('os_type'),
                       'os_ver': prj.attr('os_ver'),
                       'board_type': prj.attr('board_type'),
                       'total_devices': prj.attr('total_devices'),
-                      'total_hours': prj.attr('total_hours'),
-                      'crash_num': prj.attr('crash_num'),
-                      'mtbf': prj.attr('mtbf'),
+                      'total_hours': target_build.test_hours,
+                      'crash_num': crash_num,
                       'cs_date': prj.attr('cs_date'),
                       'last_update': prj.last_update,
             }
@@ -298,7 +305,7 @@ def ajax_running_project_update(request):
                         target_prj.owner = prj_owner
                         is_set = True
                     for attr in ('running_build', 'cs_date', 'os_type', 'os_ver', 'board_type',
-                                 'total_devices', 'total_hours', 'crash_num', 'mtbf', 'last_update'):
+                                 'total_devices', 'last_update'):
                         attr_val = request.POST.get(attr, None)
                         if attr_val is not None:
                             if target_prj.attr(attr, attr_val):
@@ -412,15 +419,20 @@ def ajax_build_list(request):
             target_prj = Project.objects.filter(id=prj_id)
             if target_prj:
                 target_prj = target_prj[0]
+                running_build_id = target_prj.attr('running_build')
                 total_count = Build.objects.filter(project=target_prj).count()
                 for bld in Build.objects.filter(project=target_prj).order_by('-create')[start_index: page_size+start_index]:
+                    build_version = bld.version
+                    if str(bld.id) == running_build_id:
+                        build_version = '-> ' + build_version
                     records.append({
                         'build_id': bld.id,
-                        'build_version': bld.version,
+                        'build_version': build_version,
                         'build_short_name': bld.short_name,
                         'build_server_path': bld.server_path,
                         'build_local_path': bld.local_path,
                         'build_crash_path': bld.crash_path,
+                        'build_test_hours': bld.test_hours,
                         'build_use_server': 'true' if bld.use_server else 'false',
                         'crash_num': Crash.objects.filter(build=bld).count(),
                         'create_time': bld.create,
@@ -450,6 +462,7 @@ def ajax_build_create(request):
                                 server_path=request.POST.get('build_server_path', None),
                                 local_path=request.POST.get('build_local_path', None),
                                 crash_path=request.POST.get('build_crash_path', None),
+                                test_hours=request.POST.get('build_test_hours', None),
                                 use_server=use_server,
                             )
                             record = {
@@ -459,6 +472,7 @@ def ajax_build_create(request):
                                 'build_server_path': target_build.server_path,
                                 'build_local_path': target_build.local_path,
                                 'build_crash_path': target_build.crash_path,
+                                'build_test_hours': target_build.test_hours,
                                 'build_use_server': target_build.use_server,
                                 'crash_num': 0,
                                 'create_time': target_build.create,
@@ -490,7 +504,7 @@ def ajax_build_update(request):
             if target_build:
                 target_build = target_build[0]
                 is_set = False
-                for attr in ('build_server_path', 'build_local_path', 'build_crash_path',
+                for attr in ('build_server_path', 'build_local_path', 'build_crash_path', 'build_test_hours',
                              'build_use_server', 'build_short_name', 'build_version'):
                     attr_val = request.POST.get(attr, None)
                     if attr == 'build_use_server':
@@ -803,6 +817,219 @@ def ajax_testcase_delete(request):
     else:
         return JsonResponse({'Result': 'OK'})
 
+def ajax_crash_list(request):
+    print "request crash list:" + repr(request.POST)
+    records = []
+    total_count = 0
+    if request.method == 'POST':
+        prj_id = request.POST.get('prj_id', None)
+        build_id = request.POST.get('build_id', None)
+        target_build = None
+        if build_id:
+            target_build = Build.objects.filter(id=build_id)
+            if target_build:
+                target_build = target_build[0]
+        if prj_id:
+            start_index = int(request.GET.get('jtStartIndex', 0))
+            page_size = int(request.GET.get('jtPageSize', 20))
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                if target_build:
+                    crashes = Crash.objects.filter(build=target_build).order_by('-create')[start_index: page_size+start_index]
+                    total_count = Crash.objects.filter(build=target_build).count()
+                    print "crash num {}, in build {}!".format(total_count, target_build.version)
+                else:
+                    crashes = Crash.objects.filter(build__project=target_prj).order_by('-create')[start_index: page_size+start_index]
+                    total_count = Crash.objects.filter(build__project=target_prj).count()
+                    print "crash num {}, in project {}!".format(total_count, target_prj.name)
+                for crash in crashes:
+                    records.append({
+                        'crash_id': crash.id,
+                        'crash_path': crash.path,
+                        'build_id': crash.build.id,
+                        'host_id': crash.host.id,
+                        'testcase_id': crash.testcase.id,
+                        'jira_id': crash.jira.jira_id if crash.jira else 'n/a',
+                        'jira_category': crash.jira.category if crash.jira else 'n/a',
+                        'create_time': crash.create,
+                    })
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
+
+def ajax_crash_list_hosts(request):
+    print request.POST
+    options = [{
+        "DisplayText": '--no host--',
+        "Value": ''
+    }]
+    if request.method == 'POST':
+        prj_id = request.GET.get('prj_id', None)
+        if prj_id:
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                for host in Host.objects.filter(project=target_prj).order_by('name'):
+                    options.append({
+                        "DisplayText": str(host),
+                        "Value": host.id
+                    })
+    return JsonResponse({'Result': 'OK', 'Options': options})
+
+def ajax_crash_list_testcases(request):
+    print request.POST
+    options = [{
+        "DisplayText": '--no testcase--',
+        "Value": ''
+    }]
+    if request.method == 'POST':
+        prj_id = request.GET.get('prj_id', None)
+        if prj_id:
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                for tc in TestCase.objects.filter(project=target_prj).order_by('name'):
+                    options.append({
+                        "DisplayText": str(tc),
+                        "Value": tc.id
+                    })
+    return JsonResponse({'Result': 'OK', 'Options': options})
+
+def ajax_crash_create(request):
+    print "request crash create:" + repr(request.POST)
+    message = None
+    record = None
+    if request.method == 'POST':
+        build_id = request.POST.get('build_id', None)
+        if build_id:
+            target_build = Build.objects.filter(id=build_id)
+            if target_build:
+                target_build = target_build[0]
+                target_host = None
+                target_testcase = None
+                target_jira = None
+                crash_path = request.POST.get('crash_path', None)
+                host_id = request.POST.get('host_id', None)
+                testcase_id = request.POST.get('testcase_id', None)
+                jira_id = request.POST.get('jira_id', None)
+                if host_id:
+                    target_host = Host.objects.filter(id=host_id)
+                    if target_host:
+                        target_host = target_host[0]
+                if testcase_id:
+                    target_testcase = TestCase.objects.filter(id=testcase_id)
+                    if target_testcase:
+                        target_testcase = target_testcase[0]
+                if jira_id:
+                    target_jira = JIRA.objects.filter(jira_id=jira_id)
+                    if target_jira:
+                        target_jira = target_jira[0]
+                try:
+                    target_crash = Crash.objects.create(build=target_build, path=crash_path, host=target_host, testcase=target_testcase, jira=target_jira)
+                    record = {
+                        'id': target_crash.id,
+                        'path': target_crash.path,
+                        'build_id': target_crash.build.id,
+                        'host_id': target_crash.host.id,
+                        'testcase_id': target_crash.testcase.id,
+                        'jira_id': target_crash.jira.jira_id if target_crash.jira else 'n/a',
+                        'jira_category': target_crash.jira.category if target_crash.jira else 'n/a',
+                    }
+                except Exception as err:
+                    message = "Save Crash {} failed: {}!".format(crash_path, err)
+            else:
+                message = 'Build id {} does NOT exist!'.format(build_id)
+        else:
+            message = 'Lack necessary arguement: build id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK', "Record": record})
+
+def ajax_crash_delete(request):
+    print "request crash delete:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        crash_id = request.POST.get('crash_id', None)
+        if crash_id:
+            target_crash = Crash.objects.filter(id=crash_id)
+            if target_crash:
+                target_crash = target_crash[0]
+                try:
+                    target_crash.delete()
+                except Exception as err:
+                    message = "Delete Crash {} failed: {}!".format(target_crash.path, err)
+            else:
+                message = 'Crash id {} is NOT existed, no necessary to delete!'.format(crash_id)
+        else:
+            message = 'Lack necessary arguement: Crash id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
+
+def ajax_crash_update(request):
+    print "request crash create:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        crash_id = request.POST.get('crash_id', None)
+        if crash_id:
+            target_crash = Crash.objects.filter(id=crash_id)
+            if target_crash:
+                target_crash = target_crash[0]
+                is_set = False
+                build_id = request.POST.get('build_id', None)
+                host_id = request.POST.get('host_id', None)
+                testcase_id = request.POST.get('testcase_id', None)
+                jira_id = request.POST.get('jira_id', None)
+                if target_crash.build and build_id != target_crash.build.id:
+                    target_build = Build.objects.filter(id=build_id)
+                    if target_build:
+                        target_crash.build = target_build[0]
+                        is_set = True
+                if target_crash.host and host_id != target_crash.host.id:
+                    target_host = Host.objects.filter(id=host_id)
+                    if target_host:
+                        target_crash.host = target_host[0]
+                        is_set = True
+                if target_crash.testcase and testcase_id != target_crash.testcase.id:
+                    target_testcase = TestCase.objects.filter(id=testcase_id)
+                    if target_testcase:
+                        target_crash.testcase = target_testcase[0]
+                        is_set = True
+                if target_crash.jira and jira_id != target_crash.jira.id:
+                    target_jira = JIRA.objects.filter(jira_id=jira_id)
+                    if target_jira:
+                        target_crash.jira = target_jira[0]
+                        is_set = True
+                for attr in ('crash_path',):
+                    attr_val = request.POST.get(attr, None)
+                    if attr_val is not None:
+                        attr_name = attr[6:]
+                        orig_val = getattr(target_crash, attr_name, None)
+                        #print "set {} from {} to {}!".format(attr_name, orig_val, attr_val)
+                        if orig_val != attr_val:
+                            setattr(target_crash, attr_name, attr_val)
+                            is_set = True
+                if is_set:
+                    try:
+                        target_crash.save()
+                    except Exception as err:
+                        message = "Save Crash {} failed: {}!".format(target_crash.path, err)
+                    print "Change Crash, save {}!".format(target_crash.path)
+                else:
+                    print "Not change Crash, don't save!"
+            else:
+                message = 'Crash id {} does NOT exist!'.format(crash_id)
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
 
 def ajax_get_builds(request):
     prj_name = request.POST.get('project_name', None)
@@ -962,15 +1189,17 @@ def host_page(request):
     target_prj = None
     target_build = None
     builds = []
-    if prj_id:
-        target_prj = Project.objects.filter(id=prj_id)
-        if target_prj:
-            target_prj = target_prj[0]
-            builds = Build.objects.filter(project=target_prj).order_by('-create')
     if build_id:
         target_build = Build.objects.filter(id=build_id)
         if target_build:
             target_build = target_build[0]
+            target_prj = target_build.project
+            builds = target_prj.build_set.order_by('-create')
+    elif prj_id:
+        target_prj = Project.objects.filter(id=prj_id)
+        if target_prj:
+            target_prj = target_prj[0]
+            builds = Build.objects.filter(project=target_prj).order_by('-create')
     return render(request, 'tbd/host.html', {'project': target_prj, 'projects': projects, 'build': target_build, 'builds': builds})
 
 def testcase_page(request):
@@ -980,20 +1209,42 @@ def testcase_page(request):
     target_prj = None
     target_build = None
     builds = []
-    if prj_id:
-        target_prj = Project.objects.filter(id=prj_id)
-        if target_prj:
-            target_prj = target_prj[0]
-            builds = Build.objects.filter(project=target_prj).order_by('-create')
     if build_id:
         target_build = Build.objects.filter(id=build_id)
         if target_build:
             target_build = target_build[0]
+            target_prj = target_build.project
+            builds = target_prj.build_set.order_by('-create')
+    elif prj_id:
+        target_prj = Project.objects.filter(id=prj_id)
+        if target_prj:
+            target_prj = target_prj[0]
+            builds = Build.objects.filter(project=target_prj).order_by('-create')
     return render(request, 'tbd/testcase.html', {
         'project': target_prj, 'projects': projects,
         'build': target_build, 'builds': builds,
         'testcase_platform_choice': json.dumps(dict(TestCase.PLATFORM_CHOICE)),
     })
+
+def crash_page(request):
+    prj_id = request.GET.get('prj_id', '')
+    build_id = request.GET.get('build_id', '')
+    projects = Project.objects.all()
+    target_prj = None
+    target_build = None
+    builds = []
+    if build_id:
+        target_build = Build.objects.filter(id=build_id)
+        if target_build:
+            target_build = target_build[0]
+            target_prj = target_build.project
+            builds = target_prj.build_set.order_by('-create')
+    elif prj_id:
+        target_prj = Project.objects.filter(id=prj_id)
+        if target_prj:
+            target_prj = target_prj[0]
+            builds = Build.objects.filter(project=target_prj).order_by('-create')
+    return render(request, 'tbd/crash.html', {'project': target_prj, 'projects': projects, 'build': target_build, 'builds': builds})
 
 def build_page_post(request):
     get_method = request.POST.get('method', None)

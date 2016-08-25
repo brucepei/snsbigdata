@@ -75,6 +75,7 @@ class Build(models.Model):
     local_path = models.CharField(blank=True, default='', max_length=255)
     crash_path = models.CharField(default='', max_length=255)
     use_server = models.BooleanField(default=False)
+    test_hours = models.PositiveIntegerField(default=0)
     create = models.DateTimeField(auto_now_add=True)
     
     project = models.ForeignKey(
@@ -105,7 +106,7 @@ class Host(models.Model):
         unique_together = ("project", "name")
         
     def __unicode__(self):
-        return "Host {}(IPv4{})".format(self.name, self.ip)
+        return "{}(IPv4{})".format(self.name, self.ip)
         
 class TestCase(models.Model):
     PHOENIX = 'PHO'
@@ -135,7 +136,7 @@ class TestCase(models.Model):
         unique_together = ("project", "name")
         
     def __unicode__(self):
-        return "TestCase {}({})".format(self.name, self.platform)
+        return "{}({})".format(self.name, self.platform)
 
 class JIRA(models.Model):
     OPEN = 'OP'
@@ -160,7 +161,7 @@ class JIRA(models.Model):
         return self.category == self.CNSS
     
     def __unicode__(self):
-        return "JIRA {}".format(self.jira_id)
+        return "{}".format(self.jira_id)
         
 class Crash(models.Model):
     path = models.CharField(unique=True, default='', max_length=255)

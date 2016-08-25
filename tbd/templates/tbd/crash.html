@@ -1,0 +1,390 @@
+﻿{% extends 'tbd/base.html' %}
+{% block title %}TestData - SBD{% endblock %}
+{% block nav_crash_attr %}class="active"{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>
+                          <h1>
+                          {% if project %}
+                          {{ project.name }} <small>{{ project.owner }}</small>
+                          {% else %}
+                          No project selection <small>anonymous</small>
+                          {% endif %}
+                          </h1>
+                        </p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="filtering">
+                            Project:
+                            <select name="project_name" class="selectpicker">
+                                <option value>--select project--</option>
+                                {% for prj in projects %}
+                                    <option value="{{prj.id}}"{% if project and prj == project %} selected="selected"{% endif %}>{{forloop.counter}}. {{prj.name}}</option>
+                                {% endfor %}
+                            </select>
+                            Build: 
+                            <select name="build_version" class="selectpicker">
+                                <option value>--select build--</option>
+                                {% for bld in builds %}
+                                    <option value="{{bld.id}}"{% if build and build == bld %} selected="selected"{% endif %}>{{forloop.counter}}. {{bld.short_name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="HostContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!--<div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-7">
+                        <p>
+                          <h1>
+                            {% if build %}
+                                {{ build.project.name }} <small>{{ build.version }}</small>
+                            {% else %}
+                                {% if project %}
+                                {{ project.name }} <small>No build selection</small>
+                                {% else %}
+                                No project selection <small>No build selection</small>
+                                {% endif %}
+                            {% endif %}
+                          </h1>
+                        </p>
+                    </div>
+                    <div class="col-md-5">
+                        <h4>Choose project:
+                            <select name="td_project_name" class="selectpicker">
+                                <option>--select project--</option>
+                            </select>
+                        </h4>
+                        <h4>Choose build:
+                            <select name="td_build_version" class="selectpicker">
+                                <option>--select build--</option>
+                            </select>
+                        </h4>
+                    </div>
+                </div>
+                <h4>Sort by:
+                    <select name="td_sort_by" class="selectpicker">
+                        <option value="Host"{% if sort_by == 'Host' %} selected{% endif %}>Host</option>
+                        <option value="TestCase"{% if sort_by == 'TestCase' %} selected{% endif %}>TestCase</option>
+                    </select>
+                </h4>
+                <table id="id_build_table" class="table table-striped table-hover" contenteditable="false">
+                    <caption class="text-center">Test Data</caption>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>{{ sort_by }}</th>
+                            <th>TotalDump</th>
+                            <th>OpenCrash</th>
+                            <th>ValidCrash</th>
+                            <th>Operation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in page.items %}
+                        <tr>
+                            <td>{{ item.no }}</td>
+                            <td>{{ item.name }}{% if sort_by == 'Host' %}({{ item.ip }}){% else %}({{ item.platform }}){% endif %}</td>
+                            <td>{{ item.total_dump }}</td>
+                            <td>{{ item.open_crash }}</td>
+                            <td>{{ item.valid_crash }}</td>
+                            <td>
+                                <a href="#"><span class="glyphicon glyphicon-share-alt" aria-hidden="true">JIRA</span></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if page.list %}
+                <ul class="pagination">
+                    <li>
+                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&sort_by={{ sort_by }}&page={{ page.previous }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                    {% for p in page.list %}
+                    <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&sort_by={{ sort_by }}&page={{ p }}">{{ p }}</a></li>
+                    {% endfor %}
+                    <li>
+                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&sort_by={{ sort_by }}&page={{ page.next }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                </ul>
+                {% endif %}
+                {% if flash %}
+                <div class="alert alert-{{ flash.type }}"  role="alert">
+                    <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
+                </div>
+                {% endif %}
+                <div>
+                    <form action="{% url 'tbd_crash' %}" method="post">
+                        {% for hidden in form.crash.hidden_fields %}
+                        {{ hidden }}
+                        {% endfor %}
+                        {% csrf_token %}
+                        <fieldset>
+                            <legend contenteditable="false">Add Crash</legend>
+                            <table>
+                                <tr class="crash_head">
+                                    <td><label>Host:</label></td>
+                                    <td>
+                                        <select name="td_host" class="selectpicker">
+                                            <option>--select host--</option>
+                                        </select>
+                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax' 'add_host' %}">Extend</button>
+                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax' 'del_host' %}">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr class="hidden info">
+                                    <td>Add Host:</td>
+                                    <td>
+                                        {% for host_field in form.host %}
+                                            {{host_field}}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                <tr class="crash_head">
+                                    <td><label>TestCase:</label></td>
+                                    <td>
+                                        <select name="td_testcase" class="selectpicker">
+                                            <option>--select testcase--</option>
+                                        </select>
+                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax' 'add_tc'%}">Extend</button>
+                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax' 'del_tc' %}">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr class="hidden info">
+                                    <td>Add TestCase:</td>
+                                    <td>
+                                        {% for testcase_field in form.testcase %}
+                                            {{testcase_field}}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                {% for field in form.crash.visible_fields %}
+                                <tr class="crash_head"><td>{{ field.label_tag }}</td><td>{{ field }}</td></tr>
+                                {% endfor %}
+                                <tr>
+                                    <td><button class="btn btn-default" type="reset" contenteditable="false">Reset</button></td>
+                                    <td><button class="btn btn-default" name="add" type="submit" contenteditable="false">Submit</button></td>
+                                </tr>
+                            </table>
+                        </fieldset>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>-->
+{% endblock %}
+
+
+{% block user_js %}
+<script type="text/javascript">
+    var cachedCrashOptions = {'testcase': {}, 'host': {}, 'jira': {}, 'build': {}};
+    $(function(){
+        $('#HostContainer').jtable({
+            title: 'Crash List',
+            ajaxSettings: {
+                beforeSend: function(xhr, settings){
+                    xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
+                }
+            },
+            paging: true,
+            pageSize: 20,
+            selecting: false,
+            actions: {
+                listAction: '/ajax/crash_list',
+                createAction: '/ajax/crash_create',
+                updateAction: '/ajax/crash_update',
+                deleteAction: '/ajax/crash_delete'
+            },
+            fields: {
+                crash_id: {
+                    key: true,
+                    list: false
+                },
+                crash_path: {
+                    title: 'Crash Path',
+                    width: '15%',
+                    display: function(data) {
+                        console.log(data);
+                        if ('crash_path' in data.record) {
+                            var crash_path = data.record.crash_path;
+                            var parts = crash_path.split(/[\\\/]/);
+                            var last_part = '';
+                            for (var i=parts.length - 1; i >= 0; i--) {
+                                if (parts[i]) {
+                                    last_part = parts[i];
+                                    break;
+                                }
+                            }
+                            parts = crash_path.split('/')
+                            return '<a href="' + crash_path + '">' + last_part + '</a>';
+                        }
+                        return '';
+                    },
+                },
+                build_id: {
+                    title: 'Build',
+                    width: '20%',
+                    options: function (data) {
+                        console.log(data);
+                        var prj_id = {% if project %}{{ project.id }}{% else %}null{% endif %};
+                        if (prj_id) {
+                            if (prj_id in cachedCrashOptions.build) {
+                                console.log("return cached build for project id " + prj_id + "!");
+                                return cachedCrashOptions.build[prj_id];
+                            }
+                        }
+                        else {
+                            console.log("%Error%: not found project id when request build list!");
+                            return [];
+                        }
+                        var options = [];
+                        $.ajax({
+                            url: '/ajax/running_project_list_builds',
+                            type: 'POST',
+                            dataType: 'json',
+                            data: {'prj_id': prj_id},
+                            async: false,
+                            beforeSend: function(xhr, settings){
+                                xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
+                            },
+                            success: function (data) {
+                                if (data.Result != 'OK') {
+                                    alert(data.Message);
+                                    return;
+                                }
+                                console.log(data);
+                                options = data.Options;
+                            }
+                        });
+                        return cachedCrashOptions.build[prj_id] = options; //Cache results and return options
+                    },
+                    create: true,
+                    edit: true
+                },
+                host_id: {
+                    title: 'Host',
+                    width: '10%',
+                    options: function (data) {
+                        console.log(data);
+                        var prj_id = {% if project %}{{ project.id }}{% else %}null{% endif %};
+                        if (prj_id) {
+                            if (prj_id in cachedCrashOptions.host) {
+                                console.log("return cached host for project id " + prj_id + "!");
+                                return cachedCrashOptions.host[prj_id];
+                            }
+                        }
+                        else {
+                            console.log("%Error%: not found project id when request build list!");
+                            return [];
+                        }
+                        var options = [];
+                        $.ajax({
+                            url: '/ajax/crash_list_hosts?prj_id='+prj_id,
+                            type: 'POST',
+                            dataType: 'json',
+                            async: false,
+                            beforeSend: function(xhr, settings){
+                                xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
+                            },
+                            success: function (data) {
+                                if (data.Result != 'OK') {
+                                    alert(data.Message);
+                                    return;
+                                }
+                                console.log(data);
+                                options = data.Options;
+                            }
+                        });
+                        return cachedCrashOptions.host[prj_id] = options; //Cache results and return options
+                    },
+                    create: true,
+                    edit: true
+                },
+                testcase_id: {
+                    title: 'TestCase',
+                    width: '10%',
+                    options: function (data) {
+                        console.log(data);
+                        var prj_id = {% if project %}{{ project.id }}{% else %}null{% endif %};
+                        if (prj_id) {
+                            if (prj_id in cachedCrashOptions.testcase) {
+                                console.log("return cached testcase for project id " + prj_id + "!");
+                                return cachedCrashOptions.testcase[prj_id];
+                            }
+                        }
+                        else {
+                            console.log("%Error%: not found project id when request build list!");
+                            return [];
+                        }
+                        var options = [];
+                        $.ajax({
+                            url: '/ajax/crash_list_testcases?prj_id='+prj_id,
+                            type: 'POST',
+                            dataType: 'json',
+                            async: false,
+                            beforeSend: function(xhr, settings){
+                                xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
+                            },
+                            success: function (data) {
+                                if (data.Result != 'OK') {
+                                    alert(data.Message);
+                                    return;
+                                }
+                                console.log(data);
+                                options = data.Options;
+                            }
+                        });
+                        return cachedCrashOptions.testcase[prj_id] = options; //Cache results and return options
+                    },
+                    create: true,
+                    edit: true
+                },
+                jira_id: {
+                    title: 'JIRA ID',
+                    width: '10%',
+                    create: true,
+                    edit: true
+                },
+                jira_category: {
+                    title: 'JIRA Cate',
+                    width: '10%',
+                    create: false,
+                    edit: false
+                },
+                create_time: {
+                    title: 'Create Time',
+                    width: '25%',
+                    create: false,
+                    edit: false
+                }
+            }
+        });
+        $('#HostContainer').jtable('load', {
+            'prj_id': {% if project %}{{ project.id }}{% else %}null{% endif %},
+            'build_id': {% if build %}{{ build.id }}{% else %}null{% endif %}
+        });
+    });
+</script>
+{% endblock %}

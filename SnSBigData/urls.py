@@ -24,7 +24,7 @@ urlpatterns = [
     url(r'^build$', tbd.views.build_page, name='tbd_build'),
     url(r'^host$', tbd.views.host_page, name='tbd_host'),
     url(r'^testcase$', tbd.views.testcase_page, name='tbd_testcase'),
-    url(r'^testdata$', tbd.views.testdata_page, name='tbd_testdata'),
+    url(r'^crash$', tbd.views.crash_page, name='tbd_crash'),
     url(r'^ajax/([^/]+)$', tbd.views.ajax, name='ajax'),
     url(r'^auto/([^/]+)$', tbd.views.auto, name='auto'),
 ]

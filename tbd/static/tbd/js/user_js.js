@@ -117,23 +117,48 @@ $("select[name='project_name']").change( function() {
         if ($(this).val().indexOf('--') != 0) {
             window.location.href = '/testcase?prj_id=' + $(this).val()
         }
+    } else if (cur_url.indexOf('/crash') > -1) {
+        if ($(this).val().indexOf('--') != 0) {
+            window.location.href = '/crash?prj_id=' + $(this).val()
+        }
     }
 });
 
 $("select[name='build_version']").change( function() {
     cur_url = window.location.href
-    prj_id = $("select[name='project_name']").val();
     if (cur_url.indexOf('/build') > -1) {
         if ($(this).val().indexOf('--') != 0) {
-            window.location.href = '/build?prj_id=' + prj_id + "&build_id=" + $(this).val()
+            window.location.href = '/build?build_id=' + $(this).val()
         }
     } else if (cur_url.indexOf('/host') > -1) {
         if ($(this).val().indexOf('--') != 0) {
-            window.location.href = '/host?prj_id=' + prj_id + "&build_id=" + $(this).val()
+            build_id = $(this).val();
+            if (build_id) {
+                window.location.href = '/host?build_id=' + build_id;
+            } else {
+                prj_id = $("select[name='project_name']").val();
+                window.location.href = '/host?prj_id=' + prj_id;
+            }
         }
     } else if (cur_url.indexOf('/testcase') > -1) {
         if ($(this).val().indexOf('--') != 0) {
-            window.location.href = '/testcase?prj_id=' + prj_id + "&build_id=" + $(this).val()
+            build_id = $(this).val();
+            if (build_id) {
+                window.location.href = '/testcase?build_id=' + build_id;
+            } else {
+                prj_id = $("select[name='project_name']").val();
+                window.location.href = '/testcase?prj_id=' + prj_id;
+            }
+        }
+    } else if (cur_url.indexOf('/crash') > -1) {
+        if ($(this).val().indexOf('--') != 0) {
+            build_id = $(this).val();
+            if (build_id) {
+                window.location.href = '/crash?build_id=' + build_id;
+            } else {
+                prj_id = $("select[name='project_name']").val();
+                window.location.href = '/crash?prj_id=' + prj_id;
+            }
         }
     }
 });

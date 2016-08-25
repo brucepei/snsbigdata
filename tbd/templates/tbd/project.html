@@ -50,8 +50,8 @@
                     display: function(data) {
                         console.log(data);
                         if ('build_num' in data.record) {
-                            build_num = data.record.build_num;
-                            prj_id = data.record.prj_id;
+                            var build_num = data.record.build_num;
+                            var prj_id = data.record.prj_id;
                             return '<a href="{% url "tbd_build" %}?prj_id=' + prj_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + build_num + ' builds</span></a>';
                         }
                         return 0;
@@ -64,8 +64,8 @@
                     display: function(data) {
                         console.log(data);
                         if ('build_num' in data.record) {
-                            host_num = data.record.host_num;
-                            prj_id = data.record.prj_id;
+                            var host_num = data.record.host_num;
+                            var prj_id = data.record.prj_id;
                             return '<a href="{% url "tbd_host" %}?prj_id=' + prj_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + host_num + ' hosts</span></a>';
                         }
                         return 0;
@@ -78,8 +78,8 @@
                     display: function(data) {
                         console.log(data);
                         if ('build_num' in data.record) {
-                            testcase_num = data.record.testcase_num;
-                            prj_id = data.record.prj_id;
+                            var testcase_num = data.record.testcase_num;
+                            var prj_id = data.record.prj_id;
                             return '<a href="{% url "tbd_testcase" %}?prj_id=' + prj_id + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + testcase_num + ' tc</span></a>';
                         }
                         return 0;

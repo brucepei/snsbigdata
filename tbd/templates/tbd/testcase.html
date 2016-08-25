@@ -89,8 +89,8 @@
                     display: function(data) {
                         console.log(data);
                         if ('crash_num' in data.record) {
-                            crash_num = data.record.crash_num;
-                            return '<a href="{% url "tbd_testdata" %}?prj_id={% if project %}{{ project.id }}{% endif %}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + ' crashes</span></a>';
+                            var crash_num = data.record.crash_num;
+                            return '<a href="{% url "tbd_crash" %}?prj_id={% if project %}{{ project.id }}{% endif %}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + ' crashes</span></a>';
                         }
                         return 0;
                     },
