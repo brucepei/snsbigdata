@@ -1155,7 +1155,23 @@ def auto(request, action):
         return func(request)
     else:
         return json_response("Unknown auto action: {!r}!".format(action), -1)
-    
+
+def auto_query_build(request):
+    err_code = None
+    msg = None
+    if request.method == 'POST':
+        prj_name = request.POST.get('project_name', None)
+        print prj_name
+        builds = Build.objects.filter(project__name=prj_name).order_by('-create')
+        msg = []
+        err_code = 0
+        for bld in builds:
+            msg.append({
+                'version': bld.version,
+                'name': bld.short_name,
+            })
+    return json_response(msg, err_code)
+        
 def auto_crash_info(request):
     err_code = None
     msg = None
