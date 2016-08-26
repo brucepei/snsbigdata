@@ -8,6 +8,43 @@ from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddT
 import time
 import json
 
+DEFAULT = {
+    'jira': {'name': ''},
+    'host': {'name': '!NULL!'},
+    'testcase': {'name': '!NULL!'},
+}
+
+try:
+    jira = JIRA.objects.filter(is_default=True)
+    if jira:
+        jira = jira[0]
+        if jira.category != JIRA.NONE or jira.jira_id != DEFAULT['jira']['name']:
+            jira.jira_id = DEFAULT['jira']['name']
+            jira.category = JIRA.NONE
+            jira.save()
+    else:
+        JIRA.objects.create(is_default=True, jira_id=DEFAULT['jira']['name'], category=JIRA.NONE)
+    for prj in Project.objects.all():
+        host = Host.objects.filter(project=prj, is_default=True)
+        if host:
+            host = host[0]
+            if host.name != DEFAULT['host']['name']:
+                host.name = DEFAULT['host']['name']
+                host.save()
+        else:
+            Host.objects.create(is_default=True, project=prj, name=DEFAULT['host']['name'])
+        testcase = TestCase.objects.filter(project=prj, is_default=True)
+        if testcase:
+            testcase = testcase[0]
+            if testcase.name != DEFAULT['testcase']['name']:
+                testcase.name = DEFAULT['testcase']['name']
+                testcase.save()
+        else:
+            TestCase.objects.create(is_default=True, project=prj, name=DEFAULT['testcase']['name'])
+    print "!!!!!!!!!!!!!Initial DB done!!!!!!!!!!!!!!!!"
+except Exception as err:
+    print err
+    
 #internal func
 def flash(request, flash_data=None):
     if flash_data:
@@ -265,10 +302,12 @@ def ajax_running_project_list(request):
             running_build_id = prj.attr('running_build')
             target_build = None
             crash_num = 0
+            total_hours = 0
             if running_build_id:
                 target_build = Build.objects.filter(id=running_build_id)
                 if target_build:
                     target_build = target_build[0]
+                    total_hours = target_build.test_hours
                     crash_num = Crash.objects.filter(build=target_build).count()
             record = {'prj_id': prj.id,
                       'prj_name': prj.name,
@@ -278,7 +317,7 @@ def ajax_running_project_list(request):
                       'os_ver': prj.attr('os_ver'),
                       'board_type': prj.attr('board_type'),
                       'total_devices': prj.attr('total_devices'),
-                      'total_hours': target_build.test_hours,
+                      'total_hours': total_hours,
                       'crash_num': crash_num,
                       'cs_date': prj.attr('cs_date'),
                       'last_update': prj.last_update,
@@ -349,8 +388,8 @@ def ajax_project_list(request):
                 'prj_name': prj.name,
                 'prj_owner': prj.owner,
                 'build_num': Build.objects.filter(project=prj).count(),
-                'host_num': Host.objects.filter(project=prj).count(),
-                'testcase_num': TestCase.objects.filter(project=prj).count(),
+                'host_num': Host.objects.filter(project=prj, is_default=False).count(),
+                'testcase_num': TestCase.objects.filter(project=prj, is_default=False).count(),
                 'create_time': prj.create,
             })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.count()})
@@ -397,6 +436,11 @@ def ajax_project_create(request):
                 }
             except Exception as err:
                 message = "Save Project {} failed: {}!".format(name, err)
+            try:
+                Host.objects.create(is_default=True, project=target_prj, name=DEFAULT['host']['name'])
+                TestCase.objects.create(is_default=True, project=target_prj, name=DEFAULT['testcase']['name'])
+            except Exception as err:
+                message = "Failed to create related default host/testcase for project {}: {}!".format(target_prj.name, err)
         else:
             message = 'Project {} has already existed!'.format(name)
     else:
@@ -422,12 +466,10 @@ def ajax_build_list(request):
                 running_build_id = target_prj.attr('running_build')
                 total_count = Build.objects.filter(project=target_prj).count()
                 for bld in Build.objects.filter(project=target_prj).order_by('-create')[start_index: page_size+start_index]:
-                    build_version = bld.version
-                    if str(bld.id) == running_build_id:
-                        build_version = '-> ' + build_version
                     records.append({
                         'build_id': bld.id,
-                        'build_version': build_version,
+                        'running_build_id': running_build_id,
+                        'build_version': bld.version,
                         'build_short_name': bld.short_name,
                         'build_server_path': bld.server_path,
                         'build_local_path': bld.local_path,
@@ -453,7 +495,10 @@ def ajax_build_create(request):
                 if build_version:
                     target_build = Build.objects.filter(project=target_prj, version=build_version)
                     if not target_build:
-                        use_server = True if request.POST.get('build_use_server', 'False').lower() == 'true' else False,
+                        use_server = True if request.POST.get('build_use_server', 'False').lower() == 'true' else False
+                        test_hour = request.POST.get('build_test_hours', 0)
+                        if not test_hour:
+                            test_hour = 0
                         try:
                             target_build = Build.objects.create(
                                 project=target_prj,
@@ -462,7 +507,7 @@ def ajax_build_create(request):
                                 server_path=request.POST.get('build_server_path', None),
                                 local_path=request.POST.get('build_local_path', None),
                                 crash_path=request.POST.get('build_crash_path', None),
-                                test_hours=request.POST.get('build_test_hours', None),
+                                test_hours=test_hour,
                                 use_server=use_server,
                             )
                             record = {
@@ -637,23 +682,26 @@ def ajax_host_update(request):
             target_host = Host.objects.filter(id=host_id)
             if target_host:
                 target_host = target_host[0]
-                is_set = False
-                for attr in ('host_name', 'host_ip', 'host_mac'):
-                    attr_val = request.POST.get(attr, None)
-                    if attr_val is not None:
-                        attr_name = attr[5:]
-                        orig_val = getattr(target_host, attr_name, None)
-                        if orig_val != attr_val:
-                            setattr(target_host, attr_name, attr_val)
-                            is_set = True
-                if is_set:
-                    try:
-                        target_host.save()
-                    except Exception as err:
-                        message = "Save Host {} failed: {}!".format(target_host.name, err)
-                    print "Change Host, save {}!".format(target_host.name)
+                if target_host.is_default:
+                    message = "Default host {} cannot be edited!".format(target_host.name)
                 else:
-                    print "Not change host, don't save!"
+                    is_set = False
+                    for attr in ('host_name', 'host_ip', 'host_mac'):
+                        attr_val = request.POST.get(attr, None)
+                        if attr_val is not None:
+                            attr_name = attr[5:]
+                            orig_val = getattr(target_host, attr_name, None)
+                            if orig_val != attr_val:
+                                setattr(target_host, attr_name, attr_val)
+                                is_set = True
+                    if is_set:
+                        try:
+                            target_host.save()
+                        except Exception as err:
+                            message = "Save Host {} failed: {}!".format(target_host.name, err)
+                        print "Change Host, save {}!".format(target_host.name)
+                    else:
+                        print "Not change host, don't save!"
             else:
                 message = 'Host id {} does NOT exist!'.format(host_id)
         else:
@@ -674,10 +722,13 @@ def ajax_host_delete(request):
             target_host = Host.objects.filter(id=host_id)
             if target_host:
                 target_host = target_host[0]
-                try:
-                    target_host.delete()
-                except Exception as err:
-                    message = "Delete Host {} failed: {}!".format(target_host.name, err)
+                if target_host.is_default:
+                    message = "Default host {} cannot be deleted!".format(target_host.name)
+                else:
+                    try:
+                        target_host.delete()
+                    except Exception as err:
+                        message = "Delete Host {} failed: {}!".format(target_host.name, err)
             else:
                 message = 'Host id {} is NOT existed, no necessary to delete!'.format(host_id)
         else:
@@ -765,23 +816,26 @@ def ajax_testcase_update(request):
             target_testcase = TestCase.objects.filter(id=testcase_id)
             if target_testcase:
                 target_testcase = target_testcase[0]
-                is_set = False
-                for attr in ('testcase_name', 'testcase_platform'):
-                    attr_val = request.POST.get(attr, None)
-                    if attr_val is not None:
-                        attr_name = attr[9:]
-                        orig_val = getattr(target_testcase, attr_name, None)
-                        if orig_val != attr_val:
-                            setattr(target_testcase, attr_name, attr_val)
-                            is_set = True
-                if is_set:
-                    try:
-                        target_testcase.save()
-                    except Exception as err:
-                        message = "Save TestCase {} failed: {}!".format(target_testcase.name, err)
-                    print "Change TestCase, save {}!".format(target_testcase.name)
+                if target_testcase.is_default:
+                    message = "Default testcase {} cannot be edited!".format(target_testcase.name)
                 else:
-                    print "Not change Testcase, don't save!"
+                    is_set = False
+                    for attr in ('testcase_name', 'testcase_platform'):
+                        attr_val = request.POST.get(attr, None)
+                        if attr_val is not None:
+                            attr_name = attr[9:]
+                            orig_val = getattr(target_testcase, attr_name, None)
+                            if orig_val != attr_val:
+                                setattr(target_testcase, attr_name, attr_val)
+                                is_set = True
+                    if is_set:
+                        try:
+                            target_testcase.save()
+                        except Exception as err:
+                            message = "Save TestCase {} failed: {}!".format(target_testcase.name, err)
+                        print "Change TestCase, save {}!".format(target_testcase.name)
+                    else:
+                        print "Not change Testcase, don't save!"
             else:
                 message = 'TestCase id {} does NOT exist!'.format(testcase_id)
         else:
@@ -802,10 +856,13 @@ def ajax_testcase_delete(request):
             target_testcase = TestCase.objects.filter(id=testcase_id)
             if target_testcase:
                 target_testcase = target_testcase[0]
-                try:
-                    target_testcase.delete()
-                except Exception as err:
-                    message = "Delete TestCase {} failed: {}!".format(target_testcase.name, err)
+                if target_testcase.is_default:
+                    message = "Default testcase {} cannot be deleted!".format(target_testcase.name)
+                else:
+                    try:
+                        target_testcase.delete()
+                    except Exception as err:
+                        message = "Delete TestCase {} failed: {}!".format(target_testcase.name, err)
             else:
                 message = 'TestCase id {} is NOT existed, no necessary to delete!'.format(testcase_id)
         else:
@@ -850,18 +907,15 @@ def ajax_crash_list(request):
                         'build_id': crash.build.id,
                         'host_id': crash.host.id,
                         'testcase_id': crash.testcase.id,
-                        'jira_id': crash.jira.jira_id if crash.jira else 'n/a',
-                        'jira_category': crash.jira.category if crash.jira else 'n/a',
+                        'jira_id': crash.jira.jira_id,
+                        'jira_category': crash.jira.category,
                         'create_time': crash.create,
                     })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
 
 def ajax_crash_list_hosts(request):
     print request.POST
-    options = [{
-        "DisplayText": '--no host--',
-        "Value": ''
-    }]
+    options = []
     if request.method == 'POST':
         prj_id = request.GET.get('prj_id', None)
         if prj_id:
@@ -877,10 +931,7 @@ def ajax_crash_list_hosts(request):
 
 def ajax_crash_list_testcases(request):
     print request.POST
-    options = [{
-        "DisplayText": '--no testcase--',
-        "Value": ''
-    }]
+    options = []
     if request.method == 'POST':
         prj_id = request.GET.get('prj_id', None)
         if prj_id:
@@ -913,14 +964,23 @@ def ajax_crash_create(request):
                 jira_id = request.POST.get('jira_id', None)
                 if host_id:
                     target_host = Host.objects.filter(id=host_id)
-                    if target_host:
-                        target_host = target_host[0]
+                else:
+                    target_host = Host.objects.filter(is_default=True, project=target_build.project)
+                if target_host:
+                    target_host = target_host[0]
                 if testcase_id:
                     target_testcase = TestCase.objects.filter(id=testcase_id)
-                    if target_testcase:
-                        target_testcase = target_testcase[0]
+                else:
+                    target_testcase = TestCase.objects.filter(is_default=True, project=target_build.project)
+                if target_testcase:
+                    target_testcase = target_testcase[0]
                 if jira_id:
-                    target_jira = JIRA.objects.filter(jira_id=jira_id)
+                    try:
+                        target_jira, created = JIRA.objects.get_or_create(jira_id=jira_id)
+                    except Exception as err:
+                        print "Failed to create JIRA by jira id {}: {}".format(jira_id, err)
+                if not target_jira:
+                    target_jira = JIRA.objects.filter(is_default=True)
                     if target_jira:
                         target_jira = target_jira[0]
                 try:
@@ -931,8 +991,8 @@ def ajax_crash_create(request):
                         'build_id': target_crash.build.id,
                         'host_id': target_crash.host.id,
                         'testcase_id': target_crash.testcase.id,
-                        'jira_id': target_crash.jira.jira_id if target_crash.jira else 'n/a',
-                        'jira_category': target_crash.jira.category if target_crash.jira else 'n/a',
+                        'jira_id': target_crash.jira.jira_id,
+                        'jira_category': target_crash.jira.category,
                     }
                 except Exception as err:
                     message = "Save Crash {} failed: {}!".format(crash_path, err)
@@ -1000,10 +1060,13 @@ def ajax_crash_update(request):
                     if target_testcase:
                         target_crash.testcase = target_testcase[0]
                         is_set = True
-                if target_crash.jira and jira_id != target_crash.jira.id:
-                    target_jira = JIRA.objects.filter(jira_id=jira_id)
+                if jira_id != target_crash.jira_id:
+                    try:
+                        target_jira, created = JIRA.objects.get_or_create(jira_id=jira_id)
+                    except Exception as err:
+                        print "Failed to get/create JIRA by jira id {}: {}".format(jira_id, err)
                     if target_jira:
-                        target_crash.jira = target_jira[0]
+                        target_crash.jira = target_jira
                         is_set = True
                 for attr in ('crash_path',):
                     attr_val = request.POST.get(attr, None)
@@ -1098,26 +1161,41 @@ def auto_crash_info(request):
     msg = None
     if request.method == 'POST':
         prj_name = request.POST.get('project_name', None)
-        prj_owner = request.POST.get('project_owner', '')
+        #prj_owner = request.POST.get('project_owner', '')
         build_version = request.POST.get('build_version', None)
         path = request.POST.get('path', None)
         host_name = request.POST.get('host_name', None)
         host_ip = request.POST.get('host_ip', '')
         host_mac = request.POST.get('host_mac', '')
         tc_name = request.POST.get('testcase_name', None)
-        tc_platform = request.POST.get('testcase_platform', None)
-        if path and prj_name and prj_owner and build_version and host_name and tc_name and tc_platform:
-            err_code, msg, prj = add_project(prj_name, prj_owner)
-            if prj:
-                err_code, msg, build = add_build(prj_name, build_version, prj)
-                if build:
-                    err_code, msg, tc = add_testcase(prj_name, tc_name, tc_platform, prj)
-                    if tc:
-                        err_code, msg, host = add_host(prj_name, host_name, host_ip, host_mac, prj)
-                        if host:
-                            err_code, msg, crash = add_crash(prj_name, build_version, path, prj, build, host, tc)
-                            if crash:
-                                return json_response(msg, err_code)
+        tc_platform = request.POST.get('testcase_platform', '')
+        jira_id = request.POST.get('jira_id', None)
+        if path and prj_name and build_version and host_name and tc_name:
+            build = Build.objects.filter(project__name=prj_name, version=build_version)
+            if build:
+                build = build[0]
+                try:
+                    host, created = Host.objects.get_or_create(project=build.project, name=host_name, ip=host_ip, mac=host_mac)
+                    testcase, created = TestCase.objects.get_or_create(project=build.project, name=tc_name, platform=tc_platform)
+                    jira = None
+                    if jira_id:
+                        jira, created = JIRA.objects.get_or_create(jira_id=jira_id, category='OP')
+                    if not jira:
+                        jira = JIRA.objects.filter(is_default=True)
+                        if jira:
+                            jira = jira[0]
+                    crash, created = Crash.objects.get_or_create(path=path, build=build, host=host, testcase=testcase, jira=jira)
+                    if created:
+                        msg = "Create crash done!"
+                    else:
+                        msg = "Crash already existed!"
+                except Exception as err:
+                    msg = "Failed to create crash record: {}".format(err)
+                    err_code = -1
+                    return json_response(msg, err_code)
+                return json_response(msg, 0)
+            else:
+                return json_response("Not found build {}!".format(build_version), -1)
         else:
             return json_response("Need necessary arguments when auto create crash!", -1)
     return json_response(msg, err_code)
@@ -1244,7 +1322,11 @@ def crash_page(request):
         if target_prj:
             target_prj = target_prj[0]
             builds = Build.objects.filter(project=target_prj).order_by('-create')
-    return render(request, 'tbd/crash.html', {'project': target_prj, 'projects': projects, 'build': target_build, 'builds': builds})
+    return render(request, 'tbd/crash.html', {
+        'project': target_prj, 'projects': projects,
+        'build': target_build, 'builds': builds,
+        'jira_category_choice': json.dumps(dict(JIRA.CATEGORY_CHOICE)),
+    })
 
 def build_page_post(request):
     get_method = request.POST.get('method', None)

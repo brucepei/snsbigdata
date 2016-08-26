@@ -94,6 +94,7 @@ class Host(models.Model):
     name = models.CharField(default='', max_length=50)
     ip = models.GenericIPAddressField(protocol='IPv4', default='')
     mac = models.CharField(default='', max_length=12)
+    is_default = models.BooleanField(default=False)
     
     project = models.ForeignKey(
         Project,
@@ -106,7 +107,7 @@ class Host(models.Model):
         unique_together = ("project", "name")
         
     def __unicode__(self):
-        return "{}(IPv4{})".format(self.name, self.ip)
+        return "{}".format(self.name)
         
 class TestCase(models.Model):
     PHOENIX = 'PHO'
@@ -124,6 +125,7 @@ class TestCase(models.Model):
     )
     name = models.CharField(default='', max_length=80)
     platform = models.CharField(default='', choices=PLATFORM_CHOICE, max_length=3)
+    is_default = models.BooleanField(default=False)
     
     project = models.ForeignKey(
         Project,
@@ -136,23 +138,26 @@ class TestCase(models.Model):
         unique_together = ("project", "name")
         
     def __unicode__(self):
-        return "{}({})".format(self.name, self.platform)
+        return "{}".format(self.name)
 
 class JIRA(models.Model):
+    NONE = ''
     OPEN = 'OP'
     INVALID     = 'IN'
     WITHDRAW  = 'WD'
     CNSS    = 'CN'
     NONCNSS = 'NC'
     CATEGORY_CHOICE = (
-        (OPEN, 'Open Issue'),
-        (INVALID, 'Invalid Issue'),
-        (WITHDRAW, 'Withdraw Issue'),
-        (CNSS, 'CNSS Issue'),
-        (NONCNSS, 'Non-CNSS Issue'),
+        (NONE, ''),
+        (OPEN, 'Open'),
+        (INVALID, 'Invalid'),
+        (WITHDRAW, 'Withdraw'),
+        (CNSS, 'CNSS'),
+        (NONCNSS, 'Non-CNSS'),
     )
     jira_id = models.CharField(unique=True, default='', max_length=20)
     category = models.CharField(default=OPEN, choices=CATEGORY_CHOICE, max_length=2)
+    is_default = models.BooleanField(default=False)
     
     def is_valid(self):
         return self.category in (self.CNSS, self.NONCNSS)
@@ -187,7 +192,6 @@ class Crash(models.Model):
         JIRA,
         on_delete=models.PROTECT,
         verbose_name="the related JIRA",
-        null = True
     )
     
     def __unicode__(self):

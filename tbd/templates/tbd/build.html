@@ -68,7 +68,18 @@
                 },
                 build_version: {
                     title: 'Build Version',
-                    width: '35%'
+                    width: '35%',
+                    display: function(data) {
+                        console.log(data);
+                        if ('running_build_id' in data.record) {
+                            if (data.record.running_build_id == data.record.build_id) {
+                                return '-> ' + data.record.build_version;
+                                console.log("match")
+                            }
+                            return data.record.build_version;
+                        }
+                        return 0;
+                    }
                 },
                 build_short_name: {
                     title: 'Build Name',
