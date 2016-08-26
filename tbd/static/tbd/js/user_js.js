@@ -106,59 +106,76 @@ var ajax_post_data = function(url, data, success_code) {
 $("select[name='project_name']").change( function() {
     cur_url = window.location.href
     if (cur_url.indexOf('/build') > -1) {
-        if ($(this).val().indexOf('--') != 0) {
-            window.location.href = '/build?prj_id=' + $(this).val()
-        }
+        window.location.href = '/build?prj_id=' + $(this).val()
     } else if (cur_url.indexOf('/host') > -1) {
-        if ($(this).val().indexOf('--') != 0) {
-            window.location.href = '/host?prj_id=' + $(this).val()
-        }
+        window.location.href = '/host?prj_id=' + $(this).val()
     } else if (cur_url.indexOf('/testcase') > -1) {
-        if ($(this).val().indexOf('--') != 0) {
-            window.location.href = '/testcase?prj_id=' + $(this).val()
-        }
+        window.location.href = '/testcase?prj_id=' + $(this).val()
     } else if (cur_url.indexOf('/crash') > -1) {
-        if ($(this).val().indexOf('--') != 0) {
-            window.location.href = '/crash?prj_id=' + $(this).val()
-        }
+        window.location.href = '/crash?prj_id=' + $(this).val()
     }
 });
 
 $("select[name='build_version']").change( function() {
     cur_url = window.location.href
     if (cur_url.indexOf('/build') > -1) {
-        if ($(this).val().indexOf('--') != 0) {
-            window.location.href = '/build?build_id=' + $(this).val()
-        }
+        window.location.href = '/build?build_id=' + $(this).val();
     } else if (cur_url.indexOf('/host') > -1) {
-        if ($(this).val().indexOf('--') != 0) {
-            build_id = $(this).val();
-            if (build_id) {
-                window.location.href = '/host?build_id=' + build_id;
-            } else {
-                prj_id = $("select[name='project_name']").val();
-                window.location.href = '/host?prj_id=' + prj_id;
-            }
+        build_id = $(this).val();
+        if (build_id) {
+            window.location.href = '/host?build_id=' + build_id;
+        } else {
+            prj_id = $("select[name='project_name']").val();
+            window.location.href = '/host?prj_id=' + prj_id;
         }
     } else if (cur_url.indexOf('/testcase') > -1) {
-        if ($(this).val().indexOf('--') != 0) {
-            build_id = $(this).val();
-            if (build_id) {
-                window.location.href = '/testcase?build_id=' + build_id;
-            } else {
-                prj_id = $("select[name='project_name']").val();
-                window.location.href = '/testcase?prj_id=' + prj_id;
-            }
+        build_id = $(this).val();
+        if (build_id) {
+            window.location.href = '/testcase?build_id=' + build_id;
+        } else {
+            prj_id = $("select[name='project_name']").val();
+            window.location.href = '/testcase?prj_id=' + prj_id;
         }
     } else if (cur_url.indexOf('/crash') > -1) {
-        if ($(this).val().indexOf('--') != 0) {
-            build_id = $(this).val();
-            if (build_id) {
-                window.location.href = '/crash?build_id=' + build_id;
-            } else {
-                prj_id = $("select[name='project_name']").val();
-                window.location.href = '/crash?prj_id=' + prj_id;
-            }
+        prj_id = $("select[name='project_name']").val();
+        build_id = $(this).val();
+        testcase_id = $("select[name='testcase']").val();
+        host_id = $("select[name='host']").val();
+        if (build_id) {
+            window.location.href = '/crash?build_id=' + build_id + '&host_id=' + host_id + '&testcase_id=' + testcase_id;
+        } else {
+            window.location.href = '/crash?prj_id=' + prj_id + '&host_id=' + host_id + '&testcase_id=' + testcase_id;
+        }
+    }
+});
+
+
+$("select[name='host']").change( function() {
+    cur_url = window.location.href
+    if (cur_url.indexOf('/crash') > -1) {
+        prj_id = $("select[name='project_name']").val();
+        build_id = $("select[name='build_version']").val();
+        testcase_id = $("select[name='testcase']").val();
+        host_id = $(this).val();
+        if (build_id) {
+            window.location.href = '/crash?build_id=' + build_id + '&host_id=' + host_id + '&testcase_id=' + testcase_id;
+        } else {
+            window.location.href = '/crash?prj_id=' + prj_id + '&host_id=' + host_id + '&testcase_id=' + testcase_id;
+        }
+    }
+});
+
+$("select[name='testcase']").change( function() {
+    cur_url = window.location.href
+    if (cur_url.indexOf('/crash') > -1) {
+        prj_id = $("select[name='project_name']").val();
+        build_id = $("select[name='build_version']").val();
+        host_id = $("select[name='host']").val();
+        testcase_id = $(this).val();
+        if (build_id) {
+            window.location.href = '/crash?build_id=' + build_id + '&host_id=' + host_id + '&testcase_id=' + testcase_id;
+        } else {
+            window.location.href = '/crash?prj_id=' + prj_id + '&host_id=' + host_id + '&testcase_id=' + testcase_id;
         }
     }
 });

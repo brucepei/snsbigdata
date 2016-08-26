@@ -92,7 +92,9 @@
                         console.log(data);
                         if ('crash_num' in data.record) {
                             var crash_num = data.record.crash_num;
-                            return '<a href="{% url "tbd_crash" %}?{% if build %}build_id={{ build.id }}{% elif project %}prj_id={{ project.id }}{% endif %}"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + ' crashes</span></a>';
+                            var url = "{% url "tbd_crash" %}?{% if build %}build_id={{ build.id }}{% elif project %}prj_id={{ project.id }}{% endif %}";
+                            url = url + "&host_id=" + data.record.host_id;
+                            return '<a href="' + url + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + ' crashes</span></a>';
                         }
                         return 0;
                     },

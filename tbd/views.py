@@ -835,7 +835,7 @@ def ajax_testcase_update(request):
                             message = "Save TestCase {} failed: {}!".format(target_testcase.name, err)
                         print "Change TestCase, save {}!".format(target_testcase.name)
                     else:
-                        print "Not change Testcase, don't save!"
+                        print "Not change TestCase, don't save!"
             else:
                 message = 'TestCase id {} does NOT exist!'.format(testcase_id)
         else:
@@ -881,25 +881,39 @@ def ajax_crash_list(request):
     if request.method == 'POST':
         prj_id = request.POST.get('prj_id', None)
         build_id = request.POST.get('build_id', None)
-        target_build = None
+        testcase_id = request.POST.get('testcase_id', None)
+        host_id = request.POST.get('host_id', None)
+        target_build = None; target_testcase = None; target_host = None
         if build_id:
             target_build = Build.objects.filter(id=build_id)
             if target_build:
                 target_build = target_build[0]
+        if testcase_id:
+            target_testcase = TestCase.objects.filter(id=testcase_id)
+            if target_testcase:
+                target_testcase = target_testcase[0]
+        if host_id:
+            target_host = Host.objects.filter(id=host_id)
+            if target_host:
+                target_host = target_host[0]
         if prj_id:
             start_index = int(request.GET.get('jtStartIndex', 0))
             page_size = int(request.GET.get('jtPageSize', 20))
             target_prj = Project.objects.filter(id=prj_id)
             if target_prj:
                 target_prj = target_prj[0]
+                user_filter = {}
                 if target_build:
-                    crashes = Crash.objects.filter(build=target_build).order_by('-create')[start_index: page_size+start_index]
-                    total_count = Crash.objects.filter(build=target_build).count()
-                    print "crash num {}, in build {}!".format(total_count, target_build.version)
+                    user_filter['build'] = target_build
                 else:
-                    crashes = Crash.objects.filter(build__project=target_prj).order_by('-create')[start_index: page_size+start_index]
-                    total_count = Crash.objects.filter(build__project=target_prj).count()
-                    print "crash num {}, in project {}!".format(total_count, target_prj.name)
+                    user_filter['build__project'] = target_prj
+                if target_host:
+                    user_filter['host'] = target_host
+                if target_testcase:
+                    user_filter['testcase'] = target_testcase
+                crashes = Crash.objects.filter(**user_filter).order_by('-create')[start_index: page_size+start_index]
+                total_count = Crash.objects.filter(**user_filter).count()
+                print "crash num {}, in {}!".format(total_count, user_filter.keys())
                 for crash in crashes:
                     records.append({
                         'crash_id': crash.id,
@@ -1160,8 +1174,8 @@ def auto_query_build(request):
     err_code = None
     msg = None
     if request.method == 'POST':
+        print request.POST
         prj_name = request.POST.get('project_name', None)
-        print prj_name
         builds = Build.objects.filter(project__name=prj_name).order_by('-create')
         msg = []
         err_code = 0
@@ -1323,10 +1337,16 @@ def testcase_page(request):
 def crash_page(request):
     prj_id = request.GET.get('prj_id', '')
     build_id = request.GET.get('build_id', '')
+    host_id = request.GET.get('host_id', '')
+    testcase_id = request.GET.get('testcase_id', '')
     projects = Project.objects.all()
     target_prj = None
     target_build = None
+    target_host = None
+    target_testcase = None
     builds = []
+    hosts = []
+    testcases = []
     if build_id:
         target_build = Build.objects.filter(id=build_id)
         if target_build:
@@ -1338,9 +1358,22 @@ def crash_page(request):
         if target_prj:
             target_prj = target_prj[0]
             builds = Build.objects.filter(project=target_prj).order_by('-create')
+    if target_prj:
+        hosts = Host.objects.filter(project=target_prj).order_by('name')
+        testcases = TestCase.objects.filter(project=target_prj).order_by('name')
+    if host_id:
+        target_host = Host.objects.filter(id=host_id)
+        if target_host:
+            target_host = target_host[0]
+    if testcase_id:
+        target_testcase = TestCase.objects.filter(id=testcase_id)
+        if target_testcase:
+            target_testcase = target_testcase[0]
     return render(request, 'tbd/crash.html', {
         'project': target_prj, 'projects': projects,
         'build': target_build, 'builds': builds,
+        'host': target_host, 'hosts': hosts,
+        'testcase': target_testcase, 'testcases': testcases,
         'jira_category_choice': json.dumps(dict(JIRA.CATEGORY_CHOICE)),
     })
 

@@ -36,6 +36,20 @@
                                     <option value="{{bld.id}}"{% if build and build == bld %} selected="selected"{% endif %}>{{forloop.counter}}. {{bld.short_name}}</option>
                                 {% endfor %}
                             </select>
+                            Host: 
+                            <select name="host" class="selectpicker">
+                                <option value>--select host--</option>
+                                {% for ht in hosts %}
+                                    <option value="{{ht.id}}"{% if host and host == ht %} selected="selected"{% endif %}>{{forloop.counter}}. {{ht.name}}</option>
+                                {% endfor %}
+                            </select>
+                            TestCase: 
+                            <select name="testcase" class="selectpicker">
+                                <option value>--select testcase--</option>
+                                {% for tc in testcases %}
+                                    <option value="{{tc.id}}"{% if testcase and testcase == tc %} selected="selected"{% endif %}>{{forloop.counter}}. {{tc.name}}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -47,153 +61,6 @@
             </div>
         </div>
     </div>
-    
-    <!--<div class="container">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="row">
-                    <div class="col-md-7">
-                        <p>
-                          <h1>
-                            {% if build %}
-                                {{ build.project.name }} <small>{{ build.version }}</small>
-                            {% else %}
-                                {% if project %}
-                                {{ project.name }} <small>No build selection</small>
-                                {% else %}
-                                No project selection <small>No build selection</small>
-                                {% endif %}
-                            {% endif %}
-                          </h1>
-                        </p>
-                    </div>
-                    <div class="col-md-5">
-                        <h4>Choose project:
-                            <select name="td_project_name" class="selectpicker">
-                                <option>--select project--</option>
-                            </select>
-                        </h4>
-                        <h4>Choose build:
-                            <select name="td_build_version" class="selectpicker">
-                                <option>--select build--</option>
-                            </select>
-                        </h4>
-                    </div>
-                </div>
-                <h4>Sort by:
-                    <select name="td_sort_by" class="selectpicker">
-                        <option value="Host"{% if sort_by == 'Host' %} selected{% endif %}>Host</option>
-                        <option value="TestCase"{% if sort_by == 'TestCase' %} selected{% endif %}>TestCase</option>
-                    </select>
-                </h4>
-                <table id="id_build_table" class="table table-striped table-hover" contenteditable="false">
-                    <caption class="text-center">Test Data</caption>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>{{ sort_by }}</th>
-                            <th>TotalDump</th>
-                            <th>OpenCrash</th>
-                            <th>ValidCrash</th>
-                            <th>Operation</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in page.items %}
-                        <tr>
-                            <td>{{ item.no }}</td>
-                            <td>{{ item.name }}{% if sort_by == 'Host' %}({{ item.ip }}){% else %}({{ item.platform }}){% endif %}</td>
-                            <td>{{ item.total_dump }}</td>
-                            <td>{{ item.open_crash }}</td>
-                            <td>{{ item.valid_crash }}</td>
-                            <td>
-                                <a href="#"><span class="glyphicon glyphicon-share-alt" aria-hidden="true">JIRA</span></a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% if page.list %}
-                <ul class="pagination">
-                    <li>
-                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&sort_by={{ sort_by }}&page={{ page.previous }}" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                      </a>
-                    </li>
-                    {% for p in page.list %}
-                    <li{% if page.cur == p %} class="active"{% endif %}><a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&sort_by={{ sort_by }}&page={{ p }}">{{ p }}</a></li>
-                    {% endfor %}
-                    <li>
-                      <a href="{% url 'tbd_testdata' %}?project_name={{ project.name }}&version={{ build.version }}&sort_by={{ sort_by }}&page={{ page.next }}" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                      </a>
-                    </li>
-                </ul>
-                {% endif %}
-                {% if flash %}
-                <div class="alert alert-{{ flash.type }}"  role="alert">
-                    <strong>{{ flash.type }}!</strong><br/>{{ flash.msg|safe }}
-                </div>
-                {% endif %}
-                <div>
-                    <form action="{% url 'tbd_crash' %}" method="post">
-                        {% for hidden in form.crash.hidden_fields %}
-                        {{ hidden }}
-                        {% endfor %}
-                        {% csrf_token %}
-                        <fieldset>
-                            <legend contenteditable="false">Add Crash</legend>
-                            <table>
-                                <tr class="crash_head">
-                                    <td><label>Host:</label></td>
-                                    <td>
-                                        <select name="td_host" class="selectpicker">
-                                            <option>--select host--</option>
-                                        </select>
-                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax' 'add_host' %}">Extend</button>
-                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax' 'del_host' %}">Delete</button>
-                                    </td>
-                                </tr>
-                                <tr class="hidden info">
-                                    <td>Add Host:</td>
-                                    <td>
-                                        {% for host_field in form.host %}
-                                            {{host_field}}
-                                        {% endfor %}
-                                    </td>
-                                </tr>
-                                <tr class="crash_head">
-                                    <td><label>TestCase:</label></td>
-                                    <td>
-                                        <select name="td_testcase" class="selectpicker">
-                                            <option>--select testcase--</option>
-                                        </select>
-                                        <button type="button" class="btn btn-default add_btn" action="{% url 'ajax' 'add_tc'%}">Extend</button>
-                                        <button type="button" class="btn btn-danger del_btn" action="{% url 'ajax' 'del_tc' %}">Delete</button>
-                                    </td>
-                                </tr>
-                                <tr class="hidden info">
-                                    <td>Add TestCase:</td>
-                                    <td>
-                                        {% for testcase_field in form.testcase %}
-                                            {{testcase_field}}
-                                        {% endfor %}
-                                    </td>
-                                </tr>
-                                {% for field in form.crash.visible_fields %}
-                                <tr class="crash_head"><td>{{ field.label_tag }}</td><td>{{ field }}</td></tr>
-                                {% endfor %}
-                                <tr>
-                                    <td><button class="btn btn-default" type="reset" contenteditable="false">Reset</button></td>
-                                    <td><button class="btn btn-default" name="add" type="submit" contenteditable="false">Submit</button></td>
-                                </tr>
-                            </table>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>-->
 {% endblock %}
 
 
@@ -384,7 +251,9 @@
         });
         $('#HostContainer').jtable('load', {
             'prj_id': {% if project %}{{ project.id }}{% else %}null{% endif %},
-            'build_id': {% if build %}{{ build.id }}{% else %}null{% endif %}
+            'build_id': {% if build %}{{ build.id }}{% else %}null{% endif %},
+            'host_id': {% if host %}{{ host.id }}{% else %}null{% endif %},
+            'testcase_id': {% if testcase %}{{ testcase.id }}{% else %}null{% endif %}
         });
     });
 </script>
