@@ -25,6 +25,7 @@ class Project(models.Model):
     owner = models.CharField(unique=False, default='', max_length=30)
     create = models.DateTimeField(unique=False, auto_now_add=True)
     last_update = models.DateTimeField(unique=False, auto_now=True)
+    is_stop = models.BooleanField(default=False)
     _attr = models.TextField(unique=False, default='')
     
     @AttrLookup
@@ -65,6 +66,9 @@ class Project(models.Model):
             return True
         return ''
 
+    class Meta:
+        ordering = ('-create',)
+        
     def __unicode__(self):
         return "Project {}({})".format(self.name, self.owner)
 
@@ -76,6 +80,7 @@ class Build(models.Model):
     crash_path = models.CharField(default='', max_length=255)
     use_server = models.BooleanField(default=False)
     test_hours = models.PositiveIntegerField(default=0)
+    is_stop = models.BooleanField(default=False)
     create = models.DateTimeField(auto_now_add=True)
     
     project = models.ForeignKey(
@@ -85,7 +90,8 @@ class Build(models.Model):
     )
     
     class Meta:
-        unique_together = ("version", "project")
+        unique_together = ('project', 'version')
+        ordering = ('project', '-create')
         
     def __unicode__(self):
         return "Build {}({})".format(self.short_name, self.version)
@@ -105,10 +111,29 @@ class Host(models.Model):
     
     class Meta:
         unique_together = ("project", "name")
+        ordering = ('project', 'name')
         
     def __unicode__(self):
         return "{}".format(self.name)
+
+class TestAction(models.Model):
+    name = models.CharField(unique=True, default='', max_length=80)
+    is_default = models.BooleanField(default=False)
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.PROTECT,
+        verbose_name="the related project",
+        null=True
+    )
+    
+    class Meta:
+        unique_together = ("project", "name")
+        ordering = ('project', 'name',)
         
+    def __unicode__(self):
+        return "{}".format(self.name)
+    
 class TestCase(models.Model):
     PHOENIX = 'PHO'
     VEGA    = 'VEG'
@@ -126,6 +151,7 @@ class TestCase(models.Model):
     name = models.CharField(default='', max_length=80)
     platform = models.CharField(default='', choices=PLATFORM_CHOICE, max_length=3)
     is_default = models.BooleanField(default=False)
+    testactions = models.ManyToManyField(TestAction)
     
     project = models.ForeignKey(
         Project,
@@ -136,9 +162,37 @@ class TestCase(models.Model):
     
     class Meta:
         unique_together = ("project", "name")
+        ordering = ('project', 'name',)
         
     def __unicode__(self):
         return "{}".format(self.name)
+
+class TestResult(models.Model):
+    pass_count = models.PositiveIntegerField(default=0)
+    fail_count = models.PositiveIntegerField(default=0)
+    
+    build = models.ForeignKey(
+        Build,
+        on_delete=models.PROTECT,
+        verbose_name="the related build",
+    )
+    host = models.ForeignKey(
+        Host,
+        on_delete=models.PROTECT,
+        verbose_name="the related host",
+    )
+    testaction = models.ForeignKey(
+        TestAction,
+        on_delete=models.PROTECT,
+        verbose_name="the related testaction",
+    )
+    
+    class Meta:
+        unique_together = ("build", "host", "testaction")
+        ordering = ('build', 'host', 'testaction')
+        
+    def __unicode__(self):
+        return "{}-()-{}({}/{})".format(self.build.version, self.host.name, self.testaction.name, self.pass_count, self.fail_count)
 
 class JIRA(models.Model):
     NONE = ''
@@ -194,6 +248,9 @@ class Crash(models.Model):
         verbose_name="the related JIRA",
     )
     
+    class Meta:
+        ordering = ('build', '-create')
+        
     def __unicode__(self):
         return "Crash {}({})".format(self.host.name, self.path)
         
