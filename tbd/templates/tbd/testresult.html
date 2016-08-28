@@ -1,5 +1,5 @@
-﻿{% extends 'tbd/base.html' %}
-{% block title %}Crash - SBD{% endblock %}
+{% extends 'tbd/base.html' %}
+{% block title %}TestResult - SBD{% endblock %}
 {% block nav_crash_attr %}class="active"{% endblock %}
 
 {% block content %}
@@ -43,19 +43,12 @@
                                     <option value="{{ht.id}}"{% if host and host == ht %} selected="selected"{% endif %}>{{forloop.counter}}. {{ht.name}}</option>
                                 {% endfor %}
                             </select>
-                            TestCase: 
-                            <select name="testcase" class="selectpicker">
-                                <option value>--select testcase--</option>
-                                {% for tc in testcases %}
-                                    <option value="{{tc.id}}"{% if testcase and testcase == tc %} selected="selected"{% endif %}>{{forloop.counter}}. {{tc.name}}</option>
-                                {% endfor %}
-                            </select>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <div id="CrashContainer"></div>
+                        <div id="TestResultContainer"></div>
                     </div>
                 </div>
             </div>
@@ -66,9 +59,9 @@
 
 {% block user_js %}
 <script type="text/javascript">
-    var cachedCrashOptions = {'testcase': {}, 'host': {}, 'jira': {}, 'build': {}};
+    var cachedTestResultOptions = {'host': {}, 'build': {}, 'testaction': {}};
     $(function(){
-        $('#CrashContainer').jtable({
+        $('#TestResultContainer').jtable({
             title: 'Crash List',
             ajaxSettings: {
                 beforeSend: function(xhr, settings){
@@ -85,41 +78,20 @@
                 deleteAction: '/ajax/crash_delete'
             },
             fields: {
-                crash_id: {
+                testresult_id: {
                     key: true,
                     list: false
                 },
-                crash_path: {
-                    title: 'Crash Path',
-                    width: '15%',
-                    display: function(data) {
-                        console.log(data);
-                        if ('crash_path' in data.record) {
-                            var crash_path = data.record.crash_path;
-                            var parts = crash_path.split(/[\\\/]/);
-                            var last_part = '';
-                            for (var i=parts.length - 1; i >= 0; i--) {
-                                if (parts[i]) {
-                                    last_part = parts[i];
-                                    break;
-                                }
-                            }
-                            parts = crash_path.split('/')
-                            return '<a href="' + crash_path + '">' + last_part + '</a>';
-                        }
-                        return '';
-                    },
-                },
                 build_id: {
                     title: 'Build',
-                    width: '20%',
+                    width: '25%',
                     options: function (data) {
                         console.log(data);
                         var prj_id = {% if project %}{{ project.id }}{% else %}null{% endif %};
                         if (prj_id) {
-                            if (prj_id in cachedCrashOptions.build) {
+                            if (prj_id in cachedTestResultOptions.build) {
                                 console.log("return cached build for project id " + prj_id + "!");
-                                return cachedCrashOptions.build[prj_id];
+                                return cachedTestResultOptions.build[prj_id];
                             }
                         }
                         else {
@@ -145,21 +117,21 @@
                                 options = data.Options;
                             }
                         });
-                        return cachedCrashOptions.build[prj_id] = options; //Cache results and return options
+                        return cachedTestResultOptions.build[prj_id] = options; //Cache results and return options
                     },
                     create: true,
                     edit: true
                 },
                 host_id: {
                     title: 'Host',
-                    width: '10%',
+                    width: '15%',
                     options: function (data) {
                         console.log(data);
                         var prj_id = {% if project %}{{ project.id }}{% else %}null{% endif %};
                         if (prj_id) {
-                            if (prj_id in cachedCrashOptions.host) {
+                            if (prj_id in cachedTestResultOptions.host) {
                                 console.log("return cached host for project id " + prj_id + "!");
-                                return cachedCrashOptions.host[prj_id];
+                                return cachedTestResultOptions.host[prj_id];
                             }
                         }
                         else {
@@ -184,21 +156,21 @@
                                 options = data.Options;
                             }
                         });
-                        return cachedCrashOptions.host[prj_id] = options; //Cache results and return options
+                        return cachedTestResultOptions.host[prj_id] = options; //Cache results and return options
                     },
                     create: true,
                     edit: true
                 },
-                testcase_id: {
-                    title: 'TestCase',
-                    width: '10%',
+                testaction_id: {
+                    title: 'Host',
+                    width: '15%',
                     options: function (data) {
                         console.log(data);
                         var prj_id = {% if project %}{{ project.id }}{% else %}null{% endif %};
                         if (prj_id) {
-                            if (prj_id in cachedCrashOptions.testcase) {
-                                console.log("return cached testcase for project id " + prj_id + "!");
-                                return cachedCrashOptions.testcase[prj_id];
+                            if (prj_id in cachedTestResultOptions.testaction) {
+                                console.log("return cached testaction for project id " + prj_id + "!");
+                                return cachedTestResultOptions.testaction[prj_id];
                             }
                         }
                         else {
@@ -207,7 +179,7 @@
                         }
                         var options = [];
                         $.ajax({
-                            url: '/ajax/crash_list_testcases?prj_id='+prj_id,
+                            url: '/ajax/testresult_list_testactions?prj_id='+prj_id,
                             type: 'POST',
                             dataType: 'json',
                             async: false,
@@ -223,33 +195,28 @@
                                 options = data.Options;
                             }
                         });
-                        return cachedCrashOptions.testcase[prj_id] = options; //Cache results and return options
+                        return cachedTestResultOptions.testaction[prj_id] = options; //Cache results and return options
                     },
                     create: true,
                     edit: true
                 },
-                jira_id: {
-                    title: 'JIRA ID',
-                    width: '10%',
-                    create: true,
-                    edit: true
+                pass_count: {
+                    title: 'Pass',
+                    width: '10%'
                 },
-                jira_category: {
-                    title: 'JIRA Cate',
-                    width: '10%',
-                    options: {{ jira_category_choice | safe }},
-                    create: false,
-                    edit: false
+                fail_count: {
+                    title: 'Fail',
+                    width: '10%'
                 },
-                create_time: {
-                    title: 'Create Time',
+                last_update: {
+                    title: 'Update Time',
                     width: '25%',
                     create: false,
                     edit: false
                 }
             }
         });
-        $('#CrashContainer').jtable('load', {
+        $('#TestResultContainer').jtable('load', {
             'prj_id': {% if project %}{{ project.id }}{% else %}null{% endif %},
             'build_id': {% if build %}{{ build.id }}{% else %}null{% endif %},
             'host_id': {% if host %}{{ host.id }}{% else %}null{% endif %},
