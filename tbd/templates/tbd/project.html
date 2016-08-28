@@ -28,7 +28,7 @@
             actions: {
                 listAction: '/ajax/project_list',
                 createAction: '/ajax/project_create',
-                //updateAction: '/ajax/project_update',
+                updateAction: '/ajax/project_update',
                 deleteAction: '/ajax/project_delete'
             },
             fields: {
@@ -38,11 +38,19 @@
                 },
                 prj_name: {
                     title: 'Project',
-                    width: '30%'
+                    width: '25%'
                 },
                 prj_owner: {
                     title: 'Tester',
-                    width: '10%'
+                    width: '8%'
+                },
+                prj_is_stop: {
+                    title: 'Stopped',
+                    width: '7%',
+                    type: 'checkbox',
+                    create: false,
+                    values: { 'false': 'False', 'true': 'True' },
+                    defaultValue: 'false'
                 },
                 build_num: {
                     title: 'Total Builds',

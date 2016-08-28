@@ -297,7 +297,7 @@ def ajax_running_project_list(request):
     if request.method == 'POST':
         start_index = int(request.GET.get('jtStartIndex', 0))
         page_size = int(request.GET.get('jtPageSize', 20))
-        projects = Project.objects.all().order_by('-create')[start_index: page_size+start_index]
+        projects = Project.objects.filter(is_stop=False).order_by('-create')[start_index: page_size+start_index]
         for prj in projects:
             running_build_id = prj.attr('running_build')
             target_build = None
@@ -368,7 +368,7 @@ def ajax_running_project_list_builds(request):
             target_prj = Project.objects.filter(id=prj_id)
             if target_prj:
                 target_prj = target_prj[0]
-                for bld in Build.objects.filter(project=target_prj).order_by('-create'):
+                for bld in Build.objects.filter(project=target_prj, is_stop=False).order_by('-create'):
                     options.append({
                         "DisplayText": bld.short_name,
                         "Value": bld.id
@@ -387,6 +387,7 @@ def ajax_project_list(request):
                 'prj_id': prj.id,
                 'prj_name': prj.name,
                 'prj_owner': prj.owner,
+                'prj_is_stop': 'true' if prj.is_stop else 'false',
                 'build_num': Build.objects.filter(project=prj).count(),
                 'host_num': Host.objects.filter(project=prj, is_default=False).count(),
                 'testcase_num': TestCase.objects.filter(project=prj, is_default=False).count(),
@@ -413,6 +414,38 @@ def ajax_project_delete(request):
         return JsonResponse({'Result': 'ERROR', 'Message': message})
     else:
         return JsonResponse({'Result': 'OK'})
+
+def ajax_project_update(request):
+    print request.POST
+    if request.method == 'POST':
+        prj_id = request.POST.get('prj_id', None)
+        prj_name = request.POST.get('prj_name', None)
+        prj_owner = request.POST.get('prj_owner', None)
+        if prj_id:
+            target_prj = Project.objects.filter(id=prj_id)
+            if target_prj:
+                target_prj = target_prj[0]
+                if target_prj:
+                    is_set = False
+                    for attr in ('prj_name', 'prj_owner', 'prj_is_stop'):
+                        attr_val = request.POST.get(attr, None)
+                        if attr == 'prj_is_stop':
+                            attr_val = True if attr_val and attr_val.lower() == 'true' else False
+                        if attr_val is not None:
+                            attr_name = attr[4:]
+                            orig_val = getattr(target_prj, attr_name, None)
+                            if orig_val != attr_val:
+                                setattr(target_prj, attr_name, attr_val)
+                                is_set = True
+                    if is_set:
+                        try:
+                            target_prj.save()
+                        except Exception as err:
+                            message = "Save project {} failed: {}!".format(target_prj.name, err)
+                        print "Change project, save {}!".format(target_prj.name)
+                    else:
+                        print "Not change project, don't save!"
+    return JsonResponse({'Result': 'OK'})
 
 def ajax_project_create(request):
     print "request project create:" + repr(request.POST)
@@ -471,6 +504,7 @@ def ajax_build_list(request):
                         'running_build_id': running_build_id,
                         'build_version': bld.version,
                         'build_short_name': bld.short_name,
+                        'build_is_stop': 'true' if bld.is_stop else 'false',
                         'build_server_path': bld.server_path,
                         'build_local_path': bld.local_path,
                         'build_crash_path': bld.crash_path,
@@ -550,9 +584,9 @@ def ajax_build_update(request):
                 target_build = target_build[0]
                 is_set = False
                 for attr in ('build_server_path', 'build_local_path', 'build_crash_path', 'build_test_hours',
-                             'build_use_server', 'build_short_name', 'build_version'):
+                             'build_use_server', 'build_is_stop', 'build_short_name', 'build_version'):
                     attr_val = request.POST.get(attr, None)
-                    if attr == 'build_use_server':
+                    if attr == 'build_use_server' or attr == 'build_is_stop':
                         attr_val = True if attr_val and attr_val.lower() == 'true' else False
                     if attr_val is not None:
                         attr_name = attr[6:]
@@ -1176,7 +1210,7 @@ def auto_query_build(request):
     if request.method == 'POST':
         print request.POST
         prj_name = request.POST.get('project_name', None)
-        builds = Build.objects.filter(project__name=prj_name).order_by('-create')
+        builds = Build.objects.filter(project__name=prj_name, is_stop=False).order_by('-create')
         msg = []
         err_code = 0
         for bld in builds:
@@ -1281,7 +1315,7 @@ def build_page(request):
     #else:
     #    return build_page_get(request)
     prj_id = request.GET.get('prj_id', '')
-    projects = Project.objects.all()
+    projects = Project.objects.filter(is_stop=False)
     target_prj = None
     builds = []
     if prj_id:
@@ -1293,7 +1327,7 @@ def build_page(request):
 def host_page(request):
     prj_id = request.GET.get('prj_id', '')
     build_id = request.GET.get('build_id', '')
-    projects = Project.objects.all()
+    projects = Project.objects.filter(is_stop=False)
     target_prj = None
     target_build = None
     builds = []
@@ -1307,13 +1341,13 @@ def host_page(request):
         target_prj = Project.objects.filter(id=prj_id)
         if target_prj:
             target_prj = target_prj[0]
-            builds = Build.objects.filter(project=target_prj).order_by('-create')
+            builds = Build.objects.filter(project=target_prj, is_stop=False).order_by('-create')
     return render(request, 'tbd/host.html', {'project': target_prj, 'projects': projects, 'build': target_build, 'builds': builds})
 
 def testcase_page(request):
     prj_id = request.GET.get('prj_id', '')
     build_id = request.GET.get('build_id', '')
-    projects = Project.objects.all()
+    projects = Project.objects.filter(is_stop=False)
     target_prj = None
     target_build = None
     builds = []
@@ -1327,7 +1361,7 @@ def testcase_page(request):
         target_prj = Project.objects.filter(id=prj_id)
         if target_prj:
             target_prj = target_prj[0]
-            builds = Build.objects.filter(project=target_prj).order_by('-create')
+            builds = Build.objects.filter(project=target_prj, is_stop=False).order_by('-create')
     return render(request, 'tbd/testcase.html', {
         'project': target_prj, 'projects': projects,
         'build': target_build, 'builds': builds,
@@ -1339,7 +1373,7 @@ def crash_page(request):
     build_id = request.GET.get('build_id', '')
     host_id = request.GET.get('host_id', '')
     testcase_id = request.GET.get('testcase_id', '')
-    projects = Project.objects.all()
+    projects = Project.objects.filter(is_stop=False)
     target_prj = None
     target_build = None
     target_host = None
@@ -1357,7 +1391,7 @@ def crash_page(request):
         target_prj = Project.objects.filter(id=prj_id)
         if target_prj:
             target_prj = target_prj[0]
-            builds = Build.objects.filter(project=target_prj).order_by('-create')
+            builds = Build.objects.filter(project=target_prj, is_stop=False).order_by('-create')
     if target_prj:
         hosts = Host.objects.filter(project=target_prj).order_by('name')
         testcases = TestCase.objects.filter(project=target_prj).order_by('name')

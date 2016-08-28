@@ -68,7 +68,7 @@
                 },
                 build_version: {
                     title: 'Build Version',
-                    width: '35%',
+                    width: '30%',
                     display: function(data) {
                         console.log(data);
                         if ('running_build_id' in data.record) {
@@ -83,7 +83,15 @@
                 },
                 build_short_name: {
                     title: 'Build Name',
-                    width: '15%'
+                    width: '13%'
+                },
+                build_is_stop: {
+                    title: 'Stopped',
+                    width: '7%',
+                    type: 'checkbox',
+                    create: false,
+                    values: { 'false': 'False', 'true': 'True' },
+                    defaultValue: 'false'
                 },
                 crash_num: {
                     title: 'Total Crash',
