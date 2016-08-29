@@ -117,7 +117,7 @@ class Host(models.Model):
         return "{}".format(self.name)
 
 class TestAction(models.Model):
-    name = models.CharField(unique=True, default='', max_length=80)
+    name = models.CharField(default='', max_length=80)
     is_default = models.BooleanField(default=False)
 
     project = models.ForeignKey(

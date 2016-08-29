@@ -107,6 +107,8 @@ $("select[name='project_name']").change( function() {
     cur_url = window.location.href
     if (cur_url.indexOf('/build') > -1) {
         window.location.href = '/build?prj_id=' + $(this).val()
+    } else if (cur_url.indexOf('/testaction') > -1) {
+        window.location.href = '/testaction?prj_id=' + $(this).val()
     } else if (cur_url.indexOf('/host') > -1) {
         window.location.href = '/host?prj_id=' + $(this).val()
     } else if (cur_url.indexOf('/testcase') > -1) {

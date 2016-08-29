@@ -1,5 +1,5 @@
 ﻿{% extends 'tbd/base.html' %}
-{% block title %}Build - SBD{% endblock %}
+{% block title %}TestCase - SBD{% endblock %}
 {% block nav_testcase_attr %}class="active"{% endblock %}
 
 {% block content %}
@@ -98,6 +98,38 @@
                     },
                     create: false,
                     edit: false
+                },
+                testcase_testactions: {
+                    list: false,
+                    width: '25%',
+                    inputTitle: 'Key TestActions',
+                    defaultValue: {{all_testactions | safe}},
+                    input: function(data) {
+                        console.log("input testactions:");
+                        console.log(data);
+                        var checked_str = '';
+                        var options = null;
+                        var values = [];
+                        if (data.record) {
+                            options = data.record.testcase_testactions.Options;
+                            values = data.record.testcase_testactions.Values;
+                        } else {
+                            options = data.value;
+                        }
+                        html = '';
+                        for(var i=0; i < options.length; i++) {
+                            var checked = '';
+                            var check_id = 'ta_' + options[i].Value;
+                            if (values.indexOf(options[i].Value) > -1) {
+                                checked = 'checked';
+                            }
+                            html += '<input id="'+check_id+'" type="checkbox" name="testcase_testactions" ' + checked + ' value="' + options[i].Value + '" /><label for="'+check_id+'">' + options[i].DisplayText + '</label><Br/>';
+                        }
+                        return html;
+
+                    },
+                    create: true,
+                    edit: true
                 }
             }
         });
