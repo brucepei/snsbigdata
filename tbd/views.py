@@ -297,7 +297,7 @@ def ajax_running_project_list(request):
     if request.method == 'POST':
         start_index = int(request.GET.get('jtStartIndex', 0))
         page_size = int(request.GET.get('jtPageSize', 20))
-        projects = Project.objects.filter(is_stop=False).order_by('-create')[start_index: page_size+start_index]
+        projects = Project.objects.filter(is_stop=False).order_by('name')[start_index: page_size+start_index]
         for prj in projects:
             running_build_id = prj.attr('running_build')
             target_build = None
@@ -390,6 +390,7 @@ def ajax_project_list(request):
                 'prj_is_stop': 'true' if prj.is_stop else 'false',
                 'build_num': Build.objects.filter(project=prj).count(),
                 'host_num': Host.objects.filter(project=prj, is_default=False).count(),
+                'testaction_num': TestAction.objects.filter(project=prj, is_default=False).count(),
                 'testcase_num': TestCase.objects.filter(project=prj, is_default=False).count(),
                 'create_time': prj.create,
             })
@@ -465,6 +466,7 @@ def ajax_project_create(request):
                     'build_num': 0,
                     'host_num': 0,
                     'testcase_num': 0,
+                    'testaction_num': 0,
                     'create_time': target_prj.create,
                 }
             except Exception as err:
