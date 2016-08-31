@@ -472,8 +472,8 @@ def ajax_project_create(request):
             except Exception as err:
                 message = "Save Project {} failed: {}!".format(name, err)
             try:
-                Host.objects.create(is_default=True, project=target_prj, name=DEFAULT['host']['name'])
-                TestCase.objects.create(is_default=True, project=target_prj, name=DEFAULT['testcase']['name'])
+                Host.objects.create(is_default=True, project=target_prj, name=DEFAULT['host']['name'], ip='', mac='')
+                TestCase.objects.create(is_default=True, project=target_prj, name=DEFAULT['testcase']['name'], platform='')
             except Exception as err:
                 message = "Failed to create related default host/testcase for project {}: {}!".format(target_prj.name, err)
         else:
