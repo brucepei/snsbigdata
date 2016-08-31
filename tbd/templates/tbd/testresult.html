@@ -63,11 +63,6 @@
     $(function(){
         $('#TestResultContainer').jtable({
             title: 'Crash List',
-            ajaxSettings: {
-                beforeSend: function(xhr, settings){
-                    xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
-                }
-            },
             paging: true,
             pageSize: 20,
             selecting: false,
@@ -105,9 +100,6 @@
                             dataType: 'json',
                             data: {'prj_id': prj_id},
                             async: false,
-                            beforeSend: function(xhr, settings){
-                                xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
-                            },
                             success: function (data) {
                                 if (data.Result != 'OK') {
                                     alert(data.Message);
@@ -144,9 +136,6 @@
                             type: 'POST',
                             dataType: 'json',
                             async: false,
-                            beforeSend: function(xhr, settings){
-                                xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
-                            },
                             success: function (data) {
                                 if (data.Result != 'OK') {
                                     alert(data.Message);
@@ -183,9 +172,6 @@
                             type: 'POST',
                             dataType: 'json',
                             async: false,
-                            beforeSend: function(xhr, settings){
-                                xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
-                            },
                             success: function (data) {
                                 if (data.Result != 'OK') {
                                     alert(data.Message);

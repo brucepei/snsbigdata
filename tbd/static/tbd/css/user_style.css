@@ -7,6 +7,10 @@
         width: 600px;
     }
     
+    .hidden {
+        display:none;
+    }
+    
     div.filtering {
         margin-bottom: 5px;
         border: 1px solid #999;

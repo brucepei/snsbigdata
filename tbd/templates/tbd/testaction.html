@@ -49,11 +49,6 @@
     $(function(){
         $('#TestResultContainer').jtable({
             title: 'Crash List',
-            ajaxSettings: {
-                beforeSend: function(xhr, settings){
-                    xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
-                }
-            },
             paging: true,
             pageSize: 20,
             selecting: false,

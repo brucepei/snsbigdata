@@ -17,11 +17,6 @@
     $(function(){
         $('#RunningProjectContainer').jtable({
             title: 'Project Running Information',
-            ajaxSettings: {
-                beforeSend: function(xhr, settings){
-                    xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
-                }
-            },
             paging: true,
             pageSize: 20,
             selecting: false,
@@ -66,9 +61,6 @@
                             dataType: 'json',
                             data: {'prj_id': data.record.prj_id},
                             async: false,
-                            beforeSend: function(xhr, settings){
-                                xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
-                            },
                             success: function (data) {
                                 if (data.Result != 'OK') {
                                     alert(data.Message);

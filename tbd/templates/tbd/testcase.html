@@ -54,11 +54,6 @@
     $(function(){
         $('#TestCaseContainer').jtable({
             title: 'TestCase List',
-            ajaxSettings: {
-                beforeSend: function(xhr, settings){
-                    xhr.setRequestHeader("X-CSRFToken", get_cookie('csrftoken'));  
-                }
-            },
             paging: true,
             pageSize: 20,
             selecting: false,
