@@ -98,8 +98,8 @@ class Build(models.Model):
         
 class Host(models.Model):
     name = models.CharField(default='', max_length=50)
-    ip = models.GenericIPAddressField(protocol='IPv4', default='')
-    mac = models.CharField(default='', max_length=12)
+    ip = models.CharField(default='', max_length=15)
+    mac = models.CharField(default='', max_length=17)
     is_default = models.BooleanField(default=False)
     
     project = models.ForeignKey(
