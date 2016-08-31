@@ -1413,13 +1413,15 @@ def auto_crash_info(request):
     return json_response(msg, err_code)
 
 # Create your views here.
+@ensure_csrf_cookie
 def home_page(request):
     #cur_page = request.GET.get('page', 1)
     #item_per_page = 20
     #page_data = slice_page(Project.objects.all().order_by('-create'), cur_page, item_per_page)
     #return render(request, 'tbd/home.html', {'page': page_data})
     return render(request, 'tbd/home.html')
-        
+
+@ensure_csrf_cookie
 def project_page(request):
     #if request.method == 'POST':
     #    return project_page_post(request)
@@ -1457,6 +1459,7 @@ def project_page_post(request):
             flash(request, {'type': 'danger', 'msg': flash_err})
     return redirect('tbd_project')
 
+@ensure_csrf_cookie
 def build_page(request):
     #if request.method == 'POST':
     #    return build_page_post(request)
@@ -1472,6 +1475,7 @@ def build_page(request):
             target_prj = target_prj[0]
     return render(request, 'tbd/build.html', {'project': target_prj, 'projects': projects})
 
+@ensure_csrf_cookie
 def host_page(request):
     prj_id = request.GET.get('prj_id', '')
     build_id = request.GET.get('build_id', '')
@@ -1492,6 +1496,7 @@ def host_page(request):
             builds = Build.objects.filter(project=target_prj, is_stop=False).order_by('-create')
     return render(request, 'tbd/host.html', {'project': target_prj, 'projects': projects, 'build': target_build, 'builds': builds})
 
+@ensure_csrf_cookie
 def testaction_page(request):
     prj_id = request.GET.get('prj_id', '')
     build_id = request.GET.get('build_id', '')
@@ -1516,6 +1521,7 @@ def testaction_page(request):
         'testcase_platform_choice': json.dumps(dict(TestCase.PLATFORM_CHOICE)),
     })
 
+@ensure_csrf_cookie
 def testcase_page(request):
     prj_id = request.GET.get('prj_id', '')
     build_id = request.GET.get('build_id', '')
@@ -1544,6 +1550,7 @@ def testcase_page(request):
         'all_testactions': json.dumps([{'Value': ta.id, 'DisplayText': ta.name} for ta in all_testactions]),
     })
 
+@ensure_csrf_cookie
 def testresult_page(request):
     prj_id = request.GET.get('prj_id', '')
     build_id = request.GET.get('build_id', '')
@@ -1558,6 +1565,7 @@ def testresult_page(request):
         'project': target_prj, 'projects': projects,
     })
 
+@ensure_csrf_cookie
 def crash_page(request):
     prj_id = request.GET.get('prj_id', '')
     build_id = request.GET.get('build_id', '')
