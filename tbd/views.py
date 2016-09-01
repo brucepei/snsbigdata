@@ -11,40 +11,84 @@ import json
 DEFAULT = {
     'jira': {'name': ''},
     'host': {'name': '!NULL!'},
+    'testaction': {'name': '!COMMON_TA!'},
     'testcase': {'name': '!NULL!'},
 }
 
-try:
-    jira = JIRA.objects.filter(is_default=True)
-    if jira:
-        jira = jira[0]
-        if jira.category != JIRA.NONE or jira.jira_id != DEFAULT['jira']['name']:
-            jira.jira_id = DEFAULT['jira']['name']
-            jira.category = JIRA.NONE
-            jira.save()
-    else:
-        JIRA.objects.create(is_default=True, jira_id=DEFAULT['jira']['name'], category=JIRA.NONE)
-    for prj in Project.objects.all():
-        host = Host.objects.filter(project=prj, is_default=True)
-        if host:
-            host = host[0]
-            if host.name != DEFAULT['host']['name']:
-                host.name = DEFAULT['host']['name']
-                host.save()
+def set_default_records(prj_name=None, project=None, set_jira=False, set_host=False, set_testcase=False, set_testaction=False):
+    result = None
+    try:
+        if set_jira:
+            jira = None
+            try:
+                jira = JIRA.objects.get(is_default=True)
+            except Exception as err:
+                print "Not found default JIRA, need to create!"
+            if jira:
+                if jira.category != JIRA.NONE or jira.jira_id != DEFAULT['jira']['name']:
+                    print "Rset default JIRA attribution!"
+                    jira.jira_id = DEFAULT['jira']['name']
+                    jira.category = JIRA.NONE
+                    jira.save()
+            else:
+                print "Create default JIRA!"
+                JIRA.objects.create(is_default=True, jira_id=DEFAULT['jira']['name'], category=JIRA.NONE)
+        prj_list = None
+        if project:
+            prj_list = [project]
+        elif prj_name:
+            prj_list = Project.objects.filter(name=prj_name)
         else:
-            Host.objects.create(is_default=True, project=prj, name=DEFAULT['host']['name'])
-        testcase = TestCase.objects.filter(project=prj, is_default=True)
-        if testcase:
-            testcase = testcase[0]
-            if testcase.name != DEFAULT['testcase']['name']:
-                testcase.name = DEFAULT['testcase']['name']
-                testcase.save()
-        else:
-            TestCase.objects.create(is_default=True, project=prj, name=DEFAULT['testcase']['name'])
-    print "!!!!!!!!!!!!!Initial DB done!!!!!!!!!!!!!!!!"
-except Exception as err:
-    print err
-    
+            prj_list = Project.objects.all()
+        for prj in prj_list:
+            if set_host:
+                host = None
+                try:
+                    host = Host.objects.get(project=prj, is_default=True)
+                except Exception as err:
+                    print "Not found default Host, need to create!"
+                if host:
+                    if host.name != DEFAULT['host']['name']:
+                        print "Rset default host attribution for project {}!".format(prj.name)
+                        host.name = DEFAULT['host']['name']
+                        host.save()
+                else:
+                    print "Create default host for project {}!".format(prj.name)
+                    Host.objects.create(is_default=True, project=prj, name=DEFAULT['host']['name'], ip='', mac='')
+            if set_testcase:
+                testcase = None
+                try:
+                    testcase = TestCase.objects.get(project=prj, is_default=True)
+                except Exception as err:
+                    print "Not found default TestCase, need to create!"
+                if testcase:
+                    if testcase.name != DEFAULT['testcase']['name']:
+                        print "Rset default testcase attribution for project {}!".format(prj.name)
+                        testcase.name = DEFAULT['testcase']['name']
+                        testcase.save()
+                else:
+                    print "Create default testcase for project {}!".format(prj.name)
+                    TestCase.objects.create(is_default=True, project=prj, name=DEFAULT['testcase']['name'], platform='')
+            if set_testaction:
+                testaction = None
+                try:
+                    testaction = TestAction.objects.get(project=prj, is_default=True)
+                except Exception as err:
+                    print "Not found default TestAction, need to create!"
+                if testaction:
+                    if testaction.name != DEFAULT['testaction']['name']:
+                        print "Rset default TestAction attribution for project {}!".format(prj.name)
+                        testaction.name = DEFAULT['testaction']['name']
+                        testaction.save()
+                else:
+                    print "Create default TestAction for project {}!".format(prj.name)
+                    TestAction.objects.create(is_default=True, project=prj, name=DEFAULT['testaction']['name'])
+    except Exception as err:
+        result = "Failed to set default records: {}".format(err)
+        print result
+    return result
+
+set_default_records(set_jira=True, set_testcase=True, set_host=True, set_testaction=True)
 #internal func
 def json_response(json, code=0):
     if code and hasattr(json, 'items'):
@@ -168,6 +212,9 @@ def ajax_project_delete(request):
                 testcases = TestCase.objects.filter(project=target_prj)
                 if len(testcases) == 1 and testcases[0].is_default == True:
                     testcases[0].delete()
+                testactions = TestAction.objects.filter(project=target_prj)
+                if len(testactions) == 1 and testactions[0].is_default == True:
+                    testactions[0].delete()
                 target_prj.delete()
             except Exception as err:
                 message = "Delete Project {} failed: {}!".format(target_prj.name, err)
@@ -239,11 +286,9 @@ def ajax_project_create(request):
                 }
             except Exception as err:
                 message = "Save Project {} failed: {}!".format(name, err)
-            try:
-                Host.objects.create(is_default=True, project=target_prj, name=DEFAULT['host']['name'], ip='', mac='')
-                TestCase.objects.create(is_default=True, project=target_prj, name=DEFAULT['testcase']['name'], platform='')
-            except Exception as err:
-                message = "Failed to create related default host/testcase for project {}: {}!".format(target_prj.name, err)
+            set_default_result = set_default_records(project=target_prj, set_testcase=True, set_host=True, set_testaction=True)
+            if set_default_result:
+                message = "Failed to create related default host/testcase for project {}: {}!".format(target_prj.name, set_default_result)
         else:
             message = 'Project {} has already existed!'.format(name)
     else:
@@ -525,8 +570,6 @@ def ajax_build_delete(request):
                     target_build.delete()
                 except Exception as err:
                     message = "Delete Build {} failed: {}!".format(target_build.version, err)
-            else:
-                message = 'Build id {} is NOT existed, no necessary to delete!'.format(build_id)
         else:
             message = 'Lack necessary arguement: build id!'
     else:
@@ -671,8 +714,6 @@ def ajax_host_delete(request):
                         target_host.delete()
                     except Exception as err:
                         message = "Delete Host {} failed: {}!".format(target_host.name, err)
-            else:
-                message = 'Host id {} is NOT existed, no necessary to delete!'.format(host_id)
         else:
             message = 'Lack necessary arguement: host id!'
     else:
@@ -846,8 +887,6 @@ def ajax_testcase_delete(request):
                         target_testcase.delete()
                     except Exception as err:
                         message = "Delete TestCase {} failed: {}!".format(target_testcase.name, err)
-            else:
-                message = 'TestCase id {} is NOT existed, no necessary to delete!'.format(testcase_id)
         else:
             message = 'Lack necessary arguement: testcase id!'
     else:
@@ -1001,8 +1040,6 @@ def ajax_crash_delete(request):
                     target_crash.delete()
                 except Exception as err:
                     message = "Delete Crash {} failed: {}!".format(target_crash.path, err)
-            else:
-                message = 'Crash id {} is NOT existed, no necessary to delete!'.format(crash_id)
         else:
             message = 'Lack necessary arguement: Crash id!'
     else:
@@ -1115,22 +1152,35 @@ def ajax_testresult_list(request):
             user_filter = {}
             if target_build:
                 user_filter['build'] = target_build
+                target_prj = target_build.project
             else:
                 user_filter['build__project'] = target_prj
             if target_host:
                 user_filter['host'] = target_host
             testresults = TestResult.objects.filter(**user_filter).order_by('testaction__name')[start_index: page_size+start_index]
-            total_count = TestResult.objects.filter(**user_filter).count()
-            print "crash num {}, in {}!".format(total_count, user_filter.keys())
-            for testresult in testresults:
+            all_ta = TestAction.objects.filter(project=target_prj)
+            total_count = len(all_ta)
+            for ta in all_ta:
+                pass_count = 0
+                fail_count = 0
+                last_update = None
+                tr_id = 0
+                for tr in testresults:
+                    if tr.testaction.id == ta.id:
+                        if target_build and target_host:
+                            tr_id = tr.id
+                        pass_count += tr.pass_count
+                        fail_count += tr.fail_count
+                        if (not last_update) or last_update < tr.last_update:
+                            last_update = tr.last_update
                 records.append({
-                    'testresult_id': testresult.id,
-                    'testresult_pass_count': testresult.pass_count,
-                    'testresult_fail_count': testresult.fail_count,
-                    'testaction_id': testresult.testaction.id,
-                    'build_id': testresult.build.id,
-                    'host_id': testresult.host.id,
-                    'last_update': testresult.last_update,
+                    'testresult_id': tr_id,
+                    'testresult_pass_count': pass_count,
+                    'testresult_fail_count': fail_count,
+                    'testaction_id': ta.id,
+                    'build_id': build_id,
+                    'host_id': host_id,
+                    'last_update': last_update,
                 })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
 
@@ -1191,6 +1241,30 @@ def ajax_testresult_create(request):
     else:
         return JsonResponse({'Result': 'OK', "Record": record})
 
+def ajax_testresult_delete(request):
+    print "request testresult delete:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        testresult_id = request.POST.get('testresult_id', None)
+        if testresult_id:
+            target_testresult = None
+            try:
+                target_testresult = TestResult.objects.get(id=testresult_id)
+            except Exception as err:
+                message = "Failed to get TestResult with id {}: {}!".format(testresult_id, err)
+            if target_testresult:
+                try:
+                    target_testresult.delete()
+                except Exception as err:
+                    message = "Delete TestResult failed: {}!".format(target_testresult.id, err)
+        else:
+            message = 'Lack necessary arguement: TestResult id!'
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
 
 #list_options
 def ajax_list_options_testactions_in_project(request):
@@ -1296,7 +1370,8 @@ def auto_query_build(request):
                 'name': bld.short_name,
             })
     return json_response(msg, err_code)
-        
+    
+#TODO: need update crash if para changed, so cannot use Crash.objects.get_or_create!
 def auto_crash_info(request):
     err_code = None
     msg = None
@@ -1312,9 +1387,13 @@ def auto_crash_info(request):
         tc_platform = request.POST.get('testcase_platform', '')
         jira_id = request.POST.get('jira_id', None)
         if path and prj_name and build_version and host_name and tc_name:
-            build = Build.objects.filter(project__name=prj_name, version=build_version)
+            build = None
+            try:
+                build = Build.objects.get(project__name=prj_name, version=build_version)
+            except Exception as err:
+                err_code = -1
+                msg = "Failed to get build {} in project {}: {}".format(prj_name, build_version, err)
             if build:
-                build = build[0]
                 try:
                     host, created = Host.objects.get_or_create(project=build.project, name=host_name, ip=host_ip, mac=host_mac)
                     testcase, created = TestCase.objects.get_or_create(project=build.project, name=tc_name, platform=tc_platform)
@@ -1434,24 +1513,37 @@ def testcase_page(request):
 def testresult_page(request):
     prj_id = request.GET.get('prj_id', '')
     build_id = request.GET.get('build_id', '')
+    host_id = request.GET.get('host_id', '')
     projects = Project.objects.filter(is_stop=False)
     target_prj = None
     target_build = None
+    target_host = None
     builds = []
+    hosts = []
     if build_id:
-        target_build = Build.objects.filter(id=build_id)
-        if target_build:
-            target_build = target_build[0]
+        try:
+            target_build = Build.objects.get(id=build_id)
             target_prj = target_build.project
             builds = target_prj.build_set.order_by('-create')
+        except Exception as err:
+            print "Failed to get Project with id {}: {}!".format(prj_id, err)
     elif prj_id:
-        target_prj = Project.objects.filter(id=prj_id)
-        if target_prj:
-            target_prj = target_prj[0]
+        try:
+            target_prj = Project.objects.get(id=prj_id)
             builds = Build.objects.filter(project=target_prj, is_stop=False).order_by('-create')
+        except Exception as err:
+            print "Failed to get Project with id {}: {}!".format(prj_id, err)
+    if target_prj:
+        hosts = Host.objects.filter(project=target_prj).order_by('name')
+    if host_id:
+        try:
+            target_host = Host.objects.get(id=host_id)
+        except Exception as err:
+            print "Failed to get Host with id {}: {}!".format(host_id, err)
     return render(request, 'tbd/testresult.html', {
         'project': target_prj, 'projects': projects,
         'build': target_build, 'builds': builds,
+        'host': target_host, 'hosts': hosts,
     })
 
 def crash_page(request):
@@ -1468,27 +1560,31 @@ def crash_page(request):
     hosts = []
     testcases = []
     if build_id:
-        target_build = Build.objects.filter(id=build_id)
-        if target_build:
-            target_build = target_build[0]
+        try:
+            target_build = Build.objects.get(id=build_id)
             target_prj = target_build.project
             builds = target_prj.build_set.order_by('-create')
+        except Exception as err:
+            print "Failed to get Project with id {}: {}!".format(prj_id, err)
     elif prj_id:
-        target_prj = Project.objects.filter(id=prj_id)
-        if target_prj:
-            target_prj = target_prj[0]
+        try:
+            target_prj = Project.objects.get(id=prj_id)
             builds = Build.objects.filter(project=target_prj, is_stop=False).order_by('-create')
+        except Exception as err:
+            print "Failed to get Project with id {}: {}!".format(prj_id, err)
     if target_prj:
         hosts = Host.objects.filter(project=target_prj).order_by('name')
         testcases = TestCase.objects.filter(project=target_prj).order_by('name')
     if host_id:
-        target_host = Host.objects.filter(id=host_id)
-        if target_host:
-            target_host = target_host[0]
+        try:
+            target_host = Host.objects.get(id=host_id)
+        except Exception as err:
+            print "Failed to get Host with id {}: {}!".format(host_id, err)
     if testcase_id:
-        target_testcase = TestCase.objects.filter(id=testcase_id)
-        if target_testcase:
-            target_testcase = target_testcase[0]
+        try:
+            target_testcase = TestCase.objects.get(id=testcase_id)
+        except Exception as err:
+            print "Failed to get TestCase with id {}: {}!".format(testcase_id, err)
     return render(request, 'tbd/crash.html', {
         'project': target_prj, 'projects': projects,
         'build': target_build, 'builds': builds,

@@ -156,6 +156,15 @@ $("select[name='build_version']").change( function() {
         } else {
             window.location.href = '/crash?prj_id=' + prj_id + '&host_id=' + host_id + '&testcase_id=' + testcase_id;
         }
+    } else if (cur_url.indexOf('/testresult') > -1) {
+        prj_id = $("select[name='project_name']").val();
+        build_id = $(this).val();
+        host_id = $("select[name='host']").val();
+        if (build_id) {
+            window.location.href = '/testresult?build_id=' + build_id + '&host_id=' + host_id;
+        } else {
+            window.location.href = '/testresult?prj_id=' + prj_id + '&host_id=' + host_id;
+        }
     }
 });
 
@@ -171,6 +180,15 @@ $("select[name='host']").change( function() {
             window.location.href = '/crash?build_id=' + build_id + '&host_id=' + host_id + '&testcase_id=' + testcase_id;
         } else {
             window.location.href = '/crash?prj_id=' + prj_id + '&host_id=' + host_id + '&testcase_id=' + testcase_id;
+        }
+    } else if(cur_url.indexOf('/testresult') > -1) {
+        prj_id = $("select[name='project_name']").val();
+        build_id = $("select[name='build_version']").val();
+        host_id = $(this).val();
+        if (build_id) {
+            window.location.href = '/testresult?build_id=' + build_id + '&host_id=' + host_id;
+        } else {
+            window.location.href = '/testresult?prj_id=' + prj_id + '&host_id=' + host_id;
         }
     }
 });
