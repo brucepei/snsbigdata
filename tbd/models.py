@@ -170,6 +170,7 @@ class TestCase(models.Model):
 class TestResult(models.Model):
     pass_count = models.PositiveIntegerField(default=0)
     fail_count = models.PositiveIntegerField(default=0)
+    last_update = models.DateTimeField(unique=False, auto_now=True)
     
     build = models.ForeignKey(
         Build,

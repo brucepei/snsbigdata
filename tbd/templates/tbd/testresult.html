@@ -62,15 +62,15 @@
     var cachedTestResultOptions = {'host': {}, 'build': {}, 'testaction': {}};
     $(function(){
         $('#TestResultContainer').jtable({
-            title: 'Crash List',
+            title: 'Test Action Result',
             paging: true,
             pageSize: 20,
             selecting: false,
             actions: {
-                listAction: '/ajax/crash_list',
-                createAction: '/ajax/crash_create',
-                updateAction: '/ajax/crash_update',
-                deleteAction: '/ajax/crash_delete'
+                listAction: '/ajax/testresult_list',
+                createAction: '/ajax/testresult_create',
+                updateAction: '/ajax/testresult_update',
+                deleteAction: '/ajax/testresult_delete'
             },
             fields: {
                 testresult_id: {
@@ -79,7 +79,7 @@
                 },
                 build_id: {
                     title: 'Build',
-                    width: '25%',
+                    list: false,
                     options: function (data) {
                         console.log(data);
                         var prj_id = {% if project %}{{ project.id }}{% else %}null{% endif %};
@@ -95,7 +95,7 @@
                         }
                         var options = [];
                         $.ajax({
-                            url: '/ajax/running_project_list_builds',
+                            url: '/ajax/list_options_builds_in_project',
                             type: 'POST',
                             dataType: 'json',
                             data: {'prj_id': prj_id},
@@ -116,7 +116,7 @@
                 },
                 host_id: {
                     title: 'Host',
-                    width: '15%',
+                    list: false,
                     options: function (data) {
                         console.log(data);
                         var prj_id = {% if project %}{{ project.id }}{% else %}null{% endif %};
@@ -132,7 +132,7 @@
                         }
                         var options = [];
                         $.ajax({
-                            url: '/ajax/crash_list_hosts?prj_id='+prj_id,
+                            url: '/ajax/list_options_hosts_in_project?prj_id='+prj_id,
                             type: 'POST',
                             dataType: 'json',
                             async: false,
@@ -151,8 +151,8 @@
                     edit: true
                 },
                 testaction_id: {
-                    title: 'Host',
-                    width: '15%',
+                    title: 'Action',
+                    width: '25%',
                     options: function (data) {
                         console.log(data);
                         var prj_id = {% if project %}{{ project.id }}{% else %}null{% endif %};
@@ -168,7 +168,7 @@
                         }
                         var options = [];
                         $.ajax({
-                            url: '/ajax/testresult_list_testactions?prj_id='+prj_id,
+                            url: '/ajax/list_options_testactions_in_project?prj_id='+prj_id,
                             type: 'POST',
                             dataType: 'json',
                             async: false,
@@ -186,17 +186,17 @@
                     create: true,
                     edit: true
                 },
-                pass_count: {
+                testresult_pass_count: {
                     title: 'Pass',
                     width: '10%'
                 },
-                fail_count: {
+                testresult_fail_count: {
                     title: 'Fail',
                     width: '10%'
                 },
                 last_update: {
                     title: 'Update Time',
-                    width: '25%',
+                    width: '30%',
                     create: false,
                     edit: false
                 }
