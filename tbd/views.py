@@ -3,6 +3,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 from tbd.models import Project, TestAction, Build, Crash, TestCase, Host, JIRA, TestResult
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 import time
@@ -137,7 +138,7 @@ def ajax_running_project_list(request):
                       'total_hours': total_hours,
                       'crash_num': crash_num,
                       'cs_date': prj.attr('cs_date'),
-                      'last_update': prj.last_update,
+                      'last_update': timezone.localtime(prj.last_update).strftime("%Y-%m-%d %H:%M:%S") if prj.last_update else None,
             }
             records.append(record)
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.count()})
@@ -190,7 +191,7 @@ def ajax_project_list(request):
                 'host_num': Host.objects.filter(project=prj, is_default=False).count(),
                 'testaction_num': TestAction.objects.filter(project=prj, is_default=False).count(),
                 'testcase_num': TestCase.objects.filter(project=prj, is_default=False).count(),
-                'create_time': prj.create,
+                'create_time': timezone.localtime(prj.create).strftime("%Y-%m-%d %H:%M:%S") if prj.create else None,
             })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.count()})
 
@@ -282,7 +283,7 @@ def ajax_project_create(request):
                     'host_num': 0,
                     'testcase_num': 0,
                     'testaction_num': 0,
-                    'create_time': target_prj.create,
+                    'create_time': timezone.localtime(target_prj.create).strftime("%Y-%m-%d %H:%M:%S") if target_prj.create else None,
                 }
             except Exception as err:
                 message = "Save Project {} failed: {}!".format(name, err)
@@ -448,7 +449,7 @@ def ajax_build_list(request):
                         'build_test_hours': bld.test_hours,
                         'build_use_server': 'true' if bld.use_server else 'false',
                         'crash_num': Crash.objects.filter(build=bld).count(),
-                        'create_time': bld.create,
+                        'create_time': timezone.localtime(bld.create).strftime("%Y-%m-%d %H:%M:%S") if bld.create else None,
                     })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
     
@@ -494,7 +495,7 @@ def ajax_build_create(request):
                                 'build_test_hours': target_build.test_hours,
                                 'build_use_server': target_build.use_server,
                                 'crash_num': 0,
-                                'create_time': target_build.create,
+                                'create_time': timezone.localtime(target_build.create).strftime("%Y-%m-%d %H:%M:%S") if target_build.create else None,
                             }
                         except Exception as err:
                             message = "Save Build {} in Project {} failed: {}!".format(build_version, target_prj.name, err)
@@ -951,7 +952,7 @@ def ajax_crash_list(request):
                         'testcase_id': crash.testcase.id,
                         'jira_id': crash.jira.jira_id,
                         'jira_category': crash.jira.category,
-                        'create_time': crash.create,
+                        'create_time': timezone.localtime(crash.create).strftime("%Y-%m-%d %H:%M:%S") if crash.create else None,
                     })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
 
@@ -1067,9 +1068,13 @@ def ajax_crash_update(request):
                 testcase_id = request.POST.get('testcase_id', None)
                 jira_id = request.POST.get('jira_id', None)
                 if target_crash.build and build_id != target_crash.build.id:
-                    target_build = Build.objects.filter(id=build_id)
+                    target_build = None
+                    try:
+                        target_build = Build.objects.get(id=build_id)
+                    except Exception as err:
+                        message = "Failed to get Build with id {}: {}!".format(build_id, err)
                     if target_build:
-                        target_crash.build = target_build[0]
+                        target_crash.build = target_build
                         is_set = True
                 if target_crash.host and host_id != target_crash.host.id:
                     target_host = None
@@ -1121,6 +1126,7 @@ def ajax_crash_update(request):
         return JsonResponse({'Result': 'ERROR', 'Message': message})
     else:
         return JsonResponse({'Result': 'OK'})
+    
 #testresult
 def ajax_testresult_list(request):
     print "request testresult list:" + repr(request.POST)
@@ -1180,7 +1186,7 @@ def ajax_testresult_list(request):
                     'testaction_id': ta.id,
                     'build_id': build_id,
                     'host_id': host_id,
-                    'last_update': last_update,
+                    'last_update': timezone.localtime(last_update).strftime("%Y-%m-%d %H:%M:%S") if last_update else None,
                 })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
 
@@ -1266,6 +1272,74 @@ def ajax_testresult_delete(request):
     else:
         return JsonResponse({'Result': 'OK'})
 
+def ajax_testresult_update(request):
+    print "request testresult create:" + repr(request.POST)
+    message = None
+    if request.method == 'POST':
+        testresult_id = request.POST.get('testresult_id', None)
+        if testresult_id:
+            target_testresult = None
+            try:
+                target_testresult = TestResult.objects.get(id=testresult_id)
+            except Exception as err:
+                message = "Failed to get TestResult with id {}: {}!".format(testresult_id, err)
+            if target_testresult:
+                is_set = False
+                build_id = request.POST.get('build_id', None)
+                host_id = request.POST.get('host_id', None)
+                testaction_id = request.POST.get('testaction_id', None)
+                if target_testresult.build and build_id != target_testresult.build.id:
+                    target_build = None
+                    try:
+                        target_build = Build.objects.get(id=build_id)
+                    except Exception as err:
+                        message = "Failed to get Build with id {}: {}!".format(build_id, err)
+                    if target_build:
+                        target_testresult.build = target_build
+                        is_set = True
+                if target_testresult.host and host_id != target_testresult.host.id:
+                    target_host = None
+                    try:
+                        target_host = Host.objects.get(id=host_id)
+                    except Exception as err:
+                        message = "Failed to get Host with id {}: {}!".format(host_id, err)
+                    if target_host:
+                        target_testresult.host = target_host
+                        is_set = True
+                if target_testresult.testaction and testaction_id != target_testresult.testaction.id:
+                    try:
+                        target_testaction = TestAction.objects.get(id=testaction_id)
+                    except Exception as err:
+                        message = "Failed to get TestAction with id {}: {}!".format(testaction_id, err)
+                    if target_testaction:
+                        target_testresult.testaction = target_testaction
+                        is_set = True
+                for attr in ('testresult_pass_count', 'testresult_fail_count'):
+                    attr_val = request.POST.get(attr, None)
+                    if attr_val is not None:
+                        attr_name = attr[11:]
+                        orig_val = getattr(target_testresult, attr_name, None)
+                        #print "set {} from {} to {}!".format(attr_name, orig_val, attr_val)
+                        if orig_val != attr_val:
+                            setattr(target_testresult, attr_name, attr_val)
+                            is_set = True
+                if is_set:
+                    try:
+                        target_testresult.save()
+                    except Exception as err:
+                        message = "Save TestResult id {} failed: {}!".format(target_testresult.id, err)
+                    print "Change TestResult, save with id {}!".format(target_testresult.id)
+                else:
+                    print "Not change TestResult, don't save!"
+            else:
+                message = 'Testresult id {} does NOT exist!'.format(testresult_id)
+    else:
+        message = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if message:
+        return JsonResponse({'Result': 'ERROR', 'Message': message})
+    else:
+        return JsonResponse({'Result': 'OK'})
+    
 #list_options
 def ajax_list_options_testactions_in_project(request):
     print request.POST

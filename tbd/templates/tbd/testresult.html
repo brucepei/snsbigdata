@@ -68,9 +68,11 @@
             selecting: false,
             actions: {
                 listAction: '/ajax/testresult_list',
-                createAction: '/ajax/testresult_create',
-                updateAction: '/ajax/testresult_update',
+                createAction: '/ajax/testresult_create'
+            {% if build and host %}
+                ,updateAction: '/ajax/testresult_update',
                 deleteAction: '/ajax/testresult_delete'
+            {% endif %}
             },
             fields: {
                 testresult_id: {
