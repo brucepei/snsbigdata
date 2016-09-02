@@ -1494,6 +1494,56 @@ def auto_crash_info(request):
             return json_response("Need necessary arguments when auto create crash!", -1)
     return json_response(msg, err_code)
 
+def auto_testaction_info(request):
+    err_code = None
+    msg = None
+    if request.method == 'POST':
+        prj_name = request.POST.get('project_name', None)
+        #prj_owner = request.POST.get('project_owner', '')
+        build_version = request.POST.get('build_version', None)
+        ta_name = request.POST.get('ta_name', None)
+        is_pass = request.POST.get('is_pass', None)
+        is_pass = True if is_pass and (is_pass == '1' or is_pass.lower() == 'true') else False
+        host_name = request.POST.get('host_name', None)
+        host_ip = request.POST.get('host_ip', '')
+        host_mac = request.POST.get('host_mac', '')
+        if path and prj_name and build_version and host_name and tc_name:
+            build = None
+            try:
+                build = Build.objects.get(project__name=prj_name, version=build_version)
+            except Exception as err:
+                err_code = -1
+                msg = "Failed to get build {} in project {}: {}".format(prj_name, build_version, err)
+            if build:
+                try:
+                    host, created = Host.objects.get_or_create(project=build.project, name=host_name, ip=host_ip, mac=host_mac)
+                    testcase, created = TestCase.objects.get_or_create(project=build.project, name=tc_name, platform=tc_platform)
+                    testaction = None
+                    crash = None
+                    if ta_name:
+                        testaction, created = TestAction.objects.get_or_create(name=ta_name, project=build.project)
+                    if testaction:
+                        testresult, created = TestResult.objects.get_or_create(testaction=testaction, build=build, host=host, pass_count=0, fail_count=0)
+                    if testresult:
+                        if is_pass:
+                            testresult.pass_count += 1
+                        else:
+                            testresult.fail_count += 1
+                            msg = "Add fail crash done!"
+                    else:
+                        msg = "Crash already existed!"
+                except Exception as err:
+                    msg = "Failed to create crash record: {}".format(err)
+                    err_code = -1
+                    return json_response(msg, err_code)
+                return json_response(msg, 0)
+            else:
+                return json_response("Not found build {}!".format(build_version), -1)
+        else:
+            return json_response("Need necessary arguments when auto create crash!", -1)
+    return json_response(msg, err_code)
+
+
 # Create your views here.
 def home_page(request):
     return render(request, 'tbd/home.html')
