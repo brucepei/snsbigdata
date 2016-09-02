@@ -1495,7 +1495,7 @@ def auto_crash_info(request):
     return json_response(msg, err_code)
 
 def auto_testaction_info(request):
-    err_code = None
+    err_code = 0
     msg = None
     if request.method == 'POST':
         prj_name = request.POST.get('project_name', None)
@@ -1507,7 +1507,7 @@ def auto_testaction_info(request):
         host_name = request.POST.get('host_name', None)
         host_ip = request.POST.get('host_ip', '')
         host_mac = request.POST.get('host_mac', '')
-        if path and prj_name and build_version and host_name and tc_name:
+        if ta_name and prj_name and build_version and host_name:
             build = None
             try:
                 build = Build.objects.get(project__name=prj_name, version=build_version)
@@ -1517,26 +1517,31 @@ def auto_testaction_info(request):
             if build:
                 try:
                     host, created = Host.objects.get_or_create(project=build.project, name=host_name, ip=host_ip, mac=host_mac)
-                    testcase, created = TestCase.objects.get_or_create(project=build.project, name=tc_name, platform=tc_platform)
                     testaction = None
-                    crash = None
+                    testresult = None
                     if ta_name:
                         testaction, created = TestAction.objects.get_or_create(name=ta_name, project=build.project)
                     if testaction:
-                        testresult, created = TestResult.objects.get_or_create(testaction=testaction, build=build, host=host, pass_count=0, fail_count=0)
+                        try:
+                            testresult = TestResult.objects.get(testaction=testaction, build=build, host=host)
+                        except Exception as err:
+                            testresult = TestResult.objects.create(testaction=testaction, build=build, host=host, pass_count=0, fail_count=0)
                     if testresult:
                         if is_pass:
                             testresult.pass_count += 1
+                            msg = "Add {} pass to {}!".format(ta_name, testresult.pass_count)
                         else:
                             testresult.fail_count += 1
-                            msg = "Add fail crash done!"
+                            msg = "Add {} fail to {}!".format(ta_name, testresult.fail_count)
+                        testresult.save()
                     else:
-                        msg = "Crash already existed!"
+                        err_code = -1
+                        msg = "Failed to set test result with unknown reason!"
                 except Exception as err:
-                    msg = "Failed to create crash record: {}".format(err)
+                    msg = "Failed to set test result record: {}".format(err)
                     err_code = -1
                     return json_response(msg, err_code)
-                return json_response(msg, 0)
+                return json_response(msg, err_code)
             else:
                 return json_response("Not found build {}!".format(build_version), -1)
         else:
