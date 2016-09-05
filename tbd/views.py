@@ -302,17 +302,19 @@ def ajax_project_create(request):
 def ajax_testaction_list(request):
     print "request testaction list:" + repr(request)
     records = []
+    total_count = 0
     if request.method == 'POST':
         prj_id = request.POST.get('prj_id', None)
         if prj_id:
             start_index = int(request.GET.get('jtStartIndex', 0))
             page_size = int(request.GET.get('jtPageSize', 20))
+            total_count = TestAction.objects.filter(project__id=prj_id).count()
             for testaction in TestAction.objects.filter(project__id=prj_id)[start_index: page_size+start_index]:
                 records.append({
                     'testaction_id': testaction.id,
                     'testaction_name': testaction.name,
                 })
-    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': TestAction.objects.filter(project__id=prj_id).count()})
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
 
 def ajax_testaction_create(request):
     print "request testaction create:" + repr(request.POST)
