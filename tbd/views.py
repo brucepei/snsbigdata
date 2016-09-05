@@ -307,12 +307,12 @@ def ajax_testaction_list(request):
         if prj_id:
             start_index = int(request.GET.get('jtStartIndex', 0))
             page_size = int(request.GET.get('jtPageSize', 20))
-            for testaction in TestAction.objects.filter(project__id=prj_id):
+            for testaction in TestAction.objects.filter(project__id=prj_id)[start_index: page_size+start_index]:
                 records.append({
                     'testaction_id': testaction.id,
                     'testaction_name': testaction.name,
                 })
-    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': TestAction.objects.count()})
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': TestAction.objects.filter(project__id=prj_id).count()})
 
 def ajax_testaction_create(request):
     print "request testaction create:" + repr(request.POST)
@@ -1164,7 +1164,7 @@ def ajax_testresult_list(request):
             if target_host:
                 user_filter['host'] = target_host
             testresults = TestResult.objects.filter(**user_filter)
-            all_ta = TestAction.objects.filter(project=target_prj).order_by('testaction__name')[start_index: page_size+start_index]
+            all_ta = TestAction.objects.filter(project=target_prj).order_by('name')[start_index: page_size+start_index]
             total_count = TestAction.objects.filter(project=target_prj).count()
             for ta in all_ta:
                 pass_count = 0
