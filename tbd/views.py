@@ -481,9 +481,9 @@ def ajax_build_create(request):
                                 project=target_prj,
                                 version=build_version,
                                 short_name=request.POST.get('build_short_name', build_version),
-                                server_path=request.POST.get('build_server_path', None),
-                                local_path=request.POST.get('build_local_path', None),
-                                crash_path=request.POST.get('build_crash_path', None),
+                                server_path=request.POST.get('build_server_path', ''),
+                                local_path=request.POST.get('build_local_path', ''),
+                                crash_path=request.POST.get('build_crash_path', ''),
                                 test_hours=test_hour,
                                 use_server=use_server,
                             )
@@ -1431,6 +1431,128 @@ def auto(request, action):
     else:
         return json_response("Unknown auto action: {!r}!".format(action), -1)
 
+def auto_project_info(request):
+    err_code = None
+    msg = None
+    if request.method == 'POST':
+        prj_name = request.POST.get('project_name', None)
+        prj_owner = request.POST.get('project_owner', None)
+        prj_is_stop = request.POST.get('project_is_stop', None)
+        prj_is_stop = True if prj_is_stop and ( prj_is_stop == '1' or prj_is_stop.lower() == 'true' ) else False
+        if prj_name:
+            target_prj = None
+            try:
+                target_prj = Project.objects.get(name=prj_name)
+            except Exception as err:
+                pass
+            if target_prj:
+                changed = False
+                if prj_owner and target_prj.owner != prj_owner:
+                    target_prj.owner = prj_owner
+                    changed = True
+                if prj_is_stop != target_prj.is_stop:
+                    target_prj.is_stop = prj_is_stop
+                    changed = True
+                if changed:
+                    try:
+                        target_prj.save()
+                        msg = 'Project {} has changed!'.format(prj_name)
+                    except Exception as err:
+                        msg = 'Chnage Project {} failed!'.format(prj_name)
+                else:
+                    msg = 'Project {} no change!'.format(prj_name)
+            else:
+                try:
+                    target_prj = Project.objects.create(name=prj_name, owner=prj_owner, is_stop=prj_is_stop)
+                    msg = 'Project {} has created!'.format(prj_name)
+                except Exception as err:
+                    msg = "Create Project {} failed: {}!".format(prj_name, err)
+                set_default_result = set_default_records(project=target_prj, set_testcase=True, set_host=True, set_testaction=True)
+                if set_default_result:
+                    msg = "Failed to create related default host/testcase for project {}: {}!".format(prj_name, set_default_result)
+        else:
+            msg = "Need necessary argument: project_name!"
+    else:
+        msg = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if msg:
+        return json_response(msg, -1)
+    else:
+        return json_response(msg, 0)
+
+def auto_build_info(request):
+    err_code = None
+    msg = None
+    if request.method == 'POST':
+        prj_name = request.POST.get('project_name', None)
+        if prj_name:
+            target_prj = None
+            try:
+                target_prj = Project.objects.get(name=prj_name)
+            except Exception as err:
+                msg = "Failed to get Project {}: {}".format(prj_name, err)
+            if target_prj:
+                build_version = request.POST.get('build_version', None)
+                if build_version:
+                    target_build = None
+                    try:
+                        target_build = Build.objects.get(project=target_prj, version=build_version)
+                    except Exception as err:
+                        pass
+                    if target_build:
+                        is_set = False
+                        for attr in ('build_server_path', 'build_local_path', 'build_crash_path', 'build_test_hours',
+                                     'build_use_server', 'build_is_stop', 'build_short_name', 'build_version'):
+                            attr_val = request.POST.get(attr, None)
+                            if attr == 'build_use_server' or attr == 'build_is_stop':
+                                attr_val = True if attr_val and (attr_val.lower() == 'true' or attr_val.lower() == '1') else False
+                            if attr_val is not None:
+                                attr_name = attr[6:]
+                                orig_val = getattr(target_build, attr_name, None)
+                                if str(orig_val) != str(attr_val):
+                                    #print "attr name {}: {}={}".format(attr, orig_val, attr_val)
+                                    setattr(target_build, attr_name, attr_val)
+                                    is_set = True
+                        if is_set:
+                            try:
+                                target_build.save()
+                                msg = "Build {} changed!".format(build_version)
+                            except Exception as err:
+                                msg = "Change Build {} failed: {}!".format(build_version, err)
+                        else:
+                            msg = "Build {} has no changed!".format(build_version)
+                    else:
+                        use_server = request.POST.get('build_use_server', None)
+                        use_server = True if use_server and (use_server == 'true' or use_server == '1') else False
+                        test_hour = request.POST.get('build_test_hours', 0)
+                        if not test_hour:
+                            test_hour = 0
+                        try:
+                            target_build = Build.objects.create(
+                                project=target_prj,
+                                version=build_version,
+                                short_name=request.POST.get('build_short_name', build_version),
+                                server_path=request.POST.get('build_server_path', ''),
+                                local_path=request.POST.get('build_local_path', ''),
+                                crash_path=request.POST.get('build_crash_path', ''),
+                                test_hours=test_hour,
+                                use_server=use_server,
+                            )
+                            msg = 'Build {} has created!'.format(build_version)
+                        except Exception as err:
+                            msg = "Create Build {} failed: {}!".format(build_version, err)
+                else:
+                    msg = "Need necessary argument: build_version!"
+            else:
+                msg = "Cannot find Project {}!".format(prj_name)
+        else:
+            msg = "Need necessary argument: project_name!"
+    else:
+        msg = "Incorrect request method: {}, only support POST now!".format(request.method)
+    if msg:
+        return json_response(msg, -1)
+    else:
+        return json_response(msg, 0)
+
 def auto_query_build(request):
     err_code = None
     msg = None
@@ -1462,7 +1584,7 @@ def auto_crash_info(request):
         tc_name = request.POST.get('testcase_name', None)
         tc_platform = request.POST.get('testcase_platform', '')
         jira_id = request.POST.get('jira_id', None)
-        if path and prj_name and build_version and host_name and tc_name:
+        if path and prj_name and build_version:
             build = None
             try:
                 build = Build.objects.get(project__name=prj_name, version=build_version)
@@ -1471,22 +1593,64 @@ def auto_crash_info(request):
                 msg = "Failed to get build {} in project {}: {}".format(prj_name, build_version, err)
             if build:
                 try:
-                    host, created = Host.objects.get_or_create(project=build.project, name=host_name, ip=host_ip, mac=host_mac)
-                    testcase, created = TestCase.objects.get_or_create(project=build.project, name=tc_name, platform=tc_platform)
-                    jira = None
-                    if jira_id:
-                        jira, created = JIRA.objects.get_or_create(jira_id=jira_id, category='OP')
-                    if not jira:
-                        jira = JIRA.objects.filter(is_default=True)
-                        if jira:
-                            jira = jira[0]
-                    crash, created = Crash.objects.get_or_create(path=path, build=build, host=host, testcase=testcase, jira=jira)
-                    if created:
-                        msg = "Create crash done!"
+                    if host_name:
+                        try:
+                            host = Host.objects.get(project=build.project, name=host_name)
+                        except Exception as err:
+                            host = Host.objects.create(project=build.project, name=host_name, ip=host_ip, mac=host_mac)
                     else:
-                        msg = "Crash already existed!"
+                        host = Host.objects.get(is_default=True, project=build.project)
                 except Exception as err:
-                    msg = "Failed to create crash record: {}".format(err)
+                    err_code = -1
+                    msg = "Failed to get/create Host with name {}: {}!".format(host_name, err)
+                    return json_response(msg, err_code)
+                try:
+                    if tc_name:
+                        try:
+                            testcase = TestCase.objects.get(project=build.project, name=tc_name)
+                        except Exception as err:
+                            testcase = TestCase.objects.create(project=build.project, name=tc_name, platform=tc_platform)
+                    else:
+                        testcase = TestCase.objects.get(is_default=True, project=build.project)
+                except Exception as err:
+                    err_code = -1
+                    msg = "Failed to get/create TestCase with name {}: {}!".format(tc_name, err)
+                    return json_response(msg, err_code)
+                try:
+                    if jira_id:
+                        try:
+                            jira = JIRA.objects.get(jira_id=jira_id)
+                        except Exception as err:
+                            jira = JIRA.objects.create(is_default=False, jira_id=jira_id, category=JIRA.OPEN)
+                    else:
+                        jira = JIRA.objects.get(is_default=True)
+                except Exception as err:
+                    err_code = -1
+                    msg = "Failed to get/create JIRA with jira_id {}: {}!".format(jira_id, err)
+                    return json_response(msg, err_code)
+                try:
+                    changed = False
+                    need_change = False
+                    try:
+                        crash = Crash.objects.get(path=path)
+                        need_change = True
+                    except Exception as err:
+                        crash = Crash.objects.create(path=path, build=build, host=host, testcase=testcase, jira=jira)
+                        msg = "Create crash done!"
+                    if need_change:
+                        for attr in ('jira', 'host', 'testcase'):
+                            val = locals().get(attr, None)
+                            if hasattr(crash, attr) and val and getattr(crash, attr) != val:
+                                setattr(crash, attr, val)
+                                print "attr name {}: {}={}".format(attr, getattr(crash, attr), val)
+                                changed = True
+                        if changed:
+                            crash.save()
+                            msg = "Crash changed!"
+                        else:
+                            msg = "Crash no change!"
+                except Exception as err:
+                    msg = "Failed to change/create crash record: {}".format(err)
                     err_code = -1
                     return json_response(msg, err_code)
                 return json_response(msg, 0)
