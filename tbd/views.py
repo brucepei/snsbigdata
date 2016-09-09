@@ -1432,7 +1432,7 @@ def auto(request, action):
         return json_response("Unknown auto action: {!r}!".format(action), -1)
 
 def auto_project_info(request):
-    err_code = None
+    err_code = 0
     msg = None
     if request.method == 'POST':
         prj_name = request.POST.get('project_name', None)
@@ -1459,6 +1459,7 @@ def auto_project_info(request):
                         msg = 'Project {} has changed!'.format(prj_name)
                     except Exception as err:
                         msg = 'Chnage Project {} failed!'.format(prj_name)
+                        err_code = -1
                 else:
                     msg = 'Project {} no change!'.format(prj_name)
             else:
@@ -1467,20 +1468,20 @@ def auto_project_info(request):
                     msg = 'Project {} has created!'.format(prj_name)
                 except Exception as err:
                     msg = "Create Project {} failed: {}!".format(prj_name, err)
+                    err_code = -1
                 set_default_result = set_default_records(project=target_prj, set_testcase=True, set_host=True, set_testaction=True)
                 if set_default_result:
                     msg = "Failed to create related default host/testcase for project {}: {}!".format(prj_name, set_default_result)
         else:
+            err_code = -1
             msg = "Need necessary argument: project_name!"
     else:
+        err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
-    if msg:
-        return json_response(msg, -1)
-    else:
-        return json_response(msg, 0)
+    return json_response(msg, err_code)
 
 def auto_build_info(request):
-    err_code = None
+    err_code = 0
     msg = None
     if request.method == 'POST':
         prj_name = request.POST.get('project_name', None)
@@ -1518,6 +1519,7 @@ def auto_build_info(request):
                                 msg = "Build {} changed!".format(build_version)
                             except Exception as err:
                                 msg = "Change Build {} failed: {}!".format(build_version, err)
+                                err_code = -1
                         else:
                             msg = "Build {} has no changed!".format(build_version)
                     else:
@@ -1540,18 +1542,20 @@ def auto_build_info(request):
                             msg = 'Build {} has created!'.format(build_version)
                         except Exception as err:
                             msg = "Create Build {} failed: {}!".format(build_version, err)
+                            err_code = -1
                 else:
                     msg = "Need necessary argument: build_version!"
+                    err_code = -1
             else:
                 msg = "Cannot find Project {}!".format(prj_name)
+                err_code = -1
         else:
             msg = "Need necessary argument: project_name!"
+            err_code = -1
     else:
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
-    if msg:
-        return json_response(msg, -1)
-    else:
-        return json_response(msg, 0)
+        err_code = -1
+    return json_response(msg, err_code)
 
 def auto_query_build(request):
     err_code = None
@@ -1569,9 +1573,8 @@ def auto_query_build(request):
             })
     return json_response(msg, err_code)
     
-#TODO: need update crash if para changed, so cannot use Crash.objects.get_or_create!
 def auto_crash_info(request):
-    err_code = None
+    err_code = 0
     msg = None
     if request.method == 'POST':
         prj_name = request.POST.get('project_name', None)
@@ -1652,12 +1655,12 @@ def auto_crash_info(request):
                 except Exception as err:
                     msg = "Failed to change/create crash record: {}".format(err)
                     err_code = -1
-                    return json_response(msg, err_code)
-                return json_response(msg, 0)
             else:
-                return json_response("Not found build {}!".format(build_version), -1)
+                msg = "Not found build {}!".format(build_version)
+                err_code = -1
         else:
-            return json_response("Need necessary arguments when auto create crash!", -1)
+            msg = "Need necessary arguments when auto create crash!"
+            err_code = -1
     return json_response(msg, err_code)
 
 def auto_testaction_info(request):
