@@ -1641,7 +1641,7 @@ def auto_crash_info(request):
                         crash = Crash.objects.create(path=path, build=build, host=host, testcase=testcase, jira=jira)
                         msg = "Create crash done!"
                     if need_change:
-                        for attr in ('jira', 'host', 'testcase'):
+                        for attr in ('build', 'jira', 'host', 'testcase'):
                             val = locals().get(attr, None)
                             if hasattr(crash, attr) and val and getattr(crash, attr) != val:
                                 setattr(crash, attr, val)

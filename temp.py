@@ -2,13 +2,13 @@ from requests import Session
 
 sess = Session()
 if 1:
-    resp = sess.post('http://127.0.0.1/auto/crash_info', {
-        'project_name': "TF2.1.5.1.0",
-        'build_version': "version001",
+    resp = sess.post('http://10.231.194.75:8080/auto/crash_info', {
+        'project_name': "QCA9377.WIN.1.1.7_win10",
+        'build_version': "win10",
         'path': "\\\\mdm\\c003",
         'host_name': "",
-        'host_ip': "1.1.1.2",
-        'testcase_name': "testplan1_s3_s4_udp_traffic",
+        'host_ip': "",
+        'testcase_name': "",
     })
     print resp.json()
 
