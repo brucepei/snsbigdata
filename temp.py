@@ -1,7 +1,7 @@
 from requests import Session
 
 sess = Session()
-if 1:
+if 0:
     resp = sess.post('http://10.231.194.75:8080/auto/crash_info', {
         'project_name': "QCA9377.WIN.1.1.7_win10",
         'build_version': "win10",
@@ -29,7 +29,7 @@ if 0:
     })
     print resp.json()
 
-if 1:
+if 0:
     resp = sess.post('http://127.0.0.1/auto/project_info', {
         'project_name': "TF2.1.5.1.0",
         'project_owner': "xiaoming",
@@ -40,8 +40,8 @@ if 1:
 if 1:
     resp = sess.post('http://127.0.0.1/auto/build_info', {
         'project_name': "TF2.1.5.1.0",
-        'build_version': "version002",
-        'build_short_name': "v2",
+        'build_version': "version004",
+        'build_short_name': "v4",
         'build_test_hours': "10",
         'build_use_server': '0',
         'build_server_path': '\\\\s\\v2',

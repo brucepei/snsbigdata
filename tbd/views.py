@@ -1540,6 +1540,8 @@ def auto_build_info(request):
                                 use_server=use_server,
                             )
                             msg = 'Build {} has created!'.format(build_version)
+                            target_prj.attr('running_build', target_build.id)
+                            target_prj.save()
                         except Exception as err:
                             msg = "Create Build {} failed: {}!".format(build_version, err)
                             err_code = -1
