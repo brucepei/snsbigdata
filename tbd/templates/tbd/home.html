@@ -37,11 +37,11 @@
                 },
                 prj_owner: {
                     title: 'Tester',
-                    width: '5%',
+                    width: '10%',
                 },
                 running_build: {
                     title: 'Running Build',
-                    width: '30%',
+                    width: '25%',
                     options: function (data) {
                         console.log(data);
                         if ('prj_id' in data.record) {
@@ -129,8 +129,8 @@
                     type: 'date',
                     displayFormat: 'yy/mm/dd'
                 },
-                last_update: {
-                    title: 'Update Time',
+                last_crash: {
+                    title: 'Last Crash',
                     width: '20%',
                     edit: false
                 }

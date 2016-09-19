@@ -127,6 +127,11 @@ def ajax_running_project_list(request):
                     target_build = target_build[0]
                     total_hours = target_build.test_hours
                     crash_num = Crash.objects.filter(build=target_build).count()
+                    last_crash = None
+                    try:
+                        last_crash = Crash.objects.filter(build=target_build).latest('create')
+                    except Exception:
+                        pass
             record = {'prj_id': prj.id,
                       'prj_name': prj.name,
                       'prj_owner': prj.owner,
@@ -138,7 +143,7 @@ def ajax_running_project_list(request):
                       'total_hours': total_hours,
                       'crash_num': crash_num,
                       'cs_date': prj.attr('cs_date'),
-                      'last_update': timezone.localtime(prj.last_update).strftime("%Y-%m-%d %H:%M:%S") if prj.last_update else None,
+                      'last_crash': timezone.localtime(last_crash.create).strftime("%Y-%m-%d %H:%M:%S") if last_crash else None,
             }
             records.append(record)
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.count()})
@@ -162,7 +167,7 @@ def ajax_running_project_update(request):
                         target_prj.owner = prj_owner
                         is_set = True
                     for attr in ('running_build', 'cs_date', 'os_type', 'os_ver', 'board_type',
-                                 'total_devices', 'last_update'):
+                                 'total_devices'):
                         attr_val = request.POST.get(attr, None)
                         if attr_val is not None:
                             if target_prj.attr(attr, attr_val):
