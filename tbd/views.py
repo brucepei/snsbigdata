@@ -121,13 +121,13 @@ def ajax_running_project_list(request):
             target_build = None
             crash_num = 0
             total_hours = 0
+            last_crash = None
             if running_build_id:
                 target_build = Build.objects.filter(id=running_build_id)
                 if target_build:
                     target_build = target_build[0]
                     total_hours = target_build.test_hours
                     crash_num = Crash.objects.filter(build=target_build).count()
-                    last_crash = None
                     try:
                         last_crash = Crash.objects.filter(build=target_build).latest('create')
                     except Exception:
