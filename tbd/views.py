@@ -115,7 +115,7 @@ def ajax_running_project_list(request):
     if request.method == 'POST':
         start_index = int(request.GET.get('jtStartIndex', 0))
         page_size = int(request.GET.get('jtPageSize', 20))
-        projects = Project.objects.filter(is_stop=False).order_by('name')[start_index: page_size+start_index]
+        projects = Project.objects.filter(is_stop=False).order_by('owner', 'name')[start_index: page_size+start_index]
         for prj in projects:
             running_build_id = prj.attr('running_build')
             target_build = None
