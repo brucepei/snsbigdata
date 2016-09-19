@@ -504,6 +504,8 @@ def ajax_build_create(request):
                                 'crash_num': 0,
                                 'create_time': timezone.localtime(target_build.create).strftime("%Y-%m-%d %H:%M:%S") if target_build.create else None,
                             }
+                            target_prj.attr('running_build', target_build.id)
+                            target_prj.save()
                         except Exception as err:
                             message = "Save Build {} in Project {} failed: {}!".format(build_version, target_prj.name, err)
                     else:
