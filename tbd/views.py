@@ -1696,28 +1696,42 @@ def auto_testaction_info(request):
     if request.method == 'POST':
         prj_name = request.POST.get('project_name', None)
         #prj_owner = request.POST.get('project_owner', '')
-        build_version = request.POST.get('build_version', None)
+        #build_version = request.POST.get('build_version', None)
         ta_name = request.POST.get('ta_name', None)
         is_pass = request.POST.get('is_pass', None)
         is_pass = True if is_pass and (is_pass == '1' or is_pass.lower() == 'true') else False
         host_name = request.POST.get('host_name', None)
         host_ip = request.POST.get('host_ip', '')
         host_mac = request.POST.get('host_mac', '')
-        if ta_name and prj_name and build_version and host_name:
+        if ta_name and prj_name and host_name:
+            project = None
             build = None
+            running_build_id = None
             try:
-                build = Build.objects.get(project__name=prj_name, version=build_version)
+                project = Project.objects.get(name=prj_name)
             except Exception as err:
                 err_code = -1
-                msg = "Failed to get build {} in project {}: {}".format(prj_name, build_version, err)
+                msg = "Failed to get Project {}: {}".format(prj_name, err)
+            if project:
+                running_build_id = project.attr('running_build')
+            if running_build_id:
+                try:
+                    build = Build.objects.get(id=running_build_id)
+                except Exception as err:
+                    err_code = -1
+                    msg = "Failed to get running build with id {} in Project {}: {}".format(running_build_id, prj_name, err)
             if build:
                 try:
-                    host, created = Host.objects.get_or_create(project=build.project, name=host_name, ip=host_ip, mac=host_mac)
+                    host = None
+                    try:
+                        host = Host.objects.get(project=project, name=host_name)
+                    except Exception as err:
+                        host = Host.objects.create(project=project, name=host_name, ip=host_ip, mac=host_mac)
                     testaction = None
                     testresult = None
                     if ta_name:
-                        testaction, created = TestAction.objects.get_or_create(name=ta_name, project=build.project)
-                    if testaction:
+                        testaction, created = TestAction.objects.get_or_create(name=ta_name, project=project)
+                    if host and testaction:
                         try:
                             testresult = TestResult.objects.get(testaction=testaction, build=build, host=host)
                         except Exception as err:
@@ -1725,23 +1739,23 @@ def auto_testaction_info(request):
                     if testresult:
                         if is_pass:
                             testresult.pass_count += 1
-                            msg = "Add {} pass to {}!".format(ta_name, testresult.pass_count)
+                            msg = "Add {} pass to {} in build {}!".format(ta_name, testresult.pass_count, build.version)
                         else:
                             testresult.fail_count += 1
-                            msg = "Add {} fail to {}!".format(ta_name, testresult.fail_count)
+                            msg = "Add {} fail to {} in build {}!".format(ta_name, testresult.fail_count, build.version)
                         testresult.save()
                     else:
                         err_code = -1
-                        msg = "Failed to set test result with unknown reason!"
+                        msg = "Failed to set test result: TA={} is_pass: {} in build {} with unknown reason!".format(ta_name, is_pass, build.version)
                 except Exception as err:
-                    msg = "Failed to set test result record: {}".format(err)
+                    msg = "Failed to set test result: TA={} is_pass: {} in build {}: {}".format(ta_name, is_pass, build.version, err)
                     err_code = -1
                     return json_response(msg, err_code)
                 return json_response(msg, err_code)
             else:
-                return json_response("Not found build {}!".format(build_version), -1)
+                return json_response("Not found running build in project {}!".format(prj_name), -1)
         else:
-            return json_response("Need necessary arguments when auto create crash!", -1)
+            return json_response("Need necessary arguments when auto update action: TA={}, Project={}, Host={}!".format(ta_name, prj_name, host_name), -1)
     return json_response(msg, err_code)
 
 
