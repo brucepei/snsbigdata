@@ -146,7 +146,7 @@ def ajax_running_project_list(request):
                       'last_crash': timezone.localtime(last_crash.create).strftime("%Y-%m-%d %H:%M:%S") if last_crash else None,
             }
             records.append(record)
-    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.count()})
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.filter(is_stop=False).count()})
 
 def ajax_running_project_update(request):
     print request.POST
@@ -185,7 +185,7 @@ def ajax_project_list(request):
     if request.method == 'POST':
         start_index = int(request.GET.get('jtStartIndex', 0))
         page_size = int(request.GET.get('jtPageSize', 20))
-        projects = Project.objects.all().order_by('-create')[start_index: page_size+start_index]
+        projects = Project.objects.all().order_by('is_stop', 'name')[start_index: page_size+start_index]
         for prj in projects:
             records.append({
                 'prj_id': prj.id,
