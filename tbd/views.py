@@ -142,7 +142,7 @@ def ajax_running_project_list(request):
                       'total_devices': prj.attr('total_devices'),
                       'total_hours': total_hours,
                       'crash_num': crash_num,
-                      'cs_date': prj.attr('cs_date'),
+                      'build_create': timezone.localtime(target_build.create).strftime("%Y-%m-%d %H:%M:%S") if target_build else None,
                       'last_crash': timezone.localtime(last_crash.create).strftime("%Y-%m-%d %H:%M:%S") if last_crash else None,
             }
             records.append(record)
@@ -166,7 +166,7 @@ def ajax_running_project_update(request):
                     if prj_owner != target_prj.owner:
                         target_prj.owner = prj_owner
                         is_set = True
-                    for attr in ('running_build', 'cs_date', 'os_type', 'os_ver', 'board_type',
+                    for attr in ('running_build', 'os_type', 'os_ver', 'board_type',
                                  'total_devices'):
                         attr_val = request.POST.get(attr, None)
                         if attr_val is not None:
@@ -196,6 +196,9 @@ def ajax_project_list(request):
                 'host_num': Host.objects.filter(project=prj, is_default=False).count(),
                 'testaction_num': TestAction.objects.filter(project=prj, is_default=False).count(),
                 'testcase_num': TestCase.objects.filter(project=prj, is_default=False).count(),
+                'es_date': prj.attr('es_date'),
+                'fc_date': prj.attr('fc_date'),
+                'cs_date': prj.attr('cs_date'),
                 'create_time': timezone.localtime(prj.create).strftime("%Y-%m-%d %H:%M:%S") if prj.create else None,
             })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.count()})
@@ -256,6 +259,11 @@ def ajax_project_update(request):
                         if orig_val != attr_val:
                             setattr(target_prj, attr_name, attr_val)
                             is_set = True
+                for attr in ('es_date', 'fc_date', 'cs_date', ):
+                    attr_val = request.POST.get(attr, None)
+                    if attr_val is not None:
+                        if target_prj.attr(attr, attr_val):
+                            is_set = True
                 if is_set:
                     try:
                         target_prj.save()
@@ -276,6 +284,9 @@ def ajax_project_create(request):
     if request.method == 'POST':
         prj_name = request.POST.get('prj_name', None)
         prj_owner = request.POST.get('prj_owner', None)
+        es_date = request.POST.get('es_date', None)
+        fc_date = request.POST.get('fc_date', None)
+        cs_date = request.POST.get('cs_date', None)
         target_prj = Project.objects.filter(name=prj_name)
         if not target_prj:
             try:
@@ -288,15 +299,22 @@ def ajax_project_create(request):
                     'host_num': 0,
                     'testcase_num': 0,
                     'testaction_num': 0,
+                    'es_date': es_date,
+                    'fc_date': fc_date,
+                    'cs_date': cs_date,
                     'create_time': timezone.localtime(target_prj.create).strftime("%Y-%m-%d %H:%M:%S") if target_prj.create else None,
                 }
+                target_prj.attr('es_date', es_date)
+                target_prj.attr('fc_date', fc_date)
+                target_prj.attr('cs_date', cs_date)
+                target_prj.save()
             except Exception as err:
-                message = "Save Project {} failed: {}!".format(name, err)
+                message = "Save Project {} failed: {}!".format(prj_name, err)
             set_default_result = set_default_records(project=target_prj, set_testcase=True, set_host=True, set_testaction=True)
             if set_default_result:
                 message = "Failed to create related default host/testcase for project {}: {}!".format(target_prj.name, set_default_result)
         else:
-            message = 'Project {} has already existed!'.format(name)
+            message = 'Project {} has already existed!'.format(prj_name)
     else:
         message = "Incorrect request method: {}, only support POST now!".format(request.method)
     if message:

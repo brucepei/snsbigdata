@@ -33,15 +33,15 @@
                 },
                 prj_name: {
                     title: 'Project',
-                    width: '25%'
+                    width: '20%'
                 },
                 prj_owner: {
                     title: 'Tester',
                     width: '8%'
                 },
                 prj_is_stop: {
-                    title: 'Stopped',
-                    width: '7%',
+                    title: 'Stop',
+                    width: '5%',
                     type: 'checkbox',
                     create: false,
                     values: { 'false': 'False', 'true': 'True' },
@@ -49,7 +49,7 @@
                 },
                 testaction_num: {
                     title: 'Actions',
-                    width: '8%',
+                    width: '5%',
                     display: function(data) {
                         console.log(data);
                         if ('testaction_num' in data.record) {
@@ -64,7 +64,7 @@
                 },
                 build_num: {
                     title: 'Builds',
-                    width: '8%',
+                    width: '5%',
                     display: function(data) {
                         console.log(data);
                         if ('build_num' in data.record) {
@@ -79,7 +79,7 @@
                 },
                 host_num: {
                     title: 'Hosts',
-                    width: '7%',
+                    width: '5%',
                     display: function(data) {
                         console.log(data);
                         if ('host_num' in data.record) {
@@ -94,7 +94,7 @@
                 },
                 testcase_num: {
                     title: 'Cases',
-                    width: '7%',
+                    width: '5%',
                     display: function(data) {
                         console.log(data);
                         if ('testcase_num' in data.record) {
@@ -107,11 +107,29 @@
                     create: false,
                     edit: false
                 },
+                es_date: {
+                    title: 'ES Date',
+                    width: '10%',
+                    type: 'date',
+                    displayFormat: 'yy/mm/dd'
+                },
+                fc_date: {
+                    title: 'FC Date',
+                    width: '10%',
+                    type: 'date',
+                    displayFormat: 'yy/mm/dd'
+                },
+                cs_date: {
+                    title: 'CS Date',
+                    width: '10%',
+                    type: 'date',
+                    displayFormat: 'yy/mm/dd'
+                },
                 create_time: {
                     title: 'Create Time',
-                    width: '20%',
                     create: false,
-                    edit: false
+                    edit: false,
+                    list: false
                 }
             }
         });
