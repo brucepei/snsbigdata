@@ -1758,6 +1758,25 @@ def auto_testaction_info(request):
             return json_response("Need necessary arguments when auto update action: TA={}, Project={}, Host={}!".format(ta_name, prj_name, host_name), -1)
     return json_response(msg, err_code)
 
+def auto_get_jira(request):
+    err_code = 0
+    msg = None
+    if request.method == 'POST':
+        start_id = request.POST.get('start_id', 0)
+        length = request.POST.get('length', 100)
+        try:
+            start_id = int(start_id)
+            length = int(length)
+        except Exception as err:
+            err_code = -1
+            msg = "start_id({!r})/length({!r}) is not integer: {}!".format(start_id, length, err)
+        if not err_code:
+            jiras = JIRA.objects.filter(is_default=False, category=JIRA.OPEN, id__gt=start_id)[0:length]
+            msg = [{'id': jira.id, 'jira': jira.jira_id} for jira in jiras]
+    else:
+        err_code = -1
+        msg = "Incorrect request method: {}, only support POST now!".format(request.method)
+    return json_response(msg, err_code)
 
 # Create your views here.
 def home_page(request):

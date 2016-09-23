@@ -18,7 +18,7 @@ if 0:
     })
     print resp.json()
     
-if 1:
+if 0:
     resp = sess.post('http://127.0.0.1/auto/testaction_info', {
         'project_name': "TF2.1.5.1.0",
         'ta_name': "Enable_WIFI",
@@ -47,5 +47,12 @@ if 0:
         'build_local_path': '\\\\l\\v2',
         'build_crash_path': '\\\\c\\v2',
         'build_is_stop': '0',
+    })
+    print resp.json()
+    
+if 1:
+    resp = sess.post('http://127.0.0.1/auto/get_jira', {
+        'start_id': 1,
+        'length': 2,
     })
     print resp.json()

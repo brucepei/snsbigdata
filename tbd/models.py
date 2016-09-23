@@ -215,7 +215,7 @@ class JIRA(models.Model):
     is_default = models.BooleanField(default=False)
     
     def is_valid(self):
-        return self.category in (self.CNSS, self.NONCNSS)
+        return self.category in (self.OPEN, self.CNSS, self.NONCNSS)
         
     def is_cnss(self):
         return self.category == self.CNSS
