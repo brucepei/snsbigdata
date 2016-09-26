@@ -52,7 +52,15 @@ if 0:
     
 if 1:
     resp = sess.post('http://127.0.0.1/auto/get_jira', {
-        'start_id': 1,
-        'length': 2,
+        'start_id': 0,
+        'length': 50,
+    })
+    print resp.json()
+    
+if 1:
+    resp = sess.post('http://127.0.0.1/auto/jira_info', {
+        'id': 2,
+        'jira_id': 'CNSSDEBUG-001',
+        'category': 'IN',
     })
     print resp.json()

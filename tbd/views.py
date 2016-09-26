@@ -119,7 +119,9 @@ def ajax_running_project_list(request):
         for prj in projects:
             running_build_id = prj.attr('running_build')
             target_build = None
-            crash_num = 0
+            total_crash = 0
+            valid_crash = 0
+            cnss_crash = 0
             total_hours = 0
             last_crash = None
             if running_build_id:
@@ -127,7 +129,16 @@ def ajax_running_project_list(request):
                 if target_build:
                     target_build = target_build[0]
                     total_hours = target_build.test_hours
-                    crash_num = Crash.objects.filter(build=target_build).count()
+                    crashes = Crash.objects.filter(build=target_build)
+                    total_crash = len(crashes)
+                    valid_crash = 0
+                    cnss_crash = 0
+                    for crash in crashes:
+                        if crash.jira.is_cnss():
+                            cnss_crash += 1
+                            valid_crash += 1
+                        elif crash.jira.is_valid():
+                            valid_crash += 1
                     try:
                         last_crash = Crash.objects.filter(build=target_build).latest('create')
                     except Exception:
@@ -141,7 +152,7 @@ def ajax_running_project_list(request):
                       'board_type': prj.attr('board_type'),
                       'total_devices': prj.attr('total_devices'),
                       'total_hours': total_hours,
-                      'crash_num': crash_num,
+                      'crash_num': "{}({})/{}".format(valid_crash, cnss_crash, total_crash),
                       'build_create': timezone.localtime(target_build.create).strftime("%Y-%m-%d %H:%M:%S") if target_build else None,
                       'last_crash': timezone.localtime(last_crash.create).strftime("%Y-%m-%d %H:%M:%S") if last_crash else None,
             }
@@ -462,6 +473,16 @@ def ajax_build_list(request):
                 running_build_id = target_prj.attr('running_build')
                 total_count = Build.objects.filter(project=target_prj).count()
                 for bld in Build.objects.filter(project=target_prj).order_by('-create')[start_index: page_size+start_index]:
+                    crashes = Crash.objects.filter(build=bld)
+                    total_crash = len(crashes)
+                    valid_crash = 0
+                    cnss_crash = 0
+                    for crash in crashes:
+                        if crash.jira.is_cnss():
+                            cnss_crash += 1
+                            valid_crash += 1
+                        elif crash.jira.is_valid():
+                            valid_crash += 1
                     records.append({
                         'build_id': bld.id,
                         'running_build_id': running_build_id,
@@ -473,7 +494,7 @@ def ajax_build_list(request):
                         'build_crash_path': bld.crash_path,
                         'build_test_hours': bld.test_hours,
                         'build_use_server': 'true' if bld.use_server else 'false',
-                        'crash_num': Crash.objects.filter(build=bld).count(),
+                        'crash_num': "{}({})/{}".format(valid_crash, cnss_crash, total_crash),
                         'create_time': timezone.localtime(bld.create).strftime("%Y-%m-%d %H:%M:%S") if bld.create else None,
                     })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
@@ -1777,6 +1798,52 @@ def auto_get_jira(request):
         err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
     return json_response(msg, err_code)
+
+def auto_jira_info(request):
+    err_code = 0
+    msg = None
+    if request.method == 'POST':
+        jid = request.POST.get('id', None)
+        jira_id = request.POST.get('jira_id', None)
+        category = request.POST.get('category', JIRA.OPEN)
+        if jid:
+            target_jira = None
+            try:
+                target_jira = JIRA.objects.get(id=jid)
+            except Exception as err:
+                pass
+            if target_jira:
+                changed = False
+                if jira_id and target_jira.jira_id != jira_id:
+                    target_jira.jira_id = jira_id
+                    changed = True
+                if category != target_jira.category:
+                    target_jira.category = category
+                    changed = True
+                if changed:
+                    try:
+                        target_jira.save()
+                        msg = 'JIRA {}({}) has changed!'.format(jid, jira_id)
+                    except Exception as err:
+                        msg = 'Chnage JIRA {}({}) failed!'.format(jid, jira_id)
+                        err_code = -1
+                else:
+                    msg = 'JIRA {}({}) no change!'.format(jid, jira_id)
+            else:
+                try:
+                    target_jira = JIRA.objects.create(jira_id=jira_id, category=category)
+                    msg = 'JIRA {} has created!'.format(jira_id)
+                except Exception as err:
+                    msg = "Create JIRA {} failed: {}!".format(jira_id, err)
+                    err_code = -1
+        else:
+            err_code = -1
+            msg = "Need necessary argument: JIRA id!"
+    else:
+        err_code = -1
+        msg = "Incorrect request method: {}, only support POST now!".format(request.method)
+    return json_response(msg, err_code)
+
 
 # Create your views here.
 def home_page(request):
