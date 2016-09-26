@@ -1825,7 +1825,7 @@ def auto_jira_info(request):
                         target_jira.save()
                         msg = 'JIRA {}({}) has changed!'.format(jid, jira_id)
                     except Exception as err:
-                        msg = 'Chnage JIRA {}({}) failed!'.format(jid, jira_id)
+                        msg = 'Change JIRA {}({}) failed: {}!'.format(jid, jira_id, err)
                         err_code = -1
                 else:
                     msg = 'JIRA {}({}) no change!'.format(jid, jira_id)
