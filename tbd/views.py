@@ -99,6 +99,30 @@ def json_response(json, code=0):
         json = err_str
     return JsonResponse({'code': code, 'result': json})
 
+def calc_crash_num(build=None, host=None, testcase=None):
+    total_crash = 0
+    valid_crash = 0
+    cnss_crash = 0
+    user_filter = {}
+    if build:
+        user_filter['build'] = build
+    if host:
+        user_filter['host'] = host
+    if testcase:
+        user_filter['testcase'] = testcase
+    if user_filter:
+        crashes = Crash.objects.filter(**user_filter)
+        total_crash = len(crashes)
+        for crash in crashes:
+            if crash.jira.is_cnss():
+                cnss_crash += 1
+                valid_crash += 1
+            elif crash.jira.is_valid():
+                valid_crash += 1
+    else:
+        print "%Error%: no filter found when calculate crash number!"
+    return "{}({})/{}".format(valid_crash, cnss_crash, total_crash)
+
 #ajax views
 def ajax(request, action):
     global_vars = globals()
@@ -119,9 +143,6 @@ def ajax_running_project_list(request):
         for prj in projects:
             running_build_id = prj.attr('running_build')
             target_build = None
-            total_crash = 0
-            valid_crash = 0
-            cnss_crash = 0
             total_hours = 0
             last_crash = None
             if running_build_id:
@@ -129,16 +150,6 @@ def ajax_running_project_list(request):
                 if target_build:
                     target_build = target_build[0]
                     total_hours = target_build.test_hours
-                    crashes = Crash.objects.filter(build=target_build)
-                    total_crash = len(crashes)
-                    valid_crash = 0
-                    cnss_crash = 0
-                    for crash in crashes:
-                        if crash.jira.is_cnss():
-                            cnss_crash += 1
-                            valid_crash += 1
-                        elif crash.jira.is_valid():
-                            valid_crash += 1
                     try:
                         last_crash = Crash.objects.filter(build=target_build).latest('create')
                     except Exception:
@@ -152,7 +163,7 @@ def ajax_running_project_list(request):
                       'board_type': prj.attr('board_type'),
                       'total_devices': prj.attr('total_devices'),
                       'total_hours': total_hours,
-                      'crash_num': "{}({})/{}".format(valid_crash, cnss_crash, total_crash),
+                      'crash_num': calc_crash_num(build=target_build),
                       'build_create': timezone.localtime(target_build.create).strftime("%Y-%m-%d %H:%M:%S") if target_build else None,
                       'last_crash': timezone.localtime(last_crash.create).strftime("%Y-%m-%d %H:%M:%S") if last_crash else None,
             }
@@ -473,16 +484,6 @@ def ajax_build_list(request):
                 running_build_id = target_prj.attr('running_build')
                 total_count = Build.objects.filter(project=target_prj).count()
                 for bld in Build.objects.filter(project=target_prj).order_by('-create')[start_index: page_size+start_index]:
-                    crashes = Crash.objects.filter(build=bld)
-                    total_crash = len(crashes)
-                    valid_crash = 0
-                    cnss_crash = 0
-                    for crash in crashes:
-                        if crash.jira.is_cnss():
-                            cnss_crash += 1
-                            valid_crash += 1
-                        elif crash.jira.is_valid():
-                            valid_crash += 1
                     records.append({
                         'build_id': bld.id,
                         'running_build_id': running_build_id,
@@ -494,7 +495,7 @@ def ajax_build_list(request):
                         'build_crash_path': bld.crash_path,
                         'build_test_hours': bld.test_hours,
                         'build_use_server': 'true' if bld.use_server else 'false',
-                        'crash_num': "{}({})/{}".format(valid_crash, cnss_crash, total_crash),
+                        'crash_num': calc_crash_num(build=bld),
                         'create_time': timezone.localtime(bld.create).strftime("%Y-%m-%d %H:%M:%S") if bld.create else None,
                     })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
@@ -653,10 +654,10 @@ def ajax_host_list(request):
                 total_count = Host.objects.filter(project=target_prj).count()
                 for host in Host.objects.filter(project=target_prj).order_by('name')[start_index: page_size+start_index]:
                     if target_build:
-                        crash_num = Crash.objects.filter(host=host, build=target_build).count()
+                        crash_num = calc_crash_num(host=host, build=target_build)
                         print "crash num {}, in host {} build {}!".format(crash_num, host.name, target_build.version)
                     else:
-                        crash_num = Crash.objects.filter(host=host).count()
+                        crash_num = calc_crash_num(host=host)
                         print "crash num {}, in host {}!".format(crash_num, host.name)
                     records.append({
                         'host_id': host.id,
@@ -803,10 +804,10 @@ def ajax_testcase_list(request):
                     })
                 for tc in TestCase.objects.filter(project=target_prj).order_by('name')[start_index: page_size+start_index]:
                     if target_build:
-                        crash_num = Crash.objects.filter(testcase=tc, build=target_build).count()
+                        crash_num = calc_crash_num(testcase=tc, build=target_build)
                         print "crash num {}, in testcase {} build {}!".format(crash_num, tc.name, target_build.version)
                     else:
-                        crash_num = Crash.objects.filter(testcase=tc).count()
+                        crash_num = calc_crash_num(testcase=tc)
                         print "crash num {}, in testcase {}!".format(crash_num, tc.name)
                     testcase_testaction_values = []
                     for tc_ta in tc.testactions.all():
@@ -1830,15 +1831,17 @@ def auto_jira_info(request):
                 else:
                     msg = 'JIRA {}({}) no change!'.format(jid, jira_id)
             else:
-                try:
-                    target_jira = JIRA.objects.create(jira_id=jira_id, category=category)
-                    msg = 'JIRA {} has created!'.format(jira_id)
-                except Exception as err:
-                    msg = "Create JIRA {} failed: {}!".format(jira_id, err)
-                    err_code = -1
+                msg = 'JIRA {}({}) cannot be found!'.format(jid, jira_id)
+        elif jira_id:
+            try:
+                target_jira = JIRA.objects.create(jira_id=jira_id, category=category)
+                msg = 'JIRA {} has created!'.format(jira_id)
+            except Exception as err:
+                msg = "Create JIRA {} failed: {}!".format(jira_id, err)
+                err_code = -1
         else:
             err_code = -1
-            msg = "Need necessary argument: JIRA id!"
+            msg = "Need necessary argument: JIRA id(update) or jira_id(create new)!"
     else:
         err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)

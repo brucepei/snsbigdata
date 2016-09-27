@@ -81,7 +81,7 @@
                     width: '20%'
                 },
                 crash_num: {
-                    title: 'Total Crash',
+                    title: 'Crashes',
                     width: '15%',
                     display: function(data) {
                         console.log(data);
@@ -89,7 +89,7 @@
                             var crash_num = data.record.crash_num;
                             var url = "{% url "tbd_crash" %}?{% if build %}build_id={{ build.id }}{% elif project %}prj_id={{ project.id }}{% endif %}";
                             url = url + "&host_id=" + data.record.host_id;
-                            return '<a href="' + url + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + ' crashes</span></a>';
+                            return '<a href="' + url + '"><span class="glyphicon glyphicon-share-alt" aria-hidden="true"> ' + crash_num + '</span></a>';
                         }
                         return 0;
                     },
