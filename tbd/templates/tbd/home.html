@@ -41,7 +41,7 @@
                 },
                 running_build: {
                     title: 'Running Build',
-                    width: '25%',
+                    width: '35%',
                     options: function (data) {
                         console.log(data);
                         if ('prj_id' in data.record) {
@@ -94,7 +94,8 @@
                     title: 'Hours',
                     width: '5%',
                     edit: false,
-                    create: false
+                    create: false,
+                    list: false
                 },
                 crash_num: {
                     title: 'Crash',
@@ -121,7 +122,8 @@
                         return '';
                     },
                     edit: false,
-                    create: false
+                    create: false,
+                    list: false
                 },
                 build_create: {
                     title: 'Build Start',
