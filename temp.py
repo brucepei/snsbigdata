@@ -1,3 +1,4 @@
+import sys
 from requests import Session
 
 sess = Session()
@@ -12,16 +13,17 @@ if 0:
     })
     print resp.json()
 
-if 1:
-    resp = sess.post('http://127.0.0.1/auto/query_project', {
+if 0:
+    resp = sess.post('http://10.231.194.75:8080/auto/query_project', {
     }).json()
     print resp
     if not resp['code']:
         for sp in resp['result']:
-            rs = sess.post('http://127.0.0.1/auto/get_running_jira', {
+            rs = sess.post('http://10.231.194.75:8080/auto/get_running_jira', {
                 'project_id':  sp['id'],
             })
             print "SP {}:\n{}".format(sp['name'], rs.json())
+            # sys.exit(-1)
     
 if 0:
     resp = sess.post('http://127.0.0.1/auto/query_build', {
@@ -62,7 +64,7 @@ if 0:
     })
     print resp.json()
     
-if 0:
+if 1:
     resp = sess.post('http://127.0.0.1/auto/get_jira', {
         'start_id': 0,
         'length': 50,

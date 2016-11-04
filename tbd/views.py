@@ -1817,7 +1817,7 @@ def auto_get_jira(request):
             msg = "start_id({!r})/length({!r}) is not integer: {}!".format(start_id, length, err)
         if not err_code:
             jiras = JIRA.objects.filter(is_default=False, category=JIRA.OPEN, id__gt=start_id)[0:length]
-            msg = [{'id': jira.id, 'jira': jira.jira_id} for jira in jiras]
+            msg = [{'id': jira.id, 'jira': jira.jira_id, 'cr': jira.cr_id} for jira in jiras]
     else:
         err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
