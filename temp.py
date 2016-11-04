@@ -12,13 +12,18 @@ if 0:
     })
     print resp.json()
 
-if 0:
-    resp = sess.post('http://127.0.0.1/auto/query_build', {
-        'project_name': "MDM9607.LE.1.1",
+if 1:
+    resp = sess.post('http://127.0.0.1/auto/query_project', {
     })
     print resp.json()
     
 if 1:
+    resp = sess.post('http://127.0.0.1/auto/query_build', {
+        'project_name': "TF2.1.5.1.0",
+    })
+    print resp.json()
+   
+if 0:
     resp = sess.post('http://127.0.0.1/auto/testaction_info', {
         'project_name': "TF2.1.5.1.0",
         'ta_name': "Enable_WIFI",

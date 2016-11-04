@@ -1606,6 +1606,22 @@ def auto_build_info(request):
         err_code = -1
     return json_response(msg, err_code)
 
+def auto_query_project(request):
+    err_code = None
+    msg = None
+    if request.method == 'POST':
+        print request.POST
+        projects = Project.objects.filter(is_stop=False).order_by('-create')
+        msg = []
+        err_code = 0
+        for prj in projects:
+            msg.append({
+                'id': prj.id,
+                'name': prj.name,
+                'owner': prj.owner,
+            })
+    return json_response(msg, err_code)
+    
 def auto_query_build(request):
     err_code = None
     msg = None
@@ -1617,6 +1633,7 @@ def auto_query_build(request):
         err_code = 0
         for bld in builds:
             msg.append({
+                'id': bld.id,
                 'version': bld.version,
                 'name': bld.short_name,
             })
@@ -1806,6 +1823,25 @@ def auto_get_jira(request):
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
     return json_response(msg, err_code)
 
+def auto_get_running_jira(request):
+    err_code = 0
+    msg = None
+    if request.method == 'POST':
+        sp_name = request.POST.get('sp', None)
+        try:
+            start_id = int(start_id)
+            length = int(length)
+        except Exception as err:
+            err_code = -1
+            msg = "start_id({!r})/length({!r}) is not integer: {}!".format(start_id, length, err)
+        if not err_code:
+            jiras = JIRA.objects.filter(is_default=False, category=JIRA.OPEN, id__gt=start_id)[0:length]
+            msg = [{'id': jira.id, 'jira': jira.jira_id} for jira in jiras]
+    else:
+        err_code = -1
+        msg = "Incorrect request method: {}, only support POST now!".format(request.method)
+    return json_response(msg, err_code)
+    
 def auto_jira_info(request):
     err_code = 0
     msg = None
