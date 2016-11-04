@@ -1827,16 +1827,34 @@ def auto_get_running_jira(request):
     err_code = 0
     msg = None
     if request.method == 'POST':
-        sp_name = request.POST.get('sp', None)
-        try:
-            start_id = int(start_id)
-            length = int(length)
-        except Exception as err:
+        project_name = request.POST.get('project_name', None)
+        project_id = request.POST.get('project_id', None)
+        if not (project_name or project_id):
             err_code = -1
-            msg = "start_id({!r})/length({!r}) is not integer: {}!".format(start_id, length, err)
+            msg = "no project name or project id when query running build JIRA!"
         if not err_code:
-            jiras = JIRA.objects.filter(is_default=False, category=JIRA.OPEN, id__gt=start_id)[0:length]
-            msg = [{'id': jira.id, 'jira': jira.jira_id} for jira in jiras]
+            user_filter = {}
+            if project_id:
+                user_filter['id'] = project_id
+            elif project_name:
+                user_filter['name'] = project_name
+            target_prj = None
+            try:
+                target_prj = Project.objects.get(**user_filter)
+            except Exception as err:
+                err_code = -1
+                msg = "Failed to get project with id {}/name {}: {}!".format(project_id, project_name, err)
+            if target_prj:
+                running_build_id = target_prj.attr('running_build')
+                if running_build_id:
+                    crashes = Crash.objects.filter(build__id=running_build_id)
+                    msg = []
+                    for crash in crashes:
+                        if crash.jira.cr_id or (crash.jira.category in (JIRA.CNSS, JIRA.NONCNSS)):
+                            msg.append({'id': crash.jira.id, 'jira': crash.jira.jira_id, 'cr': crash.jira.cr_id})
+                else:
+                    err_code = -1
+                    msg = "No running build found in project: {}!".format(target_prj.name)
     else:
         err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
@@ -1848,6 +1866,7 @@ def auto_jira_info(request):
     if request.method == 'POST':
         jid = request.POST.get('id', None)
         jira_id = request.POST.get('jira_id', None)
+        cr_id = request.POST.get('cr_id', '')
         category = request.POST.get('category', JIRA.OPEN)
         if jid:
             target_jira = None
@@ -1859,6 +1878,9 @@ def auto_jira_info(request):
                 changed = False
                 if jira_id and target_jira.jira_id != jira_id:
                     target_jira.jira_id = jira_id
+                    changed = True
+                if cr_id and target_jira.cr_id != cr_id:
+                    target_jira.cr_id = cr_id
                     changed = True
                 if category != target_jira.category:
                     target_jira.category = category
@@ -1876,7 +1898,7 @@ def auto_jira_info(request):
                 msg = 'JIRA {}({}) cannot be found!'.format(jid, jira_id)
         elif jira_id:
             try:
-                target_jira = JIRA.objects.create(jira_id=jira_id, category=category)
+                target_jira = JIRA.objects.create(jira_id=jira_id, category=category, cr_id=cr_id)
                 msg = 'JIRA {} has created!'.format(jira_id)
             except Exception as err:
                 msg = "Create JIRA {} failed: {}!".format(jira_id, err)

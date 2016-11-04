@@ -212,6 +212,7 @@ class JIRA(models.Model):
     )
     jira_id = models.CharField(unique=True, default='', max_length=20)
     category = models.CharField(default=OPEN, choices=CATEGORY_CHOICE, max_length=2)
+    cr_id = models.CharField(default='', blank=True, max_length=20)
     is_default = models.BooleanField(default=False)
     
     def is_valid(self):

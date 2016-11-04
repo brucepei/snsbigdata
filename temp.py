@@ -14,10 +14,16 @@ if 0:
 
 if 1:
     resp = sess.post('http://127.0.0.1/auto/query_project', {
-    })
-    print resp.json()
+    }).json()
+    print resp
+    if not resp['code']:
+        for sp in resp['result']:
+            rs = sess.post('http://127.0.0.1/auto/get_running_jira', {
+                'project_id':  sp['id'],
+            })
+            print "SP {}:\n{}".format(sp['name'], rs.json())
     
-if 1:
+if 0:
     resp = sess.post('http://127.0.0.1/auto/query_build', {
         'project_name': "TF2.1.5.1.0",
     })
