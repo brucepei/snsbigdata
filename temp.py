@@ -18,11 +18,12 @@ if 0:
     })
     print resp.json()
     
-if 0:
+if 1:
     resp = sess.post('http://127.0.0.1/auto/testaction_info', {
         'project_name': "TF2.1.5.1.0",
         'ta_name': "Enable_WIFI",
         'is_pass': "1",
+        'count': 4,
         'host_name': "sdc-cnss-002",
         #'host_ip': "1.1.1.1",
     })
@@ -50,14 +51,14 @@ if 0:
     })
     print resp.json()
     
-if 1:
+if 0:
     resp = sess.post('http://127.0.0.1/auto/get_jira', {
         'start_id': 0,
         'length': 50,
     })
     print resp.json()
     
-if 1:
+if 0:
     resp = sess.post('http://127.0.0.1/auto/jira_info', {
         'id': 2,
         'jira_id': 'CNSSDEBUG-001',

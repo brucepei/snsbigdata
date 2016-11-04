@@ -1721,6 +1721,12 @@ def auto_testaction_info(request):
         #build_version = request.POST.get('build_version', None)
         ta_name = request.POST.get('ta_name', None)
         is_pass = request.POST.get('is_pass', None)
+        count = request.POST.get('count', 1)
+        try:
+            count = int(count)
+        except Exception as err:
+            log.error("Failed to transform count {} into integer: {}, so set default count=1!".format(count, err))
+            count = 1
         is_pass = True if is_pass and (is_pass == '1' or is_pass.lower() == 'true') else False
         host_name = request.POST.get('host_name', None)
         host_ip = request.POST.get('host_ip', '')
@@ -1760,10 +1766,10 @@ def auto_testaction_info(request):
                             testresult = TestResult.objects.create(testaction=testaction, build=build, host=host, pass_count=0, fail_count=0)
                     if testresult:
                         if is_pass:
-                            testresult.pass_count += 1
+                            testresult.pass_count += count
                             msg = "Add {} pass to {} in build {}!".format(ta_name, testresult.pass_count, build.version)
                         else:
-                            testresult.fail_count += 1
+                            testresult.fail_count += count
                             msg = "Add {} fail to {} in build {}!".format(ta_name, testresult.fail_count, build.version)
                         testresult.save()
                     else:
