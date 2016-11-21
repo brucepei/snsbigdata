@@ -1636,6 +1636,10 @@ def auto_query_build(request):
                 'id': bld.id,
                 'version': bld.version,
                 'name': bld.short_name,
+                'server_path': bld.server_path,
+                'local_path': bld.local_path,
+                'crash_path': bld.crash_path,
+                'use_server': bld.use_server,
             })
     return json_response(msg, err_code)
     

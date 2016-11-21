@@ -25,7 +25,7 @@ if 0:
             print "SP {}:\n{}".format(sp['name'], rs.json())
             # sys.exit(-1)
     
-if 0:
+if 1:
     resp = sess.post('http://127.0.0.1/auto/query_build', {
         'project_name': "TF2.1.5.1.0",
     })
@@ -64,7 +64,7 @@ if 0:
     })
     print resp.json()
     
-if 1:
+if 0:
     resp = sess.post('http://127.0.0.1/auto/get_jira', {
         'start_id': 0,
         'length': 50,
