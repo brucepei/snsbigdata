@@ -74,7 +74,7 @@ class Project(models.Model):
 
 class Build(models.Model):
     version = models.CharField(default='', max_length=80)
-    short_name = models.CharField(default='', max_length=20)
+    short_name = models.CharField(default='', max_length=80)
     server_path = models.CharField(default='', max_length=255)
     local_path = models.CharField(blank=True, default='', max_length=255)
     crash_path = models.CharField(default='', max_length=255)
