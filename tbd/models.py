@@ -35,13 +35,13 @@ class Project(models.Model):
         is_found = False
         if value is not None:
             value = str(value)
-        print "Ready to call attr({}, {}) in project {}!".format(name, value, self.name)
+        print("Ready to call attr({}, {}) in project {}!".format(name, value, self.name))
         for i,  k_v in enumerate(attr_list):
             if k_v.startswith(name+'='):
                 if value is None:
                     get_val = k_v[len(name)+1:]
                     if get_val:
-                        print "!!!!!!!!!!! attr get {}={} in project {} attr={}!".format(name, get_val, self.name, self._attr)
+                        print("!!!!!!!!!!! attr get {}={} in project {} attr={}!".format(name, get_val, self.name, self._attr))
                         return get_val
                     else:
                         attr_list[i] = ''
@@ -59,7 +59,7 @@ class Project(models.Model):
                 attr_list.append('{}={}'.format(name,  value))
         if is_updated:
             self._attr = ';'.join([i for i in attr_list if i])
-            print "!!!!!!!!!!! attr set {}={}, new _attr={} in project {}!".format(name, value, self._attr, self.name)
+            print("!!!!!!!!!!! attr set {}={}, new _attr={} in project {}!".format(name, value, self._attr, self.name))
             if value is None:
                 self.save()
                 return ''
