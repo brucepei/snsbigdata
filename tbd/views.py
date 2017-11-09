@@ -2088,3 +2088,6 @@ def crash_page(request):
         'testcase': target_testcase, 'testcases': testcases,
         'jira_category_choice': json.dumps(dict(JIRA.CATEGORY_CHOICE)),
     })
+
+def utility_page(request):
+    return render(request, 'tbd/utility.html')

@@ -76,18 +76,18 @@ WSGI_APPLICATION = 'SnSBigData.wsgi.application'
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
 DATABASES = {
-    'slave': {
+    'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
-    'default': {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "cbd",
-        "USER": "root",
-        "PASSWORD": "t-span",
-        "HOST": "",
-        "PORT": "",
-    }
+    # 'default': {
+        # "ENGINE": "django.db.backends.mysql",
+        # "NAME": "cbd",
+        # "USER": "root",
+        # "PASSWORD": "t-span",
+        # "HOST": "",
+        # "PORT": "",
+    # }
 }
 
 
