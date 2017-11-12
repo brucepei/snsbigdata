@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from tbd.models import Project, TestAction, Build, Crash, TestCase, Host, JIRA, TestResult
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
+from .tasks import add
 import time
 import json
 
@@ -15,6 +16,8 @@ DEFAULT = {
     'testaction': {'name': '!COMMON_TA!'},
     'testcase': {'name': '!NULL!'},
 }
+
+Task_Result_Buffer = {}
 
 def set_default_records(prj_name=None, project=None, set_jira=False, set_host=False, set_testcase=False, set_testaction=False):
     result = None
@@ -1466,7 +1469,26 @@ def ajax_list_options_testcases_in_project(request):
                     })
     return JsonResponse({'Result': 'OK', 'Options': options})
 
-
+def ajax_task_result(request):
+    err_code = None
+    msg = None
+    if request.method == 'POST':
+        print(request.POST)
+        task_id = request.POST.get('task_id', None)
+        if task_id is not None and task_id in Task_Result_Buffer:
+            result = Task_Result_Buffer[task_id]
+            err_code = 0
+            msg = {'done': 0, 'result': result, 'error': None}
+            if result.ready():
+                msg['done'] = 1
+                if result.successful():
+                    msg['result'] = result.result
+                else:
+                    msg['traceback'] = result.traceback
+            else:
+                msg['result'] = result.status
+    return json_response(msg, err_code)
+    
 # Create auto API here, no CSRF
 @csrf_exempt
 def auto(request, action):
@@ -1914,8 +1936,7 @@ def auto_jira_info(request):
         err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
     return json_response(msg, err_code)
-
-
+    
 # Create your views here.
 def home_page(request):
     return render(request, 'tbd/home.html')
@@ -2090,4 +2111,7 @@ def crash_page(request):
     })
 
 def utility_page(request):
-    return render(request, 'tbd/utility.html')
+    result = add.delay(3, 8)
+    # help(result)
+    Task_Result_Buffer[result.id] = result
+    return render(request, 'tbd/utility.html', {'task_id': result.id})

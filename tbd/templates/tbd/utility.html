@@ -9,6 +9,7 @@
 			<div class="col-md-1"></div>
             <div class="col-md-9">
                 <div id="UtilityContainer">
+                <span id="task_result" task_id="{{ task_id }}"></span>
 	 <table id="test_table">
         <caption>
           <a href="#" onclick="jQuery('#example-advanced').treetable('expandAll'); return false;">Expand all</a>
@@ -498,6 +499,33 @@
 	  $(".selected").not(this).removeClass("selected");
 	  $(this).toggleClass("selected");
 	});
+    update_task_status = function(){
+        var $task_result = $("#task_result");
+        var task_id = $task_result.attr('task_id')
+        //alert($(this).attr('task_id'));
+        ajax_post_data(
+            "/ajax/task_result", 
+            {'task_id': task_id}, 
+            function(json) {
+                if ('done' in json) {
+                    if (json.done == 0) {
+                        $task_result.html("task is in " + json.result);
+                        setTimeout(update_task_status, 1000)
+                    } else {
+                        if (json.error == null) {
+                            $task_result.html("task is done: " + json.result);
+                        } else {
+                            $task_result.html("task has exception: " + json.traceback);
+                        }
+                    }
+                } else {
+                    alert_box(url + " return illegal data!", "Receive illegal JSON data: Not found key 'done'!");
+                }
+            }
+        );
+    };
+    setTimeout(update_task_status, 1000);
+    <!-- ajax_post_data = function(url, data, success_code) { -->
 
 	// Drag & Drop Example Code
 	$("#test_table .file, #example-advanced .folder").draggable({

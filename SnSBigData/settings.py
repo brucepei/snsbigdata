@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
 import os
-
+from kombu import Queue
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tbd',
+	# 'django_celery_results',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -131,3 +132,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = '/static/'
+
+#CELERY related setting
+CELERY_BROKER_URL = 'amqp://admin:admin*123@192.168.1.245/'
+CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_BACKEND = 'rpc://'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_QUEUES = (
+    Queue('add', routing_key='tasks.add'),
+)
