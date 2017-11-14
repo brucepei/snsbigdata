@@ -54,6 +54,7 @@
                             console.log("%Error%: not found project name when request build list!");
                             return [];
                         }
+                        /**
                         var options = [];
                         $.ajax({
                             url: '/ajax/list_options_builds_in_project',
@@ -70,7 +71,8 @@
                                 options = data.Options;
                             }
                         });
-                        return cachedBuildOptions[data.record.prj_id] = options; //Cache results and return options
+                        */
+                        return cachedBuildOptions[data.record.prj_id] = data.record.build_options; //Cache results and return options
                     }
                 },
                 os_type: {

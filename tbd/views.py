@@ -148,10 +148,17 @@ def ajax_running_project_list(request):
             target_build = None
             total_hours = 0
             last_crash = None
-            if running_build_id:
-                target_build = Build.objects.filter(id=running_build_id)
-                if target_build:
-                    target_build = target_build[0]
+            build_options = [{
+                "DisplayText": '--no build--',
+                "Value": ''
+            }]
+            for bld in Build.objects.filter(project=prj, is_stop=False).order_by('-create'):
+                build_options.append({
+                    "DisplayText": bld.short_name,
+                    "Value": bld.id
+                })
+                if running_build_id and bld.id == running_build_id:
+                    target_build = bld
                     total_hours = target_build.test_hours
                     try:
                         last_crash = Crash.objects.filter(build=target_build).latest('create')
@@ -169,6 +176,7 @@ def ajax_running_project_list(request):
                       'crash_num': calc_crash_num(build=target_build),
                       'build_create': timezone.localtime(target_build.create).strftime("%Y-%m-%d %H:%M:%S") if target_build else None,
                       'last_crash': timezone.localtime(last_crash.create).strftime("%Y-%m-%d %H:%M:%S") if last_crash else None,
+                      'build_options': build_options,
             }
             records.append(record)
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': Project.objects.filter(is_stop=False).count()})
