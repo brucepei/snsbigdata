@@ -6,7 +6,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from tbd.models import Project, TestAction, Build, Crash, TestCase, Host, JIRA, TestResult
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
-from .tasks import add
+from .tasks import query_issue_frequency
+from celery.result import AsyncResult
 import time
 import json
 
@@ -18,6 +19,7 @@ DEFAULT = {
 }
 
 Task_Result_Buffer = {}
+# Task_Result_Buffer = set()
 
 def set_default_records(prj_name=None, project=None, set_jira=False, set_host=False, set_testcase=False, set_testaction=False):
     result = None
@@ -1477,6 +1479,18 @@ def ajax_list_options_testcases_in_project(request):
                     })
     return JsonResponse({'Result': 'OK', 'Options': options})
 
+def ajax_query_task(request):
+    err_code = None
+    msg = None
+    if request.method == 'POST':
+        issue_id = request.POST.get('issue_id', None)
+        if issue_id is not None:
+            result = query_issue_frequency.delay(issue_id)
+            Task_Result_Buffer[result.id] = None
+            err_code = 0
+            msg = result.id
+    return json_response(msg, err_code)
+    
 def ajax_task_result(request):
     err_code = None
     msg = None
@@ -1484,17 +1498,19 @@ def ajax_task_result(request):
         print(request.POST)
         task_id = request.POST.get('task_id', None)
         if task_id is not None and task_id in Task_Result_Buffer:
-            result = Task_Result_Buffer[task_id]
-            err_code = 0
-            msg = {'done': 0, 'result': result, 'error': None}
-            if result.ready():
-                msg['done'] = 1
-                if result.successful():
-                    msg['result'] = result.result
+            if task_id in Task_Result_Buffer:
+                result = Task_Result_Buffer.get(task_id, None)
+                err_code = 0
+                msg = {'done': 0, 'result': None, 'error': None}
+                if result is None:
+                    msg['result'] = "Pending"
                 else:
-                    msg['traceback'] = result.traceback
+                    msg['done'] = 1
+                    msg['result'] = result
             else:
-                msg['result'] = result.status
+                err_code = -1
+                msg['result'] = "not found this task {}".format(task_id)
+            print(msg)
     return json_response(msg, err_code)
     
 # Create auto API here, no CSRF
@@ -1945,6 +1961,25 @@ def auto_jira_info(request):
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
     return json_response(msg, err_code)
     
+def auto_task_result(request):
+    err_code = 0
+    msg = None
+    if request.method == 'POST':
+        print("auto_task_result body={}".format(request.body))
+        task_id = request.POST.get('task_id', None)
+        task_result = request.POST.get('task_result', None)
+        if task_id is not None:
+            print("Got task {} result={}".format(task_id, task_result))
+            Task_Result_Buffer[task_id] = task_result
+            msg = 'Update result for task {}!'.format(task_id)
+        else:
+            err_code = -1
+            msg = "Not found task id!"
+    else:
+        err_code = -1
+        msg = "Incorrect request method: {}, only support POST now!".format(request.method)
+    return json_response(msg, err_code)
+    
 # Create your views here.
 def home_page(request):
     return render(request, 'tbd/home.html')
@@ -2119,7 +2154,4 @@ def crash_page(request):
     })
 
 def utility_page(request):
-    result = add.delay(3, 8)
-    # help(result)
-    Task_Result_Buffer[result.id] = result
-    return render(request, 'tbd/utility.html', {'task_id': result.id})
+    return render(request, 'tbd/utility.html')

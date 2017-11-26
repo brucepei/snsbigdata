@@ -11,6 +11,12 @@
         display:none;
     }
     
+    input.disabled {
+        border: 1px solid #DDD;
+        background-color: #F5F5F5;
+        color:#ACA899;
+    }
+
     div.filtering {
         margin-bottom: 5px;
         border: 1px solid #999;

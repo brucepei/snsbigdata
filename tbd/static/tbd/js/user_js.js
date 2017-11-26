@@ -48,7 +48,7 @@ var get_size = function (obj){
 
 var alert_box = function(title, body) {
     // $.messager.alert(title, body);
-    alert(title + "\n" + body);
+    alert(title + "\n" + body); 
 };
 
 var confirm_box = function(title, body, func) {
