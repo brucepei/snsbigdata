@@ -5,30 +5,45 @@
 {% block content %}
     <div class="container">
         <div class="row">
-			<div class="col-md-2"></div>
-			<div class="col-md-1"></div>
-            <div class="col-md-9">
+			<div class="col-md-2">
+                <div id="utility_side_bar">
+                    <div class="box">
+                        <h5>Utilities</h5>
+                        <div class="body">
+                                {% for utility_id in support_utilities %}
+                                <img src="/static/images/utility_icon.gif" border="0">
+                                <a id="issue_frequency_utility" href="{% url 'tbd_utility' %}?utility_id={{ utility_id }}">{{ support_utilities |get_item:utility_id }}</a>
+                                <br>
+                                {% endfor %}
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-10">
                 <div id="UtilityContainer">
-                <span>Issue ID:</span><input id="query_issue_id" type="text"/><input type="button" id="query_issue_btn" value="Query" /input><br/>
-                <span id="task_result"></span>
-	 <table id="test_table">
-        <caption>
-          <a href="#" onclick="jQuery('#test_table').treetable('expandAll'); return false;">Expand all</a>
-          <a href="#" onclick="jQuery('#test_table').treetable('collapseAll'); return false;">Collapse all</a>
-        </caption>
-        <thead>
-          <tr>
-            <th>Build and Devices</th>
-            <th>JIRA</th>
-            <th>Frequency</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- <tr data-tt-id='1'><td>Sample build</td><td>--</td><td>10</td></tr> -->
-          <!-- <tr data-tt-id='1-1' data-tt-parent-id='1'><td>Sample Device 1</td><td>--</td><td>3</td></tr> -->
-          <!-- <tr data-tt-id='1-1-1' data-tt-parent-id='1-1'><td colspan="2">JIRA1, JIRA2, JIRA3, JIRA4</td><td>3</td></tr> -->
-        </tbody>
-      </table>
+                    {% if utility_id == "issue_frequency_utility_id" %}
+                        <span>Issue ID:</span><input id="query_issue_id" type="text"/><input type="button" id="query_issue_btn" value="Query" /input><br/>
+                        <span id="task_result"></span>
+                        <table id="test_table">
+                            <caption>
+                              <a href="#" onclick="jQuery('#test_table').treetable('expandAll'); return false;">Expand all</a>
+                              <a href="#" onclick="jQuery('#test_table').treetable('collapseAll'); return false;">Collapse all</a>
+                            </caption>
+                            <thead>
+                              <tr>
+                                <th>Build and Devices</th>
+                                <th>JIRA</th>
+                                <th>Frequency</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <!-- <tr data-tt-id='1'><td>Sample build</td><td>--</td><td>10</td></tr> -->
+                              <!-- <tr data-tt-id='1-1' data-tt-parent-id='1'><td>Sample Device 1</td><td>--</td><td>3</td></tr> -->
+                              <!-- <tr data-tt-id='1-1-1' data-tt-parent-id='1-1'><td colspan="2">JIRA1, JIRA2, JIRA3, JIRA4</td><td>3</td></tr> -->
+                            </tbody>
+                        </table>
+                    {% endif %}
 				</div>
             </div>
         </div>

@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.template.defaulttags import register
 from tbd.models import Project, TestAction, Build, Crash, TestCase, Host, JIRA, TestResult
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 from .tasks import query_issue_frequency
@@ -2153,5 +2154,11 @@ def crash_page(request):
         'jira_category_choice': json.dumps(dict(JIRA.CATEGORY_CHOICE)),
     })
 
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+    
 def utility_page(request):
-    return render(request, 'tbd/utility.html')
+    utility_id = request.GET.get('utility_id', None)
+    support_utilities = {'issue_frequency_utility_id': 'Issue Frequency'}
+    return render(request, 'tbd/utility.html', {'support_utilities': support_utilities, 'utility_id': utility_id})
