@@ -1,5 +1,5 @@
 ﻿{% extends 'tbd/base.html' %}
-{% block title %}Central Big Data{% endblock %}
+{% block title %}Utility{% endblock %}
 {% block nav_utility_attr %}class="active"{% endblock %}
 
 {% block content %}
@@ -10,9 +10,9 @@
                     <div class="box">
                         <h5>Utilities</h5>
                         <div class="body">
-                                {% for utility_id in support_utilities %}
+                                {% for name in support_utilities %}
                                 <img src="/static/images/utility_icon.gif" border="0">
-                                <a id="issue_frequency_utility" href="{% url 'tbd_utility' %}?utility_id={{ utility_id }}">{{ support_utilities |get_item:utility_id }}</a>
+                                <a id="issue_frequency_utility" href="{% url 'tbd_utility' %}?name={{ name }}">{{ support_utilities |get_item:name }}</a>
                                 <br>
                                 {% endfor %}
 
@@ -22,165 +22,11 @@
             </div>
             <div class="col-md-10">
                 <div id="UtilityContainer">
-                    {% if utility_id == "issue_frequency_utility_id" %}
-                        <span>Issue ID:</span><input id="query_issue_id" type="text"/><input type="button" id="query_issue_btn" value="Query" /input><br/>
-                        <span id="task_result"></span>
-                        <table id="test_table">
-                            <caption>
-                              <a href="#" onclick="jQuery('#test_table').treetable('expandAll'); return false;">Expand all</a>
-                              <a href="#" onclick="jQuery('#test_table').treetable('collapseAll'); return false;">Collapse all</a>
-                            </caption>
-                            <thead>
-                              <tr>
-                                <th>Build and Devices</th>
-                                <th>JIRA</th>
-                                <th>Frequency</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <!-- <tr data-tt-id='1'><td>Sample build</td><td>--</td><td>10</td></tr> -->
-                              <!-- <tr data-tt-id='1-1' data-tt-parent-id='1'><td>Sample Device 1</td><td>--</td><td>3</td></tr> -->
-                              <!-- <tr data-tt-id='1-1-1' data-tt-parent-id='1-1'><td colspan="2">JIRA1, JIRA2, JIRA3, JIRA4</td><td>3</td></tr> -->
-                            </tbody>
-                        </table>
+                    {% if utility_name == "issue_frequency" %}
+                        {% block query_issue_block %}{% endblock %}
                     {% endif %}
 				</div>
             </div>
         </div>
     </div>
-{% endblock %}
-{% block user_js %}
-<script type="text/javascript">
-    $(function(){
-       $("#test_table").treetable({ expandable: true });
-	   // Highlight selected row
-    var query_task_id = null;
-	$("#test_table tbody").on("mousedown", "tr", function() {
-	  $(".selected").not(this).removeClass("selected");
-	  $(this).toggleClass("selected");
-	});
-    $("#query_issue_btn").click(function() {
-        $(this).attr('disabled',"true");
-        $(this).addClass('disabled');
-        var issue_id = $("#query_issue_id").val();
-        ajax_post_data(
-            "/ajax/query_task", 
-            {'issue_id': issue_id}, 
-            function(json) {
-                console.log(json)
-                query_task_id = json;
-                setTimeout(update_task_status, 1000);
-            }
-        );
-     });
-    update_task_status = function(){
-        var $task_result = $("#task_result");
-        if (query_task_id == null) {
-            return;
-        }
-        ajax_post_data(
-            "/ajax/task_result", 
-            {'task_id': query_task_id}, 
-            function(json) {
-                console.log(json)
-                var stop_query = false;
-                if ('done' in json) {
-                    if (json.done == 0) {
-                        $task_result.html("task is in " + json.result);
-                        setTimeout(update_task_status, 1000)
-                    } else {
-                        if (json.error == null) {
-                            $task_result.html("task is done: " + json.result);
-                            var task_result=null;
-                            try {
-                                task_result = $.parseJSON(json.result);
-                                console.log(task_result);
-                                <!-- var $table_body = $("#test_table tbody"); -->
-                                sorted_builds = Object.keys(task_result.builds);
-                                for (var i = 0;i < sorted_builds.length; i++) {
-                                    var build_html = "<tr data-tt-id='" + i + "'><td>" + sorted_builds[i] + "</td><td>--</td>";
-                                    var build = task_result.builds[sorted_builds[i]];
-                                    console.log(build);
-                                    sorted_duts = Object.keys(build);
-                                    var build_jira_num = 0;
-                                    var dut_html_list = [];
-                                    var jira_html_list = [];
-                                    for (var j = 0; j < sorted_duts.length; j++) {
-                                        var dut = build[sorted_duts[j]];
-                                        build_jira_num += dut.length;
-                                        var dut_html = "<tr data-tt-id='" + i + "-" + j + "' data-tt-parent-id='" + i + "'><td>" + sorted_duts[j] + "</td><td>--</td><td>" + dut.length + "</td></tr>";
-                                        console.log(dut);
-                                        var jira_list_str = '';
-                                        for (var k = 0; k < dut.length; k++) {
-                                            var jira = dut[k];
-                                            console.log(jira);
-                                        }
-                                        var jira_html = "<tr data-tt-id='" + i + "-" + j + "-0' data-tt-parent-id='" + i + "-" + j + "'><td colspan='2'>" + dut.join(", ") + "</td><td>" + dut.length + "</td></tr>";
-                                        dut_html_list.push(dut_html);
-                                        jira_html_list.push(jira_html);
-                                    }
-                                    build_html += "<td>" + build_jira_num + "</td></tr>";
-                                    <!-- $table_body.append(build_html); -->
-                                    <!-- $table_body.append(dut_html_list.join('')); -->
-                                    $("#test_table").treetable("loadBranch", null, build_html);
-                                    var last_node = $("#test_table").treetable("node", i);
-                                    console.log(last_node);
-                                    for(var m=0; m < dut_html_list.length; m++) {
-                                        $("#test_table").treetable("loadBranch", last_node, dut_html_list[m]);
-                                        <!-- last_node = $("#test_table").treetable("node", i + "-" + m); -->
-                                        $("#test_table").treetable("loadBranch", last_node, jira_html_list[m]);
-                                    }
-                                }
-                                $("#test_table").treetable({ expandable: true }, true);
-                            } catch (e) {
-                                console.log("exception when parse task result!");
-                                console.log(e);
-                            }
-                        } else {
-                            $task_result.html("task has exception: " + json.traceback);
-                        }
-                        stop_query = true;
-                    }
-                } else {
-                    alert_box(url + " return illegal data!", "Receive illegal JSON data: Not found key 'done'!");
-                    stop_query = true;
-                }
-                if (stop_query) {
-                    $("#query_issue_btn").removeAttr("disabled");
-                    $("#query_issue_btn").removeClass("disabled");
-                }
-            }
-        );
-    };
-    
-    <!-- ajax_post_data = function(url, data, success_code) { -->
-
-	// Drag & Drop Example Code
-	$("#test_table .file, #example-advanced .folder").draggable({
-	  helper: "clone",
-	  opacity: .75,
-	  refreshPositions: true,
-	  revert: "invalid",
-	  revertDuration: 300,
-	  scroll: true
-	});
-
-	$("#test_table .folder").each(function() {
-	  $(this).parents("#example-advanced tr").droppable({
-		accept: ".file, .folder",
-		drop: function(e, ui) {
-		  var droppedEl = ui.draggable.parents("tr");
-		  $("#example-advanced").treetable("move", droppedEl.data("ttId"), $(this).data("ttId"));
-		},
-		hoverClass: "accept",
-		over: function(e, ui) {
-		  var droppedEl = ui.draggable.parents("tr");
-		  if(this != droppedEl[0] && !$(this).is(".expanded")) {
-			$("#example-advanced").treetable("expandNode", $(this).data("ttId"));
-		  }
-		}
-	  });
-	});
-    });
-</script>
 {% endblock %}

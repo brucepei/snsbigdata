@@ -2159,6 +2159,17 @@ def get_item(dictionary, key):
     return dictionary.get(key)
     
 def utility_page(request):
-    utility_id = request.GET.get('utility_id', None)
-    support_utilities = {'issue_frequency_utility_id': 'Issue Frequency'}
-    return render(request, 'tbd/utility.html', {'support_utilities': support_utilities, 'utility_id': utility_id})
+    utility_name = request.GET.get('name', None)
+    support_utilities = {'issue_frequency': 'Issue Frequency'}
+    utility_args = {'support_utilities': support_utilities}
+    if utility_name == "issue_frequency":
+        utility_args['utility_name'] = utility_name
+        utility_template = 'tbd/utility_issue_frequency.html'
+        issue_id = request.GET.get('issue_id', None)
+        if issue_id:
+            result = query_issue_frequency.delay(issue_id)
+            Task_Result_Buffer[result.id] = None
+            utility_args.update({'issue_id': issue_id, 'task_id': result.id})
+    else:
+        utility_template = 'tbd/utility.html'
+    return render(request, utility_template, utility_args)
