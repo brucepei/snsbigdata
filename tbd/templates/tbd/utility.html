@@ -10,9 +10,9 @@
                     <div class="box">
                         <h5>Utilities</h5>
                         <div class="body">
-                                {% for name in support_utilities %}
+                                {% for ut_name, ut_id in support_utilities.items %}
                                 <img src="/static/images/utility_icon.gif" border="0">
-                                <a id="issue_frequency_utility" href="{% url 'tbd_utility' %}?name={{ name }}">{{ support_utilities |get_item:name }}</a>
+                                <a id="issue_frequency_utility" href="{% url 'tbd_utility' %}?name={{ ut_name }}">{{ ut_id }}</a>
                                 <br>
                                 {% endfor %}
 

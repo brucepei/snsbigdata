@@ -3,8 +3,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
-from django.template.defaulttags import register
+from collections import Iterable
 from tbd.models import Project, TestAction, Build, Crash, TestCase, Host, JIRA, TestResult
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 from .tasks import query_issue_frequency
@@ -19,9 +18,55 @@ DEFAULT = {
     'testcase': {'name': '!NULL!'},
 }
 
-Task_Result_Buffer = {}
-# Task_Result_Buffer = set()
+Issue_Frequency_Buffer = {
+    # issue1 => {result: {}, assoc_issues: [], orig_issue_id: issue1, start_at: ?, update_at: ?}
+}
+# Issue_Frequency_Buffer = set()
 
+def get_cached_issue_frequency(target_issue_id, check_result=False):
+    if target_issue_id in Issue_Frequency_Buffer:
+        if (not check_result) or (check_result and Issue_Frequency_Buffer[target_issue_id].get('result', None)):
+            print("get cached issue: {}".format(target_issue_id))
+            return Issue_Frequency_Buffer[target_issue_id]
+    for issue_id in Issue_Frequency_Buffer:
+        if 'assoc_issues' in Issue_Frequency_Buffer[issue_id] and isinstance(Issue_Frequency_Buffer[issue_id]['assoc_issues'], Iterable) \
+            and target_issue_id in Issue_Frequency_Buffer[issue_id]['assoc_issues']:
+            if (not check_result) or (check_result and Issue_Frequency_Buffer[issue_id].get('result', None)):
+                print("get associated cached issue: {}".format(target_issue_id))
+                return Issue_Frequency_Buffer[issue_id]
+    print("Cannot get cached issue!")
+    return None
+
+def update_issue_frequency(issue_id, result=None, assoc_issues=None):
+    cached_result = get_cached_issue_frequency(issue_id)
+    if cached_result:
+        if result:
+            cached_result['result'] = result
+            cached_result['update_at'] = time.time()
+            cached_result['assoc_issues'] = assoc_issues
+        else:
+            print("Update cached issue {}, but no result found!".format(issue_id))
+    else:
+        Issue_Frequency_Buffer[issue_id] = {
+            'start_at': time.time(),
+            'orig_issue_id': issue_id,
+            'assoc_issues': assoc_issues
+        }
+        if result:
+            Issue_Frequency_Buffer[issue_id]['update_at'] = time.time() #start_at and update_at at the same time
+            Issue_Frequency_Buffer[issue_id]['result'] = result
+
+def query_cached_issue_frequency(issue_id, result_url, force_refresh):
+    cached_result = get_cached_issue_frequency(issue_id, True) #True: must get completed result, but not pending result!
+    if cached_result:
+        if force_refresh:
+            print("Force refresh, and delete cached result with orig id: {}".format(cached_result['orig_issue_id']))
+            del Issue_Frequency_Buffer[cached_result['orig_issue_id']]
+        else:
+            return
+    query_issue_frequency.delay(issue_id, result_url)
+    Issue_Frequency_Buffer[issue_id] = {'orig_issue_id': issue_id, 'start_at': time.time()}
+    
 def set_default_records(prj_name=None, project=None, set_jira=False, set_host=False, set_testcase=False, set_testaction=False):
     result = None
     try:
@@ -1487,31 +1532,50 @@ def ajax_query_task(request):
         issue_id = request.POST.get('issue_id', None)
         if issue_id is not None:
             result = query_issue_frequency.delay(issue_id)
-            Task_Result_Buffer[result.id] = None
+            Issue_Frequency_Buffer[result.id] = None
             err_code = 0
             msg = result.id
     return json_response(msg, err_code)
     
-def ajax_task_result(request):
+ONE_DAY = 24 * 60 * 60
+ONE_HOUR = 60 * 60
+ONE_MINUTE = 60
+def ajax_issue_frequency_result(request):
     err_code = None
     msg = None
     if request.method == 'POST':
         print(request.POST)
-        task_id = request.POST.get('task_id', None)
-        if task_id is not None and task_id in Task_Result_Buffer:
-            if task_id in Task_Result_Buffer:
-                result = Task_Result_Buffer.get(task_id, None)
-                err_code = 0
-                msg = {'done': 0, 'result': None, 'error': None}
-                if result is None:
-                    msg['result'] = "Pending"
-                else:
+        issue_id = request.POST.get('issue_id', None)
+        if issue_id:
+            cached_result = get_cached_issue_frequency(issue_id) #check_result default is False, it might get pending result
+            msg = {'done': 0, 'result': None, 'life_time': 0}
+            if cached_result:
+                result = cached_result.get('result', None)
+                if result:
+                    life_time = time.time() - cached_result['update_at']
+                    life_time_str = ""
+                    if life_time > ONE_DAY:
+                        life_time_str = "{:.1f} days".format(life_time/ONE_DAY)
+                    elif life_time > ONE_HOUR:
+                        life_time_str = "{:.1f} hours".format(life_time/ONE_HOUR)
+                    elif life_time > ONE_MINUTE:
+                        life_time_str = "{:.1f} minutes".format(life_time/ONE_MINUTE)
+                    else:
+                        life_time_str = "{:.1f} seconds".format(life_time)
                     msg['done'] = 1
                     msg['result'] = result
+                    msg['life_time'] = life_time_str
+                else:
+                    msg['result'] = "Querying for {0:.1f} seconds...".format(time.time() - cached_result['start_at'])
             else:
-                err_code = -1
-                msg['result'] = "not found this task {}".format(task_id)
-            print(msg)
+                err_code = -3
+                msg = "not found this issue_id {} in the queue, illeagel request?!".format(issue_id)
+        else:
+            err_code = -2
+            msg = "no issue_id in the request!"
+    else:
+        err_code = -1
+        msg = "not support request method: {}!".format(request.method)
     return json_response(msg, err_code)
     
 # Create auto API here, no CSRF
@@ -1967,15 +2031,16 @@ def auto_task_result(request):
     msg = None
     if request.method == 'POST':
         print("auto_task_result body={}".format(request.body))
-        task_id = request.POST.get('task_id', None)
-        task_result = request.POST.get('task_result', None)
-        if task_id is not None:
-            print("Got task {} result={}".format(task_id, task_result))
-            Task_Result_Buffer[task_id] = task_result
-            msg = 'Update result for task {}!'.format(task_id)
+        issue_id = request.POST.get('issue_id', None)
+        issue_result = request.POST.get('issue_result', None)
+        assoc_issues = request.POST.get('assoc_issues', None)
+        if issue_id is not None:
+            print("Got issue {} result={}".format(issue_id, issue_result))
+            update_issue_frequency(issue_id, issue_result, assoc_issues)
+            msg = "Update cached request!"
         else:
-            err_code = -1
-            msg = "Not found task id!"
+            err_code = -2
+            msg = "Not found issue id in the request!"
     else:
         err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
@@ -2154,10 +2219,6 @@ def crash_page(request):
         'jira_category_choice': json.dumps(dict(JIRA.CATEGORY_CHOICE)),
     })
 
-@register.filter
-def get_item(dictionary, key):
-    return dictionary.get(key)
-    
 def utility_page(request):
     utility_name = request.GET.get('name', None)
     support_utilities = {'issue_frequency': 'Issue Frequency'}
@@ -2166,10 +2227,13 @@ def utility_page(request):
         utility_args['utility_name'] = utility_name
         utility_template = 'tbd/utility_issue_frequency.html'
         issue_id = request.GET.get('issue_id', None)
+        force_refresh = request.GET.get('force_refresh', None)
+        result_url = request.build_absolute_uri(reverse('auto', args=['task_result']))
         if issue_id:
-            result = query_issue_frequency.delay(issue_id)
-            Task_Result_Buffer[result.id] = None
-            utility_args.update({'issue_id': issue_id, 'task_id': result.id})
+            utility_args['issue_id'] = issue_id
+            query_cached_issue_frequency(issue_id, result_url, force_refresh)
+            # if cached_result:
+                # utility_args['cached_result'] = cached_result['result']
     else:
         utility_template = 'tbd/utility.html'
     return render(request, utility_template, utility_args)

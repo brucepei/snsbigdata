@@ -3,8 +3,8 @@ from celery import shared_task
 from celery.signals import task_postrun
 import time
 
-@shared_task(bind=True)
-def query_issue_frequency(self, issue_id):
+@shared_task
+def query_issue_frequency(issue_id, result_url):
     pass
     
 @task_postrun.connect

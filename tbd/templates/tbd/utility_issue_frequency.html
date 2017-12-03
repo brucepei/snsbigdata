@@ -5,8 +5,8 @@
 <span id="task_result"></span>
 <table id="test_table">
     <caption>
-      <a href="#" onclick="jQuery('#test_table').treetable('expandAll'); return false;">Expand all</a>
-      <a href="#" onclick="jQuery('#test_table').treetable('collapseAll'); return false;">Collapse all</a>
+      <a id="treetable_unfold_link" href="#"><img src="/static/images/filterunfold.png" height="16px" />Unfold All</a>
+      <a id="treetable_fold_link" class="hidden" href="#"><img src="/static/images/filterfold.png" height="16px" />Fold All</a>
     </caption>
     <thead>
       <tr>
@@ -26,128 +26,119 @@
 {% block user_js %}
 <script type="text/javascript">
     $(function(){
-       $("#test_table").treetable({ expandable: true });
-	   // Highlight selected row
-	$("#test_table tbody").on("mousedown", "tr", function() {
-	  $(".selected").not(this).removeClass("selected");
-	  $(this).toggleClass("selected");
-	});
-    $("#query_issue_btn").click(function() {
-        window.location.href="{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + $("#query_issue_id").val();
-     });
-    update_task_status = function(){
-        var $task_result = $("#task_result");
-        if (query_task_id == null) {
-            return;
-        }
-        ajax_post_data(
-            "/ajax/task_result", 
-            {'task_id': query_task_id}, 
-            function(json) {
-                console.log(json)
-                var stop_query = false;
-                if ('done' in json) {
-                    if (json.done == 0) {
-                        $task_result.html("task is in " + json.result);
-                        setTimeout(update_task_status, 1000)
-                    } else {
-                        if (json.error == null) {
-                            $task_result.html("task is done: " + json.result);
-                            var task_result=null;
-                            try {
-                                task_result = $.parseJSON(json.result);
-                                console.log(task_result);
-                                <!-- var $table_body = $("#test_table tbody"); -->
-                                sorted_builds = Object.keys(task_result.builds);
-                                for (var i = 0;i < sorted_builds.length; i++) {
-                                    var build_html = "<tr data-tt-id='" + i + "'><td>" + sorted_builds[i] + "</td><td>--</td>";
-                                    var build = task_result.builds[sorted_builds[i]];
-                                    console.log(build);
-                                    sorted_duts = Object.keys(build);
-                                    var build_jira_num = 0;
-                                    var dut_html_list = [];
-                                    var jira_html_list = [];
-                                    for (var j = 0; j < sorted_duts.length; j++) {
-                                        var dut = build[sorted_duts[j]];
-                                        build_jira_num += dut.length;
-                                        var dut_html = "<tr data-tt-id='" + i + "-" + j + "' data-tt-parent-id='" + i + "'><td>" + sorted_duts[j] + "</td><td>--</td><td>" + dut.length + "</td></tr>";
-                                        console.log(dut);
-                                        var jira_list_str = '';
-                                        for (var k = 0; k < dut.length; k++) {
-                                            var jira = dut[k];
-                                            console.log(jira);
-                                        }
-                                        var jira_html = "<tr data-tt-id='" + i + "-" + j + "-0' data-tt-parent-id='" + i + "-" + j + "'><td colspan='2'>" + dut.join(", ") + "</td><td>" + dut.length + "</td></tr>";
-                                        dut_html_list.push(dut_html);
-                                        jira_html_list.push(jira_html);
-                                    }
-                                    build_html += "<td>" + build_jira_num + "</td></tr>";
-                                    <!-- $table_body.append(build_html); -->
-                                    <!-- $table_body.append(dut_html_list.join('')); -->
-                                    $("#test_table").treetable("loadBranch", null, build_html);
-                                    var last_node = $("#test_table").treetable("node", i);
-                                    console.log(last_node);
-                                    for(var m=0; m < dut_html_list.length; m++) {
-                                        $("#test_table").treetable("loadBranch", last_node, dut_html_list[m]);
-                                        <!-- last_node = $("#test_table").treetable("node", i + "-" + m); -->
-                                        $("#test_table").treetable("loadBranch", last_node, jira_html_list[m]);
-                                    }
-                                }
-                                $("#test_table").treetable({ expandable: true }, true);
-                            } catch (e) {
-                                console.log("exception when parse task result!");
-                                console.log(e);
-                            }
-                        } else {
-                            $task_result.html("task has exception: " + json.traceback);
+        $("#test_table").treetable({ expandable: true });
+        
+        $("#treetable_unfold_link").click(function() {
+            $('#test_table').treetable('expandAll');
+            $(this).addClass("hidden");
+            $("#treetable_fold_link").removeClass("hidden");
+            return false;
+        });
+        $("#treetable_fold_link").click(function() {
+            $('#test_table').treetable('collapseAll');
+            $(this).addClass("hidden");
+            $("#treetable_unfold_link").removeClass("hidden");
+            return false;
+        });
+        
+        // Highlight selected row
+        $("#test_table tbody").on("mousedown", "tr", function() {
+          $(".selected").not(this).removeClass("selected");
+          $(this).toggleClass("selected");
+        });
+        
+        // Query button: refresh URL
+        $("#query_issue_btn").click(function() {
+            window.location.href="{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + $("#query_issue_id").val();
+         });
+         
+        construct_query_result_table = function(query_result_json_str) {
+            var query_result=null;
+            try {
+                query_result = $.parseJSON(query_result_json_str);
+                console.log(query_result);
+                var $table_body = $("#test_table tbody");
+                sorted_builds = Object.keys(query_result.builds);
+                for (var i = 0;i < sorted_builds.length; i++) {
+                    var build_html = "<tr data-tt-id='" + i + "'><td>" + sorted_builds[i] + "</td><td>--</td>";
+                    var build = query_result.builds[sorted_builds[i]];
+                    console.log(build);
+                    sorted_duts = Object.keys(build);
+                    var build_jira_num = 0;
+                    var dut_html_list = [];
+                    //var jira_html_list = [];
+                    for (var j = 0; j < sorted_duts.length; j++) {
+                        var dut = build[sorted_duts[j]];
+                        build_jira_num += dut.length;
+                        var dut_html = "<tr data-tt-id='" + i + "-" + j + "' data-tt-parent-id='" + i + "'><td>" + sorted_duts[j] + "</td><td>--</td><td>" + dut.length + "</td></tr>";
+                        console.log(dut);
+                        var jira_list_str = '';
+                        for (var k = 0; k < dut.length; k++) {
+                            var jira = dut[k];
+                            console.log(jira);
                         }
+                        var jira_html = "<tr data-tt-id='" + i + "-" + j + "-0' data-tt-parent-id='" + i + "-" + j + "'><td colspan='2'>" + dut.join(", ") + "</td><td>" + dut.length + "</td></tr>";
+                        dut_html_list.push(dut_html, jira_html);
+                        //jira_html_list.push(jira_html);
+                    }
+                    build_html += "<td>" + build_jira_num + "</td></tr>";
+                    $table_body.append(build_html);
+                    $table_body.append(dut_html_list.join(''));
+                }
+                $("#test_table").treetable({ expandable: true }, true);
+            } catch (e) {
+                console.log("exception when parse task result!");
+                console.log(e);
+            }
+        };
+         
+        update_task_status = function(){
+            var $task_result = $("#task_result");
+            if (query_issue_id == null) {
+                console.log("No query issue id, do nothing...");
+                return;
+            }
+            ajax_post_data(
+                "/ajax/issue_frequency_result", 
+                {'issue_id': query_issue_id}, 
+                function(json) {
+                    console.log(json)
+                    var stop_query = false;
+                    if ('done' in json) {
+                        if (json.done == 0) {
+                            $task_result.html("task is in " + json.result);
+                            setTimeout(update_task_status, 1000)
+                        } else {
+                            if (json.error == null) {
+                                $task_result.html("The result has updated for: <b>" + json.life_time + "</b> Click to <a href=\"{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + $("#query_issue_id").val() + "&force_refresh=1\">Force Refresh</a>");
+                                construct_query_result_table(json.result);
+                            } else {
+                                $task_result.html("task has exception: " + json.traceback);
+                            }
+                            stop_query = true;
+                        }
+                    } else {
+                        alert_box(url + " return illegal data!", "Receive illegal JSON data: Not found key 'done'!");
                         stop_query = true;
                     }
-                } else {
-                    alert_box(url + " return illegal data!", "Receive illegal JSON data: Not found key 'done'!");
-                    stop_query = true;
+                    if (stop_query) {
+                        $("#query_issue_btn").removeAttr("disabled");
+                        $("#query_issue_btn").removeClass("disabled");
+                    }
                 }
-                if (stop_query) {
-                    $("#query_issue_btn").removeAttr("disabled");
-                    $("#query_issue_btn").removeClass("disabled");
-                }
-            }
-        );
-    };
-    
-    var query_task_id = {% if task_id %}"{{ task_id }}"{% else %}null{% endif %};
-    if (query_task_id != null) {
-        $("#query_issue_btn").attr('disabled',"true").addClass('disabled');
-        setTimeout(update_task_status, 1000);
-    }
-    <!-- ajax_post_data = function(url, data, success_code) { -->
+            );
+        };
+        var query_issue_id = {% if issue_id %}"{{ issue_id }}"{% else %}null{% endif %};
+        //var cached_result = {% if cached_result %}'{{ cached_result|safe }}'{% else %}null{% endif %};
+        //if (cached_result != null) {
+        //    construct_query_result_table(cached_result);
+        //} else 
+        if (query_issue_id != null) {
+            $("#query_issue_btn").attr('disabled',"true").addClass('disabled');
+            //setTimeout(update_task_status, 1000);
+            update_task_status();
+        }
 
-	// Drag & Drop Example Code
-	$("#test_table .file, #example-advanced .folder").draggable({
-	  helper: "clone",
-	  opacity: .75,
-	  refreshPositions: true,
-	  revert: "invalid",
-	  revertDuration: 300,
-	  scroll: true
-	});
-
-	$("#test_table .folder").each(function() {
-	  $(this).parents("#example-advanced tr").droppable({
-		accept: ".file, .folder",
-		drop: function(e, ui) {
-		  var droppedEl = ui.draggable.parents("tr");
-		  $("#example-advanced").treetable("move", droppedEl.data("ttId"), $(this).data("ttId"));
-		},
-		hoverClass: "accept",
-		over: function(e, ui) {
-		  var droppedEl = ui.draggable.parents("tr");
-		  if(this != droppedEl[0] && !$(this).is(".expanded")) {
-			$("#example-advanced").treetable("expandNode", $(this).data("ttId"));
-		  }
-		}
-	  });
-	});
     });
 </script>
 {% endblock %}
