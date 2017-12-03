@@ -1,6 +1,6 @@
 ﻿{% extends 'tbd/utility.html' %}
 
-{% block query_issue_block %}
+{% block issue_frequency_block %}
 <span>Issue ID:</span><input id="query_issue_id" type="text" value="{{ issue_id }}"/><input type="button" id="query_issue_btn" value="Query" /input><br/>
 <span id="task_result"></span>
 <table id="test_table">
@@ -106,15 +106,11 @@
                     var stop_query = false;
                     if ('done' in json) {
                         if (json.done == 0) {
-                            $task_result.html("task is in " + json.result);
-                            setTimeout(update_task_status, 1000)
+                            $task_result.html(json.result);
+                            setTimeout(update_task_status, 3000)
                         } else {
-                            if (json.error == null) {
-                                $task_result.html("The result has updated for: <b>" + json.life_time + "</b> Click to <a href=\"{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + $("#query_issue_id").val() + "&force_refresh=1\">Force Refresh</a>");
-                                construct_query_result_table(json.result);
-                            } else {
-                                $task_result.html("task has exception: " + json.traceback);
-                            }
+                            $task_result.html("The result has updated for: <b>" + json.life_time + "</b> Click to <a href=\"{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + $("#query_issue_id").val() + "&force_refresh=1\">Force Refresh</a>");
+                            construct_query_result_table(json.result);
                             stop_query = true;
                         }
                     } else {
@@ -129,13 +125,8 @@
             );
         };
         var query_issue_id = {% if issue_id %}"{{ issue_id }}"{% else %}null{% endif %};
-        //var cached_result = {% if cached_result %}'{{ cached_result|safe }}'{% else %}null{% endif %};
-        //if (cached_result != null) {
-        //    construct_query_result_table(cached_result);
-        //} else 
         if (query_issue_id != null) {
             $("#query_issue_btn").attr('disabled',"true").addClass('disabled');
-            //setTimeout(update_task_status, 1000);
             update_task_status();
         }
 

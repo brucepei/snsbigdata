@@ -10,9 +10,9 @@
                     <div class="box">
                         <h5>Utilities</h5>
                         <div class="body">
-                                {% for ut_name, ut_id in support_utilities.items %}
+                                {% for ut_name, ut_display in support_utilities.items %}
                                 <img src="/static/images/utility_icon.gif" border="0">
-                                <a id="issue_frequency_utility" href="{% url 'tbd_utility' %}?name={{ ut_name }}">{{ ut_id }}</a>
+                                <a id="issue_frequency_utility" href="{% url 'tbd_utility' %}?name={{ ut_name }}">{{ ut_display }}</a>
                                 <br>
                                 {% endfor %}
 
@@ -23,7 +23,9 @@
             <div class="col-md-10">
                 <div id="UtilityContainer">
                     {% if utility_name == "issue_frequency" %}
-                        {% block query_issue_block %}{% endblock %}
+                        {% block issue_frequency_block %}{% endblock %}
+                    {% elif utility_name == "ping_workers" %}
+                        {% block ping_workers_block %}{% endblock %}
                     {% endif %}
 				</div>
             </div>

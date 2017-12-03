@@ -1,0 +1,44 @@
+﻿{% extends 'tbd/utility.html' %}
+
+{% block ping_workers_block %}
+    <input type="button" id="ping_workers_btn" value="Ping" /input><br/>
+    <div id="ping_results">
+    </div>
+{% endblock %}
+
+{% block user_js %}
+<script type="text/javascript">
+    $(function(){
+        $("#ping_workers_btn").click(function() {
+            $(this).attr('disabled',"true").addClass('disabled');
+            $("#ping_results").html('');
+            update_ping_results();
+        });
+        update_ping_results = function(){
+            var $task_result = $("#task_result");
+            ajax_post_data(
+                "/ajax/ping_results", 
+                null, 
+                function(json) {
+                    console.log(json)
+                    var html = '';
+                    for (var i=0; i < json.length; i++) {
+                        console.log(json[i])
+                        for (var d in json[i]) {
+                            console.log(d)
+                            html += "<span><b>" + d + "</b>"
+                            for (var d_status in json[i][d]) {
+                                console.log(d_status)
+                                html += " " + d_status + ":" + json[i][d][d_status] + "</span>"
+                            }
+                        }
+                        html += "<br/>"
+                    }
+                    $("#ping_results").html(html);
+                    $("#ping_workers_btn").removeAttr("disabled").removeClass("disabled");
+                }
+            );
+        };
+    });
+</script>
+{% endblock %}

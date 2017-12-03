@@ -8,6 +8,7 @@ from tbd.models import Project, TestAction, Build, Crash, TestCase, Host, JIRA, 
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 from .tasks import query_issue_frequency
 from celery.result import AsyncResult
+from SnSBigData import celery_app
 import time
 import json
 
@@ -22,6 +23,20 @@ Issue_Frequency_Buffer = {
     # issue1 => {result: {}, assoc_issues: [], orig_issue_id: issue1, start_at: ?, update_at: ?}
 }
 # Issue_Frequency_Buffer = set()
+
+ONE_DAY = 24 * 60 * 60
+ONE_HOUR = 60 * 60
+ONE_MINUTE = 60
+def seconds_to_humanable(seconds):
+    if seconds > ONE_DAY:
+        humanable_str = "{:.1f} days".format(seconds/ONE_DAY)
+    elif seconds > ONE_HOUR:
+        humanable_str = "{:.1f} hours".format(seconds/ONE_HOUR)
+    elif seconds > ONE_MINUTE:
+        humanable_str = "{:.1f} minutes".format(seconds/ONE_MINUTE)
+    else:
+        humanable_str = "{:.1f} seconds".format(seconds)
+    return humanable_str
 
 def get_cached_issue_frequency(target_issue_id, check_result=False):
     if target_issue_id in Issue_Frequency_Buffer:
@@ -64,8 +79,8 @@ def query_cached_issue_frequency(issue_id, result_url, force_refresh):
             del Issue_Frequency_Buffer[cached_result['orig_issue_id']]
         else:
             return
-    query_issue_frequency.delay(issue_id, result_url)
-    Issue_Frequency_Buffer[issue_id] = {'orig_issue_id': issue_id, 'start_at': time.time()}
+    task_id = query_issue_frequency.delay(issue_id, result_url)
+    Issue_Frequency_Buffer[issue_id] = {'orig_issue_id': issue_id, 'start_at': time.time(), 'task_id': task_id}
     
 def set_default_records(prj_name=None, project=None, set_jira=False, set_host=False, set_testcase=False, set_testaction=False):
     result = None
@@ -1525,21 +1540,6 @@ def ajax_list_options_testcases_in_project(request):
                     })
     return JsonResponse({'Result': 'OK', 'Options': options})
 
-def ajax_query_task(request):
-    err_code = None
-    msg = None
-    if request.method == 'POST':
-        issue_id = request.POST.get('issue_id', None)
-        if issue_id is not None:
-            result = query_issue_frequency.delay(issue_id)
-            Issue_Frequency_Buffer[result.id] = None
-            err_code = 0
-            msg = result.id
-    return json_response(msg, err_code)
-    
-ONE_DAY = 24 * 60 * 60
-ONE_HOUR = 60 * 60
-ONE_MINUTE = 60
 def ajax_issue_frequency_result(request):
     err_code = None
     msg = None
@@ -1553,20 +1553,12 @@ def ajax_issue_frequency_result(request):
                 result = cached_result.get('result', None)
                 if result:
                     life_time = time.time() - cached_result['update_at']
-                    life_time_str = ""
-                    if life_time > ONE_DAY:
-                        life_time_str = "{:.1f} days".format(life_time/ONE_DAY)
-                    elif life_time > ONE_HOUR:
-                        life_time_str = "{:.1f} hours".format(life_time/ONE_HOUR)
-                    elif life_time > ONE_MINUTE:
-                        life_time_str = "{:.1f} minutes".format(life_time/ONE_MINUTE)
-                    else:
-                        life_time_str = "{:.1f} seconds".format(life_time)
                     msg['done'] = 1
                     msg['result'] = result
-                    msg['life_time'] = life_time_str
+                    msg['life_time'] = seconds_to_humanable(life_time)
                 else:
-                    msg['result'] = "Querying for {0:.1f} seconds...".format(time.time() - cached_result['start_at'])
+                    msg['result'] = "querying for {}...".format(seconds_to_humanable(time.time() - cached_result['start_at']))
+                    AsyncResult
             else:
                 err_code = -3
                 msg = "not found this issue_id {} in the queue, illeagel request?!".format(issue_id)
@@ -1576,6 +1568,16 @@ def ajax_issue_frequency_result(request):
     else:
         err_code = -1
         msg = "not support request method: {}!".format(request.method)
+    return json_response(msg, err_code)
+    
+def ajax_ping_results(request):
+    err_code = None
+    msg = None
+    if request.method == 'POST':
+        ping_result = celery_app.control.ping()
+        print("Ping result: {}".format(ping_result))
+        err_code = 0
+        msg = ping_result
     return json_response(msg, err_code)
     
 # Create auto API here, no CSRF
@@ -2221,19 +2223,23 @@ def crash_page(request):
 
 def utility_page(request):
     utility_name = request.GET.get('name', None)
-    support_utilities = {'issue_frequency': 'Issue Frequency'}
+    support_utilities = {
+        'issue_frequency': 'Issue Frequency',
+        'ping_workers': 'Ping Workers',
+    }
     utility_args = {'support_utilities': support_utilities}
     if utility_name == "issue_frequency":
         utility_args['utility_name'] = utility_name
-        utility_template = 'tbd/utility_issue_frequency.html'
+        utility_template = 'tbd/utility_{}.html'.format(utility_name)
         issue_id = request.GET.get('issue_id', None)
         force_refresh = request.GET.get('force_refresh', None)
         result_url = request.build_absolute_uri(reverse('auto', args=['task_result']))
         if issue_id:
             utility_args['issue_id'] = issue_id
             query_cached_issue_frequency(issue_id, result_url, force_refresh)
-            # if cached_result:
-                # utility_args['cached_result'] = cached_result['result']
+    elif utility_name == "ping_workers":
+        utility_args['utility_name'] = utility_name
+        utility_template = 'tbd/utility_{}.html'.format(utility_name)
     else:
         utility_template = 'tbd/utility.html'
     return render(request, utility_template, utility_args)
