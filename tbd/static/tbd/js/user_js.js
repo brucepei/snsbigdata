@@ -93,7 +93,7 @@ var ajax_post_data = function(url, data, success_code) {
             url: url,
             processData: process_data,
             data: data,
-            timeout: 2000,
+            timeout: 5000,
             dataType: "json",
             success: function (json) {
                 if ('code' in json && 'result' in json) {

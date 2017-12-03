@@ -79,8 +79,8 @@ def query_cached_issue_frequency(issue_id, result_url, force_refresh):
             del Issue_Frequency_Buffer[cached_result['orig_issue_id']]
         else:
             return
-    task_id = query_issue_frequency.delay(issue_id, result_url)
-    Issue_Frequency_Buffer[issue_id] = {'orig_issue_id': issue_id, 'start_at': time.time(), 'task_id': task_id}
+    query_issue_frequency.delay(issue_id, result_url)
+    Issue_Frequency_Buffer[issue_id] = {'orig_issue_id': issue_id, 'start_at': time.time()}
     
 def set_default_records(prj_name=None, project=None, set_jira=False, set_host=False, set_testcase=False, set_testaction=False):
     result = None
