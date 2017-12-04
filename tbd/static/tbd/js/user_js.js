@@ -48,11 +48,39 @@ var get_size = function (obj){
 
 var alert_box = function(title, body) {
     // $.messager.alert(title, body);
-    alert(title + "\n" + body); 
+    //alert(title + "\n" + body);
+    $( "#dialog-confirm" ).attr('title', title).html('<p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>' +body+ '</p>')
+    $( "#dialog-confirm" ).dialog({
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+      buttons: {
+        OK: function() {
+          $( this ).dialog( "close" );
+        }
+      }
+    });
 };
 
 var confirm_box = function(title, body, func) {
-    $.messager.confirm(title, body, func);
+    //$.messager.confirm(title, body, func);
+    $( "#dialog-confirm" ).attr('title', title).html('<p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>' +body+ '</p>')
+    $( "#dialog-confirm" ).dialog({
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+      buttons: {
+        OK: function() {
+          $( this ).dialog( "close" );
+          func();
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      }
+    });
 }
 
 var update_select_options = function($selector, items) {

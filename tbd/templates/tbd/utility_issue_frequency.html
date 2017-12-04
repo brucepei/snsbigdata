@@ -46,10 +46,15 @@
           $(".selected").not(this).removeClass("selected");
           $(this).toggleClass("selected");
         });
-        
+        var jira_cr_pattern = new RegExp( "^(?:cr|wcndebug\-)\\d{5,}$", "i" );
         // Query button: refresh URL
         $("#query_issue_btn").click(function() {
-            window.location.href="{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + $("#query_issue_id").val();
+            var issue_id = $.trim($("#query_issue_id").val());
+            if (jira_cr_pattern.test(issue_id)) {
+                window.location.href="{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + issue_id;
+            } else {
+                alert_box("Unsupport issue ID", "invalid issue '" +issue_id+ "', it must be CR or JIRA ID!");
+            }
          });
          
         construct_query_result_table = function(query_result_json_str) {
@@ -91,7 +96,15 @@
                 console.log(e);
             }
         };
-         
+        
+        force_refresh_click = function(issue_id) {
+            confirm_box("Force Refresh?", "Force refresh would clear buffer and query latest result, are you sure?", function () {
+                //alert_box("haha");
+                window.location.href="{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + issue_id + "&force_refresh=1";
+            });
+            return false;
+        };
+        
         update_task_status = function(){
             var $task_result = $("#task_result");
             if (query_issue_id == null) {
@@ -109,7 +122,7 @@
                             $task_result.html(json.result);
                             setTimeout(update_task_status, 3000)
                         } else {
-                            $task_result.html("The result has updated for: <b>" + json.life_time + "</b> Click to <a href=\"{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + $("#query_issue_id").val() + "&force_refresh=1\">Force Refresh</a>");
+                            $task_result.html(query_issue_id + " has updated for: <b>" + json.life_time + "</b> Click to <a onclick=\"force_refresh_click('" +query_issue_id+ "')\">Force Refresh</a>");
                             construct_query_result_table(json.result);
                             stop_query = true;
                         }
