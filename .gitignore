@@ -10,3 +10,8 @@ _eric6project
 venv
 venv_old
 *.komodoproject
+*.xlsx
+*.xls
+*.db
+*_bak
+*.bak

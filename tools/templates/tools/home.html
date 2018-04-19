@@ -5,13 +5,10 @@
     <div class="container">
         <div class="row">
             {% verbatim %}
-            <div class="col-md-12" ng-app="excelApp">
-                <h2>AngularJS route application</h2>
+            <div class="col-md-12" ng-app="toolsApp">
+                <h2>SNS Test Tools</h2>
                 <ul>
-                    <li><a href="#!/">Homepage</a></li>
-                    <li><a href="#!/computers">Computer</a></li>
-                    <li><a href="#!/printers">Printer</a></li>
-                    <li><a href="#!/blabla">Others</a></li>
+                    <li><a href="#!/">AP Monitor</a></li>
                 </ul>
                 <div ng-controller="EditableRowCtrl">
                   <table class="table table-bordered table-hover table-condensed">
@@ -20,10 +17,17 @@
                       <td style="width:20%">SSID</td>
                       <td style="width:10%">Type</td>
                       <td style="width:20%">Password</td>
-                      <td style="width:15%">Owner</td>
+                      <td style="width:15%">
+                        <div ng-controller="SelectLocalCtrl">
+                            <a href="#" editable-select="filterOwner.value" e-ng-options="owner.value as owner.text for owner in owners">
+                                {{ filterOwner.text || "All" }}
+                            </a>
+                        </div>
+                      </td>
+                      <td style="width:20%">Aging</td>
                       <td style="width:20%">Edit</td>
                     </tr>
-                    <tr ng-repeat="ap in aps">
+                    <tr ng-repeat="ap in aps" ng-if="filterAp == '' || filterAp== ap.owner">
                       <td>
                         <span editable-text="ap.brand" e-name="brand" e-form="rowform" onbeforesave="checkBrand($data, ap.id)">
                           {{ ap.brand || 'empty' }}
@@ -47,6 +51,11 @@
                       <td>
                         <span editable-text="ap.owner" e-name="owner" e-form="rowform" onbeforesave="checkOwner($data, ap.id)">
                           {{ ap.owner || 'empty' }}
+                        </span>
+                      </td>
+                      <td>
+                        <span>
+                          {{ ap.aging || 'empty' }}
                         </span>
                       </td>
                       <td style="white-space: nowrap">
@@ -75,16 +84,42 @@
 {% endblock %}
 {% block user_js %}
 <script type="text/javascript">
-        var app = angular.module('excelApp', ['ngRoute', "xeditable"]);
-        app.run(['editableOptions', function(editableOptions) {
+        var app = angular.module('toolsApp', ['ngRoute', "xeditable"]);
+        app.run(['editableOptions', '$rootScope', function(editableOptions, $rootScope) {
             editableOptions.theme = 'bs3'; // bootstrap3 theme. Can be also 'bs2', 'default'
+            $rootScope.$on('changeFilterOwner', function(event, args) {
+                $rootScope.$broadcast('filterOwnerBroadcast', args);
+            });
         }]);
-        app.controller('EditableRowCtrl', function($scope, $filter, $http) {
-            $scope.aps = [
-                {id: 1, brand: 'Cisco', ssid: 'sns-test-2g', type: 'WEP', password: '1234567890', owner: 'for_sdm845'},
-                {id: 2, brand: 'Cisco', ssid: 'sns-test-5g', type: 'WPA2', password: '1234567890', owner: 'for_sdm845'},
+        app.controller('SelectLocalCtrl', function($scope, $filter, $http) {
+            $scope.owners = [
+                {text: "Owner: All", value: ''},
+                {text: "Owner: for_sdm845", value: 'for_sdm845'},
+                {text: "Owner: for_apq", value: 'for_apq'},
             ];
-
+            $scope.filterOwner = {text: "Owner: for_sdm845", value: 'for_sdm845'};
+            $scope.$watch('filterOwner.value', function(newVal, oldVal) {
+                if (newVal !== oldVal) {
+                    var selected = $filter('filter')($scope.owners, {value: $scope.filterOwner.value});
+                    if (selected.length) {
+                        $scope.filterOwner.text = selected[0].text;
+                        $scope.filterOwner.value = selected[0].value;
+                        $scope.$emit('changeFilterOwner', {value: $scope.filterOwner.value});
+                    }
+                    console.log("filter owner changed to: " + $scope.filterOwner.value);
+                }
+            });
+        });
+        app.controller('EditableRowCtrl', function($scope, $filter, $http) {
+            $scope.filterAp = "";
+            $scope.aps = [
+                {id: 1, brand: 'Cisco', ssid: 'sns-test-2g', type: 'WEP', password: '1234567890', owner: 'for_sdm845', aging: '15 mins'},
+                {id: 2, brand: 'Cisco', ssid: 'sns-test-5g', type: 'WPA2', password: '1234567890', owner: 'for_apq', aging: '25 mins'},
+            ];
+            $scope.$on('filterOwnerBroadcast', function(event, args) {
+                $scope.filterAp = args.value;
+                console.log("filterAp = " + $scope.filterAp);
+            });
             $scope.types = [];
             $scope.loadTypes = function() {
                 return $scope.types.length ? null : $http.get('/tools/api/ap_types').then(function(data) {
@@ -146,7 +181,8 @@
                     ssid: '',
                     type: null,
                     password: '',
-                    owner: ''
+                    owner: '',
+                    aging: ''
                 };
                 $scope.aps.push($scope.inserted);
             };
