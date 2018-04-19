@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>{% block title %}No title{% endblock %} - CBD</title>
+        <script src="/static/js/jquery-1.11.3.min.js"></script>
         <link href="/static/css/bootstrap.min.css" rel="stylesheet">
         <link href="/static/css/bootstrap-select.min.css" rel="stylesheet">
         <link href="/static/css/jquery.treetable.css" rel="stylesheet">
@@ -33,6 +34,7 @@
                         <li {% block nav_testcase_attr %}{% endblock %}><a href="{% url 'tbd_testcase' %}">TestCase</a></li>
                         <li {% block nav_testresult_attr %}{% endblock %}><a href="{% url 'tbd_testresult' %}">TestResult</a></li>
                         <li {% block nav_crash_attr %}{% endblock %}><a href="{% url 'tbd_crash' %}">Crash</a></li>
+                        <!--li {% block nav_testtime_attr %}{% endblock %}><a href="{% url 'testtime_page' %}">TestTime</a></li-->
 						<li {% block nav_utility_attr %}{% endblock %}><a href="{% url 'tbd_utility' %}">Utility</a></li>
                         <li class="disabled"><a href="#">To-Do</a></li>
                         <li class="dropdown pull-right">
@@ -52,7 +54,6 @@
             </div>
         </div>
         {% block content %}{% endblock %}
-        <script src="/static/js/jquery-1.11.3.min.js"></script>
         <script src="/static/js/jquery-ui.min.js"></script>
         <script src="/static/js/bootstrap.min.js"></script>
         <script src="/static/js/bootstrap-select.min.js"></script>

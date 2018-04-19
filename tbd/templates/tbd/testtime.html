@@ -1,0 +1,113 @@
+﻿{% extends 'tbd/base.html' %}
+{% block title %}TestTime{% endblock %}
+{% block nav_testtime_attr %}class="active"{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>
+                          <h1>
+                          {% if testbuild %}
+                          {{ testbuild }}
+                          {% else %}
+                          No project selection
+                          {% endif %}
+                          </h1>
+                        </p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="filtering">
+                            TestBuild:
+                            <select name="test_build" class="selectpicker">
+                                <option value>--select test build--</option>
+                                {% for bld in testbuilds %}
+                                    <option value="{{bld.testbuild}}"{% if testbuild and bld.testbuild == testbuild %} selected="selected"{% endif %}>{{forloop.counter}}. {{bld.testbuild}}</option>
+                                {% endfor %}
+                            </select>
+                            TestDut: 
+                            <select name="test_dut" class="selectpicker">
+                                <option value>--select test dut--</option>
+                                {% for dut in testduts %}
+                                    <option value="{{dut.testdut}}"{% if testdut and dut.testdut == testdut %} selected="selected"{% endif %}>{{forloop.counter}}. {{dut.testdut}}</option>
+                                {% endfor %}
+                            </select>
+                            TestDate: 
+                            <select name="test_date" class="selectpicker">
+                                <option value>--select date--</option>
+                                {% for tdate in testdates %}
+                                    <option value="{{tdate}}"{% if testdate and tdate == testdate %} selected="selected"{% endif %}>{{forloop.counter}}. {{tdate}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="TestResultContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block user_js %}
+<script type="text/javascript">
+    var cachedTestResultOptions = {'host': {}, 'build': {}, 'testaction': {}};
+    $(function(){
+        $('#TestResultContainer').jtable({
+            title: 'Test Time',
+            paging: true,
+            pageSize: 20,
+            selecting: false,
+            actions: {
+                listAction: '/api/testtime',
+                createAction: '/api/testtime_create',
+                updateAction: '/api/testtime_update',
+                deleteAction: '/api/testtime_delete'
+            },
+            fields: {
+                test_time_id:{
+                    key:true,
+                    list:false
+                },
+                test_build: {
+                    title: 'Build',
+                    width: '25%',
+                    defaultValue: ''
+                },
+                test_dut: {
+                    title: 'DUT',
+                    width: '10%',
+                    defaultValue: 0
+                },
+                test_date: {
+                    title: 'Date',
+                    width: '10%',
+                    create:false,
+                    edit:false,
+                    defaultValue: 0
+                },
+                test_times: {
+                    title: 'Time',
+                    width: '30%',
+                    defaultValue: ''
+                }
+            }
+        });
+
+        $('#TestResultContainer').jtable('load', {
+            'test_build': {% if testbuild %}"{{ testbuild }}"{% else %}null{% endif %},
+            'test_dut': {% if testdut %}"{{ testdut }}"{% else %}null{% endif %},
+            'test_date': {% if testdate %}"{{ testdate }}"{% else %}null{% endif %},
+        });
+        
+    });
+</script>
+{% endblock %}

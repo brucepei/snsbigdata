@@ -6,5 +6,7 @@ _eric6project
 *.prj
 .idea
 .DS_Store
+*.log
 venv
+venv_old
 *.komodoproject

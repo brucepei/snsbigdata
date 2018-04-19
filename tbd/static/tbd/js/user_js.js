@@ -121,7 +121,7 @@ var ajax_post_data = function(url, data, success_code) {
             url: url,
             processData: process_data,
             data: data,
-            timeout: 5000,
+            timeout: 15000,
             dataType: "json",
             success: function (json) {
                 if ('code' in json && 'result' in json) {
@@ -237,6 +237,24 @@ $("select[name='testcase']").change( function() {
     }
 });
 
+$("select[name='test_build']").change( function() {
+    window.location.href = '/utility?name=test_time&testbuild=' + $(this).val()
+});
+
+$("select[name='test_dut']").change( function() {
+    test_build = $("select[name='test_build'] option:selected").val()
+    window.location.href = '/utility?name=test_time&testbuild=' + test_build + '&testdut=' + $(this).val()
+});
+
+$("select[name='test_date']").change( function() {
+    test_build = $("select[name='test_build'] option:selected").val()
+    testdut = $("select[name='test_dut'] option:selected").val()
+    window.location.href = '/utility?name=test_time&testbuild=' + test_build + '&testdut=' + testdut + '&testdate=' + $(this).val()
+});
+
+$("select[name='query_build']").change( function() {
+    window.location.href = '/utility?name=get_result&query_build=' + $(this).val()
+});
 
 $(function(){
     if (typeof hosts != 'undefined') {
@@ -251,4 +269,5 @@ $(function(){
     if (typeof builds != 'undefined') {
         update_select_options($('select[name="td_build_version"]'), builds);
     }
+
 });

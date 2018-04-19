@@ -4,13 +4,18 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from collections import Iterable
-from tbd.models import Project, TestAction, Build, Crash, TestCase, Host, JIRA, TestResult
+from tbd.models import Project, TestAction, Build, Crash, TestCase, Host, JIRA, TestResult,TestTime
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
 from .tasks import query_issue_frequency
 from celery.result import AsyncResult
 from SnSBigData import celery_app
 import time
-import json
+import json,datetime
+from tools.write_excel_result import write_excel
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Sum
+
+# from dwebsocket.decorators import accept_websocket,require_websocket
 
 DEFAULT = {
     'jira': {'name': ''},
@@ -40,7 +45,7 @@ def seconds_to_humanable(seconds):
 
 def get_cached_issue_frequency(target_issue_id, check_result=False):
     if target_issue_id in Issue_Frequency_Buffer:
-        if (not check_result) or (check_result and Issue_Frequency_Buffer[target_issue_id].get('result', None)):
+        if (not check_result) or (check_result and (Issue_Frequency_Buffer[target_issue_id].get('result', None) or Issue_Frequency_Buffer[target_issue_id].get('exception', None))):
             print("get cached issue: {}".format(target_issue_id))
             return Issue_Frequency_Buffer[target_issue_id]
     for issue_id in Issue_Frequency_Buffer:
@@ -52,13 +57,16 @@ def get_cached_issue_frequency(target_issue_id, check_result=False):
     print("Cannot get cached issue!")
     return None
 
-def update_issue_frequency(issue_id, result=None, assoc_issues=None):
+def update_issue_frequency(issue_id, result=None, assoc_issues=None, exception=None):
     cached_result = get_cached_issue_frequency(issue_id)
     if cached_result:
         if result:
             cached_result['result'] = result
             cached_result['update_at'] = time.time()
             cached_result['assoc_issues'] = assoc_issues
+        elif exception:
+            cached_result['exception'] = exception
+            cached_result['update_at'] = time.time()
         else:
             print("Update cached issue {}, but no result found!".format(issue_id))
     else:
@@ -220,7 +228,7 @@ def ajax_running_project_list(request):
                     "DisplayText": bld.short_name,
                     "Value": bld.id
                 })
-                if running_build_id and bld.id == running_build_id:
+                if running_build_id and str(bld.id) == running_build_id:
                     target_build = bld
                     total_hours = target_build.test_hours
                     try:
@@ -1551,10 +1559,16 @@ def ajax_issue_frequency_result(request):
             msg = {'done': 0, 'result': None, 'life_time': 0}
             if cached_result:
                 result = cached_result.get('result', None)
+                exception = cached_result.get('exception', None)
                 if result:
                     life_time = time.time() - cached_result['update_at']
                     msg['done'] = 1
                     msg['result'] = result
+                    msg['life_time'] = seconds_to_humanable(life_time)
+                elif exception:
+                    life_time = time.time() - cached_result['update_at']
+                    msg['done'] = 1
+                    msg['exception'] = exception
                     msg['life_time'] = seconds_to_humanable(life_time)
                 else:
                     msg['result'] = "querying for {}...".format(seconds_to_humanable(time.time() - cached_result['start_at']))
@@ -1894,6 +1908,8 @@ def auto_testaction_info(request):
                     if ta_name:
                         testaction, created = TestAction.objects.get_or_create(name=ta_name, project=project)
                     if host and testaction:
+                        if is_pass:
+                            testtime=record_test_time(test_build =build,test_dut = host,test_date = str(datetime.date.today()))
                         try:
                             testresult = TestResult.objects.get(testaction=testaction, build=build, host=host)
                         except Exception as err:
@@ -2036,9 +2052,10 @@ def auto_task_result(request):
         issue_id = request.POST.get('issue_id', None)
         issue_result = request.POST.get('issue_result', None)
         assoc_issues = request.POST.get('assoc_issues', None)
+        exception = request.POST.get('exception', None)
         if issue_id is not None:
             print("Got issue {} result={}".format(issue_id, issue_result))
-            update_issue_frequency(issue_id, issue_result, assoc_issues)
+            update_issue_frequency(issue_id, issue_result, assoc_issues, exception)
             msg = "Update cached request!"
         else:
             err_code = -2
@@ -2226,6 +2243,8 @@ def utility_page(request):
     support_utilities = {
         'issue_frequency': 'Issue Frequency',
         'ping_workers': 'Ping Workers',
+        'test_time':'testtime',
+        'get_result':'getresult',
     }
     utility_args = {'support_utilities': support_utilities}
     if utility_name == "issue_frequency":
@@ -2240,6 +2259,289 @@ def utility_page(request):
     elif utility_name == "ping_workers":
         utility_args['utility_name'] = utility_name
         utility_template = 'tbd/utility_{}.html'.format(utility_name)
+    elif utility_name == "test_time":
+        utility_args['utility_name'] = utility_name
+        utility_template = 'tbd/utility_{}.html'.format(utility_name)
+        
+        test_build = request.GET.get('testbuild', '')
+        test_dut = request.GET.get('testdut', '')
+        test_date = request.GET.get('testdate', '')
+        if test_build:
+            test_build = Build.objects.filter(version=test_build)[0]
+        if test_dut:
+            test_dut = Host.objects.get(name=test_dut,project=test_build.project)
+        
+        testbuilds = Build.objects.values("version").distinct()
+        if test_build :
+            testduts = TestTime.objects.filter(testbuild=test_build).values("testdut__name").distinct()
+            if test_dut:
+                testdates_array = TestTime.objects.filter(testbuild=test_build,testdut=test_dut).values("testdate").distinct()
+                testdates = []
+                for i in testdates_array:
+                    testdates.append(str(i['testdate']))
+            else:
+                testdates_array = TestTime.objects.filter(testbuild=test_build).values("testdate").distinct()
+                testdates = []
+                for i in testdates_array:
+                    testdates.append(str(i['testdate']))
+        else:
+            testduts = []
+            testdates = []
+        utility_args.update({'testbuild': test_build.version if test_build else '', 'testbuilds': testbuilds,'testdut': test_dut.name if test_dut else '', 'testduts': testduts,'testdate': test_date, 'testdates': testdates})
+        return render(request, utility_template, utility_args)
+    elif utility_name == 'get_result':
+        testbuilds = Build.objects.values("version").distinct()
+        utility_args['utility_name'] = utility_name
+        utility_template = 'tbd/utility_{}.html'.format(utility_name)
+        
+        query_build = request.GET.get('query_build', '')
+        utility_args['query_build']=query_build
+        utility_args['testbuilds']=testbuilds
+        if query_build:
+            try:
+                query_tst_build = Build.objects.filter(version=query_build)[0]
+                test_result=TestResult.objects.filter(build=query_tst_build)
+                res = write_excel([test_result,])
+ 
+                response = HttpResponse(content_type='application/vnd.ms-excel') 
+                response['Content-Disposition'] = 'attachment; filename=beifen'+time.strftime('%Y%m%d',time.localtime(time.time()))+'.xls' 
+                res.save(response)
+                return response
+            except Exception as error:
+                print "error: {}".format(error)
+        return render(request, utility_template, utility_args)
     else:
         utility_template = 'tbd/utility.html'
     return render(request, utility_template, utility_args)
+
+@csrf_exempt    
+def ajax_test_time(request):
+    post_data = json.loads(request.body)
+    test_build = post_data.get("testbuild",None)
+    test_dut = post_data.get("testdut",None)
+    test_date = post_data.get("testdate",None)
+    test_project = post_data.get("testproject",None)
+    #test_time = post_data.get("testtime",None)
+    try:
+        test_project = Project.objects.get(name=test_project)
+    except Exception as err:
+        return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
+
+    try:
+        if test_build:
+            test_build = Build.objects.filter(version=test_build)[0]
+        else:
+            test_build = test_project.build_set.filter(is_stop=False)
+            if test_build:
+                test_build = test_build[0]
+        test_dut = Host.objects.get(name=test_dut,project=test_project)
+    except Exception as err:
+        return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
+    
+    if not test_date:
+        test_date = str(datetime.date.today())
+    if (test_build is not None) and (test_dut is not None) and (test_date is not None):
+        testtime=record_test_time(test_build =test_build,test_dut = test_dut,test_date = test_date)
+        return JsonResponse({'Result':'OK', 'dut':test_dut.name if test_dut else '','build':test_build.version if test_build else '','testcount':testtime.testcount})
+    return JsonResponse({'Result':'Fail', 'reason':'build/dut/date exist None'})
+    
+def record_test_time(test_build = None,test_dut = None,test_date = None):
+    test_date = datetime.date(*map(lambda x:int(x),test_date.split('-')))
+    today_date = str(datetime.datetime.today())[:10]
+    start_time = datetime.datetime.strptime('{} 00:00:00'.format(today_date),'%Y-%m-%d %H:%M:%S')
+    time_section = (datetime.datetime.now() - start_time).seconds/(30*60)
+    testtime = TestTime.objects.get_or_create(testbuild=test_build,testdut=test_dut,testdate=test_date,timesection=time_section)[0]
+    if testtime.testcount != 1:
+        testtime.testcount = 1
+        testtime.save()
+    return testtime
+    
+def testtime_page(request):
+    test_build = request.GET.get('testbuild', '')
+    test_dut = request.GET.get('testdut', '')
+    test_date = request.GET.get('testdate', '')
+    
+    try:
+        if test_build:
+            test_build = Build.objects.filter(version=test_build)[0]
+        if test_dut:
+            test_dut = Host.objects.get(name=test_dut,project=test_build.project)
+    except Exception as err:
+        return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
+    
+    testbuilds = Build.objects.values("version").distinct()
+    if test_build :
+        testduts = TestTime.objects.filter(testbuild=test_build).values("testdut__name").distinct()
+        if test_dut:
+            testdates_array = TestTime.objects.filter(testbuild=test_build,testdut=test_dut).values("testdate").distinct()
+            testdates = []
+            for i in testdates_array:
+                testdates.append(str(i['testdate']))
+        else:
+            testdates = []
+    else:
+        testduts = []
+        testdates = []
+
+    return render(request, 'tbd/testtime.html', {
+        'testbuild': test_build.version if test_build else '', 'testbuilds': testbuilds,
+        'testdut': test_dut.name if test_dut else '', 'testduts': testduts,
+        'testdate': test_date, 'testdates': testdates,
+    })
+
+    
+def testtime_api(request):
+    print("request testresult list:" + repr(request.POST))
+    records = []
+    total_count = 0
+    if request.method == 'POST':
+        test_build = request.POST.get('test_build', None)
+        record_build= test_build
+        test_dut = request.POST.get('test_dut', None)
+        record_dut = test_dut
+        test_date = request.POST.get('test_date', None)
+        record_date = test_date
+        start_index = int(request.GET.get('jtStartIndex', 0))
+        page_size = int(request.GET.get('jtPageSize', 20))
+        
+        try:
+            if test_build:
+                test_build = Build.objects.filter(version=test_build)[0]
+            if test_dut:
+                test_dut = Host.objects.get(name=test_dut,project=test_build.project)
+
+        except Exception as err:
+            return JsonResponse({'Result':'Error','Records': [],'Message':'error info : {}'.format(str(err))})
+        
+        if test_build:
+            if test_date:
+                test_date = datetime.date(*map(lambda x:int(x),test_date.split('-')))
+                
+            if test_dut and test_date:
+                time_objs = TestTime.objects.filter(testbuild=test_build,testdut=test_dut,testdate=test_date)
+                time_objs = time_objs.values('testbuild__version','testdut__name','testdate').annotate(testcount=Sum('testcount'))
+            elif not test_dut and not test_date:
+                time_objs = TestTime.objects.filter(testbuild=test_build)
+                #time_objs = time_objs.values('testbuild__version').annotate(testcount=Sum('testcount'))
+                time_objs = time_objs.values('testdut__name').annotate(testcount=Sum('testcount'))
+            elif not test_dut:
+                time_objs = TestTime.objects.filter(testbuild=test_build,testdate=test_date)
+                time_objs = time_objs.values('testdut__name').annotate(testcount=Sum('testcount'))
+            else:
+                time_objs = TestTime.objects.filter(testbuild=test_build,testdut=test_dut)
+                time_objs = time_objs.values('testdate').annotate(testcount=Sum('testcount'))
+                
+            #time_objs = time_objs.values('testbuild__version','testdut__name','testdate').annotate(testcount=Sum('testcount'))
+        else:
+            time_objs = []
+        if len(time_objs) > start_index and len(time_objs) > page_size+start_index:
+            all_ta = time_objs[start_index: page_size+start_index]
+        else:
+            all_ta = time_objs[start_index:]
+        for ta in all_ta:
+            if test_dut and test_date:
+                records.append({
+                    #'test_time_id':ta['id'],
+                    'test_build': ta['testbuild__version'],
+                    'test_dut': ta['testdut__name'],
+                    'test_date': str(ta['testdate']),
+                    'test_count': ta['testcount'],
+                    #'test_section':ta['timesection'],
+                })
+            elif not test_dut and not test_date:
+                records.append({
+                    #'test_time_id':ta['id'],
+                    'test_build': record_build,
+                    'test_dut': ta['testdut__name'],
+                    'test_date': record_date,
+                    'test_count': ta['testcount'],
+                    #'test_section':ta['timesection'],
+                })
+            elif not test_dut:
+                records.append({
+                    #'test_time_id':ta['id'],
+                    'test_build': record_build,
+                    'test_dut': ta['testdut__name'],
+                    'test_date': record_date,
+                    'test_count': ta['testcount'],
+                    #'test_section':ta['timesection'],
+                })
+            else:
+                records.append({
+                    #'test_time_id':ta['id'],
+                    'test_build': record_build,
+                    'test_dut': record_dut,
+                    'test_date': str(ta['testdate']),
+                    'test_count': ta['testcount'],
+                    #'test_section':ta['timesection'],
+                })
+        total_count = len(time_objs)
+    return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
+    
+def testtime_create(request):
+    #{u'test_times': [u'13'], u'test_dut': [u'0'], u'test_date': [u'0'], u'test_build': [u'wert']}>
+    test_count=request.POST.get('test_count',None)
+    test_section=request.POST.get('test_section',None)
+    test_dut=request.POST.get('test_dut',None)
+    test_date=datetime.date.today()
+    test_build=request.POST.get('test_build',None)
+    
+    try:
+        if test_build:
+            test_build = Build.objects.filter(version=test_build)[0]
+        if test_dut:
+            test_dut = Host.objects.get(name=test_dut,project=test_build.project)
+    except Exception as err:
+        return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
+    if test_build and test_dut and test_count and test_section:
+        try:
+            record = {}
+            Add_time = TestTime.objects.get_or_create(testdate=test_date,testbuild=test_build,testdut=test_dut,testcount=int(test_count),timesection=int(test_section))
+            if Add_time:
+                Add_time = Add_time[0]
+                record={'test_time_id':Add_time.id,'test_section':Add_time.timesection,'test_count':Add_time.testcount,'test_dut':Add_time.testdut.name,'test_build':Add_time.testbuild.version,'test_date':str(Add_time.testdate)}
+                return JsonResponse({'Result': 'OK', "Record": record})
+        except Exception as err:
+            return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
+    
+def testtime_update(request):
+    #print request.POST
+    test_count=request.POST.get('test_count',None)
+    test_time_id=request.POST.get('test_time_id',None)
+    if test_time_id and test_count:
+        try:
+            record={}
+            mdfy_time = TestTime.objects.filter(id=int(test_time_id))
+            if mdfy_time:
+                update_time = mdfy_time[0]
+                update_time.testcount = test_count
+                update_time.save()
+                record={'test_time_id':update_time.id,'test_count':update_time.testcount,'test_dut':update_time.testdut.name,'test_build':update_time.testbuild.version,'test_date':str(update_time.testdate)}
+            return JsonResponse({'Result': 'OK', "Record": record})
+        except Exception as err:
+            return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
+    
+def testtime_delete(request):
+    test_time_id=request.POST.get('test_time_id',None)
+    if test_time_id:
+        try:
+            delete_time = TestTime.objects.filter(id=int(test_time_id))
+            if delete_time:
+                delete_time[0].delete()
+            return JsonResponse({'Result': 'OK'})
+        except Exception as err:
+            return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
+            
+            
+# @accept_websocket
+# def echo(request):
+    # if not request.is_websocket():
+        # try:
+            # message = request.GET['message']
+            # return HttpResponse(message)
+        # except:
+            # return render(request,'index.html')
+    # else:
+        # while True:
+            # time.sleep(5)
+            # request.websocket.send("hahawolaile")

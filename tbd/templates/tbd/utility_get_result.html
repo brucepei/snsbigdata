@@ -1,0 +1,58 @@
+﻿{% extends 'tbd/utility.html' %}
+
+{% block user_style %}
+{{ block.super }}
+<link href="/static/css/chosen.css" type="text/css" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href ="/static/tbd/css/get_result.css">
+<script type="text/javascript" src="/static/js/chosen.jquery.js"></script>
+
+{% endblock %}
+
+{% block getresult_block %}
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="filtering">
+                            <!--button id="connect_websocket">connect</button>
+                            <button id="send_message">send_message</button>
+                            <button id="close_websocket">close_websocket</button>
+                            <input id="message" /-->
+                            TestBuild:
+                            <select data-placeholder="Type build key" name="query_build" style="width:auto" class="myselect chosen-select-no-results" tabindex="10">
+                            <option value>--select query build--</option>
+                            {% for bld in testbuilds %}
+                                <option value="{{bld.version}}"{% if query_build and bld.version == query_build %} selected="selected"{% endif %}>{{forloop.counter}}. {{bld.version}}</option>
+                            {% endfor %}
+                            </select>
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="TestResultContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block user_js %}
+    <script type="text/javascript">
+        var config = {
+        　　'.chosen-select':{},
+        　　'.chosen-select-deselect':{allow_single_deselect:true},
+        　　'.chosen-select-no-single':{disable_search_threshold:10},
+        　　'.chosen-select-no-results':{no_results_text:'Oops, nothing found!'},
+        　　'.chosen-select-width':{width:"30%"}
+        }
+        for (var selector in config) {
+        　　$(selector).chosen(config[selector]);
+        } 
+    </script>
+    
+{% endblock %}

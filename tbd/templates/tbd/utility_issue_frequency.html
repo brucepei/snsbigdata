@@ -3,6 +3,7 @@
 {% block issue_frequency_block %}
 <span>Issue ID:</span><input id="query_issue_id" type="text" value="{{ issue_id }}"/><input type="button" id="query_issue_btn" value="Query" /input><br/>
 <span id="task_result"></span>
+<img id="task_result_loading" class="hidden" src="/static/images/loading.gif" height="16px" />
 <table id="test_table">
     <caption>
       <a id="treetable_unfold_link" href="#"><img src="/static/images/filterunfold.png" height="16px" />Unfold All</a>
@@ -46,11 +47,14 @@
           $(".selected").not(this).removeClass("selected");
           $(this).toggleClass("selected");
         });
-        var jira_cr_pattern = new RegExp( "^(?:cr|wcndebug\-)\\d{5,}$", "i" );
+        var jira_cr_pattern = new RegExp( "^(?:cr|CNSSDEBUG\-)\\d{5,}$", "i" );
         // Query button: refresh URL
         $("#query_issue_btn").click(function() {
             var issue_id = $.trim($("#query_issue_id").val());
             if (jira_cr_pattern.test(issue_id)) {
+                $(this).attr('disabled',"true").addClass('disabled');
+                $("#task_result_loading").removeClass('hidden');
+                $("#task_result").html('');
                 window.location.href="{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + issue_id;
             } else {
                 alert_box("Unsupport issue ID", "invalid issue '" +issue_id+ "', it must be CR or JIRA ID!");
@@ -99,7 +103,9 @@
         
         force_refresh_click = function(issue_id) {
             confirm_box("Force Refresh?", "Force refresh would clear buffer and query latest result, are you sure?", function () {
-                //alert_box("haha");
+                $("#query_issue_btn").attr('disabled',"true").addClass('disabled');
+                $("#task_result_loading").removeClass('hidden');
+                $("#task_result").html('');
                 window.location.href="{% url 'tbd_utility' %}?name={{ utility_name }}&issue_id=" + issue_id + "&force_refresh=1";
             });
             return false;
@@ -120,10 +126,14 @@
                     if ('done' in json) {
                         if (json.done == 0) {
                             $task_result.html(json.result);
-                            setTimeout(update_task_status, 3000)
+                            setTimeout(update_task_status, 5000)
                         } else {
-                            $task_result.html(query_issue_id + " has updated for: <b>" + json.life_time + "</b> Click to <a onclick=\"force_refresh_click('" +query_issue_id+ "')\">Force Refresh</a>");
-                            construct_query_result_table(json.result);
+                            if (json.result) {
+                                $task_result.html(query_issue_id + " has updated for: <b>" + json.life_time + "</b> Click to <a onclick=\"force_refresh_click('" +query_issue_id+ "')\">Force Refresh</a>");
+                                construct_query_result_table(json.result);
+                            } else if (json.exception) {
+                                $task_result.html(query_issue_id + " has updated for: " + json.life_time + "Click to <a onclick=\"force_refresh_click('" +query_issue_id+ "')\">Force Refresh</a><br/><b>Exception occurred:</b><br/>" +json.exception+ "!");
+                            }
                             stop_query = true;
                         }
                     } else {
@@ -131,8 +141,8 @@
                         stop_query = true;
                     }
                     if (stop_query) {
-                        $("#query_issue_btn").removeAttr("disabled");
-                        $("#query_issue_btn").removeClass("disabled");
+                        $("#query_issue_btn").removeAttr("disabled").removeClass("disabled");
+                        $("#task_result_loading").addClass('hidden');
                     }
                 }
             );
@@ -140,6 +150,7 @@
         var query_issue_id = {% if issue_id %}"{{ issue_id }}"{% else %}null{% endif %};
         if (query_issue_id != null) {
             $("#query_issue_btn").attr('disabled',"true").addClass('disabled');
+            $("#task_result_loading").removeClass('hidden');
             update_task_status();
         }
 

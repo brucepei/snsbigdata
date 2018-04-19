@@ -256,4 +256,13 @@ class Crash(models.Model):
     def __unicode__(self):
         return "Crash {}({})".format(self.host.name, self.path)
         
-
+            
+class TestTime(models.Model):
+    testbuild = models.ForeignKey(Build)
+    testdut = models.ForeignKey(Host)
+    testdate = models.DateField(auto_now_add=True)
+    testcount = models.IntegerField(default=0)
+    timesection = models.IntegerField(default=0)
+    
+    class Meta:
+        unique_together = ('testbuild','testdut','testdate','timesection')

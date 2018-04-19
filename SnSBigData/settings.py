@@ -25,9 +25,9 @@ SECRET_KEY = 'gnd2!4obx-f3i^tczk%th(en##f_@b8my=qcicl#(y8_8pkg1*'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
-
+ALLOWED_HOSTS = ['*']
+INTERNAL_IPS = ['10.231.194.210', '10.253.39.223']
+# DEBUG_TOOLBAR_CONFIG = {  'JQUERY_URL' : r"/static/js/jquery-1.11.3.min.js"}
 # Application definition
 
 INSTALLED_APPS = [
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'tbd',
     'tools'
 	# 'django_celery_results',
+    # 'debug_toolbar',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -52,6 +53,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'SnSBigData.urls'
@@ -153,8 +155,9 @@ REST_FRAMEWORK = {
     ]
 }
 
-if not os.path.isdir(os.path.join(STATIC_ROOT, 'logs')):
-    os.mkdir(os.path.join(STATIC_ROOT, 'logs'))
+for path in (STATIC_ROOT, os.path.join(STATIC_ROOT, 'logs')):
+    if not os.path.isdir(path):
+        os.mkdir(path)
 
 LOGGING = {
     'version': 1,

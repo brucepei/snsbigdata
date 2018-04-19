@@ -26,6 +26,10 @@
                         {% block issue_frequency_block %}{% endblock %}
                     {% elif utility_name == "ping_workers" %}
                         {% block ping_workers_block %}{% endblock %}
+                    {% elif utility_name == "test_time" %}
+                        {% block testtime_block %}{% endblock %}
+                    {% elif utility_name == "get_result" %}
+                        {% block getresult_block %}{% endblock %}
                     {% endif %}
 				</div>
             </div>
