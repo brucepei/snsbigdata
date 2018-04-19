@@ -256,4 +256,4 @@ class Crash(models.Model):
     def __unicode__(self):
         return "Crash {}({})".format(self.host.name, self.path)
         
-            
+

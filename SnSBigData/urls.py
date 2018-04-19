@@ -13,9 +13,18 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.contrib import admin
+from rest_framework import routers
 import tbd.views
+import tools.views
+
+
+# Routers provide an easy way of automatically determining the URL conf.
+router = routers.DefaultRouter()
+router.register(r'users', tools.views.UserViewSet)
+router.register(r'groups', tools.views.GroupViewSet)
+router.register(r'aps', tools.views.ApViewSet)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -30,4 +39,10 @@ urlpatterns = [
     url(r'^utility$', tbd.views.utility_page, name='tbd_utility'),
     url(r'^ajax/([^/]+)$', tbd.views.ajax, name='ajax'),
     url(r'^auto/([^/]+)$', tbd.views.auto, name='auto'),
+
+    url(r'^tools$', tools.views.home_page, name='tools_home'),
+    url(r'^tools/api/', include(router.urls)),
+    url(r'^tools/ap_list', tools.views.ap_list),
+    url(r'^tools/api/ap_types', tools.views.ApTypesView.as_view()),
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
