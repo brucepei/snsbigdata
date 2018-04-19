@@ -1,0 +1,51 @@
+@media (min-width: 768px ) {    
+    .striped {
+        background-color: #f9f9f9;
+    }
+    
+    .path_input {
+        width: 600px;
+    }
+    
+    .hidden {
+        display:none;
+    }
+    
+    input.disabled {
+        border: 1px solid #DDD;
+        background-color: #F5F5F5;
+        color:#ACA899;
+    }
+
+    div.filtering {
+        margin-bottom: 5px;
+        border: 1px solid #999;
+        padding: 10px;
+        background-color: #EEE;
+    }
+    
+    div.container {
+        padding-top: 1em;
+    }
+    
+    div.box {
+        border: none;
+        margin: 0 0 2em 0;
+        padding: 0;
+    }
+    div.box h5 {
+        background: #e6e6e6;
+        border: 1px solid #aaaaaa;
+        width: 50%;
+        padding: 1px;
+        margin: 0;
+        text-align: center;
+        border-style: solid solid none solid;
+        font-size: 1em;
+    }
+    div.box div.body {
+        background: transparent;
+        border: 1px solid #aaaaaa;
+        padding: 1em;
+    }
+}
