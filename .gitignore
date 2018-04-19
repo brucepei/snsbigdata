@@ -4,5 +4,7 @@ __pycache__
 _eric6project
 *.e4p
 *.prj
+.idea
+.DS_Store
 venv
 *.komodoproject
