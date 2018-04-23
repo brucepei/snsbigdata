@@ -109,6 +109,16 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
         console.log(data);
         return $http.post('/tools/api/ap', {data: data, method: 'save'}).then(function(resp) {
             console.log("create ap ok!");
+            console.log(resp.data);
+            if (id == -1) {
+                for (var i=0; i < $scope.aps.length; i++) {
+                    if ($scope.aps[i].id == -1) {
+                        $scope.aps[i].id = resp.data.id;
+                        console.log("correct id to " + $scope.aps[i].id);
+                        break;
+                    }
+                }
+            }
             return;
         },
         function(resp) {
@@ -133,7 +143,7 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
     // add user
     $scope.addAp = function() {
         $scope.inserted = {
-            id: $scope.aps.length+1,
+            id: -1,
             brand: '',
             ssid: '',
             type: null,

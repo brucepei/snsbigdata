@@ -73,11 +73,11 @@ def ap(request):
             if method == 'save':
                 serializer = APSerializer(data=data)
                 if serializer.is_valid():
-                    logger.debug("post data={}".format(serializer.validated_data))
+                    logger.debug("save data={}".format(data))
                     # data = serializer.validated_data
-                    try:
+                    if data['id'] > 0:
                         ap = Ap.objects.get(id=data['id'])
-                        logger.debug("Get ap {}".format(ap))
+                        logger.debug("Get ap {}={}".format(data['id'], ap))
                         ap.brand = data['brand']
                         ap.ssid = data['ssid']
                         ap.password = data['password']
@@ -86,16 +86,27 @@ def ap(request):
                         if 'aging' in data and data['aging']:
                             ap.update_aging()
                         ap.save()
-                    except Exception as err:
-                        logger.debug("Cannot get ap id={}, so create it: {}".format(data['id'], err))
+                    else:
+                        logger.debug("No ap id, so create it!")
+                        del data['id']
                         if 'aging' in data:
                             del data['aging']
                         ap = Ap.objects.create(**data)
+                        data = ApSerializer(ap).data
                     return JsonResponse(data, status=201)
+            if method == 'refresh':
+                logger.debug("refresh data={}".format(data))
+                if data['ssid']:
+                    ap = Ap.objects.get(ssid=data['ssid'])
+                    logger.debug("Get ap {}={}".format(data['ssid'], ap))
+                    ap.update_aging()
+                    ap.save()
+                    data = ApSerializer(ap).data
+                return JsonResponse(data, status=201)
             elif method == 'delete':
                 ap = Ap.objects.get(**data)
                 ap.delete()
                 return JsonResponse({}, status=201)
         except Exception as err:
-            logger.error("failed to save ap: {}".format(err))
+            logger.error("failed to edit ap: {}".format(err))
             return JsonResponse({'error': err.message}, status=400)
