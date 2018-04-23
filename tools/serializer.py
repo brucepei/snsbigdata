@@ -36,11 +36,12 @@ class ApSerializer(serializers.HyperlinkedModelSerializer):
 
 class APSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
+    brand = serializers.CharField(max_length=30, allow_blank=True)
     ssid = serializers.CharField(max_length=20)
     type = serializers.ChoiceField(choices=Ap.ENCRYPTION_TYPE, default='OPEN')
-    password = serializers.CharField(max_length=20)
+    password = serializers.CharField(max_length=20, allow_blank=True)
     owner = serializers.CharField(max_length=30)
-    aging = serializers.CharField(max_length=20)
+    aging = serializers.FloatField(allow_null=True, required=False)
 
     def create(self, validated_data):
         return Ap.objects.create(**validated_data)

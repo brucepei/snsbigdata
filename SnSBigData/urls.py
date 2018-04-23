@@ -51,6 +51,7 @@ urlpatterns = [
     url(r'^tools/api/', include(router.urls)),
     url(r'^tools/ap_list', tools.views.ap_list),
     url(r'^tools/api/ap_types', tools.views.ApTypesView.as_view()),
+    url(r'^tools/api/ap', tools.views.ap),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 
 ]

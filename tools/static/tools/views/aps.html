@@ -43,7 +43,7 @@
       </td>
       <td>
         <span>
-          {{ isDefined(ap.aging) && ap.aging >= 0 ? ap.aging + ' minutes' : 'empty' }}
+          {{ isNumber(ap.aging) && ap.aging >= 0 ? ap.aging + ' minutes' : 'Null' }}
         </span>
       </td>
       <td style="white-space: nowrap">
@@ -57,11 +57,11 @@
         </form>
         <div class="buttons" ng-show="!rowform.$visible">
           <button type="button" class="btn btn-primary" ng-click="rowform.$show()">edit</button>
-          <button type="button" class="btn btn-danger" ng-click="removeAp($index)">del</button>
+          <button type="button" class="btn btn-danger" ng-click="removeAp($index, ap.id)">del</button>
         </div>
       </td>
     </tr>
   </table>
 
-  <button type="button" class="btn btn-default" ng-click="addAp()">Add row</button>
+  <button type="button" class="btn btn-default" ng-click="addAp()">New AP</button>
 </div>

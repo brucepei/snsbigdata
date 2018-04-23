@@ -6,6 +6,7 @@ from rest_framework import viewsets, serializers, status, permissions
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
+from datetime import datetime
 from .serializer import UserSerializer, GroupSerializer, ApSerializer, APSerializer
 from .models import Ap
 import logging
@@ -43,30 +44,58 @@ class ApTypesView(APIView):
         logger.debug("get {}, response data: {}".format(request.path, response.data))
         return response
 
+class ApView(APIView):
+    permission_classes = (permissions.AllowAny,)
+    def post(self, request, *args, **kw):
+        response = Response({}, status=status.HTTP_200_OK)
+        logger.debug("get {}, response data: {}".format(request.data, response.data))
+        return response
+
+        
 @csrf_exempt
 def ap_list(request):
     if request.method == 'GET':
         aps = Ap.objects.all()
         for ap in aps:
-            print("aging time={}".format(ap.aging_time()))
+            print("ap {} {} aging time={}".format(ap.id, ap.ssid, ap.aging_time()))
             ap.aging = ap.aging_time()
         serializer = APSerializer(aps, many=True)
         return JsonResponse(serializer.data, safe=False)
-    elif request.method == 'POST':
+        
+@csrf_exempt
+def ap(request):
+    if request.method == 'POST':
         logger.debug("post body={}".format(request.body))
         data = JSONParser().parse(request)
-        serializer = ApSerializer(data=data)
-        if serializer.is_valid():
-            logger.debug("post data={}".format(serializer.validated_data))
-            serializer.save()
-            return JsonResponse(serializer.data, status=201)
-        return JsonResponse(serializer.errors, status=400)
-
-@csrf_exempt
-def ap(request, pk):
-    try:
-        ap = Ap.objects.get(pk)
-    except Ap.DoesNotExist:
-        return HttpResponse(status=404)
-    if request.method == 'GET':
-        ap = ApSerializer(ap)
+        method = data['method']
+        data = data['data']
+        try:
+            if method == 'save':
+                serializer = APSerializer(data=data)
+                if serializer.is_valid():
+                    logger.debug("post data={}".format(serializer.validated_data))
+                    # data = serializer.validated_data
+                    try:
+                        ap = Ap.objects.get(id=data['id'])
+                        logger.debug("Get ap {}".format(ap))
+                        ap.brand = data['brand']
+                        ap.ssid = data['ssid']
+                        ap.password = data['password']
+                        ap.type = data['type']
+                        ap.owner = data['owner']
+                        if 'aging' in data and data['aging']:
+                            ap.update_aging()
+                        ap.save()
+                    except Exception as err:
+                        logger.debug("Cannot get ap id={}, so create it: {}".format(data['id'], err))
+                        if 'aging' in data:
+                            del data['aging']
+                        ap = Ap.objects.create(**data)
+                    return JsonResponse(data, status=201)
+            elif method == 'delete':
+                ap = Ap.objects.get(**data)
+                ap.delete()
+                return JsonResponse({}, status=201)
+        except Exception as err:
+            logger.error("failed to save ap: {}".format(err))
+            return JsonResponse({'error': err.message}, status=400)

@@ -1,14 +1,20 @@
 console.log("test aps.js");
 app.run(['editableOptions', '$rootScope', function(editableOptions, $rootScope) {
     editableOptions.theme = 'bs3'; // bootstrap3 theme. Can be also 'bs2', 'default'
+    $rootScope.$on('getFilterEvent', function (event, args) {
+        $rootScope.$broadcast('applyFilterEvent', args);
+    });
 }]);
 app.controller('SelectLocalCtrl', function($scope, $filter, $http, $log, $location) {
-    $scope.owners = [
-        {text: "Owner: All", value: ''},
-        {text: "Owner: for_sdm845", value: 'for_sdm845'},
-        {text: "Owner: for_apq", value: 'for_apq'},
-    ];
-    $scope.filterOwner = {text: "Owner: for_sdm845", value: 'for_sdm845'};
+    // $scope.owners = [
+        // {text: "Owner: All", value: ''},
+        // {text: "Owner: for_sdm845", value: 'for_sdm845'},
+        // {text: "Owner: for_apq", value: 'for_apq'},
+    // ];
+    $scope.$on('applyFilterEvent', function (event, args) {
+        $scope.owners = args.options;
+        $scope.filterOwner = {text: "Owner: " + args.selected, value: args.selected}
+    });
     $scope.$watch('filterOwner.value', function(newVal, oldVal) {
         if (newVal !== oldVal) {
             var selected = $filter('filter')($scope.owners, {value: $scope.filterOwner.value});
@@ -26,7 +32,7 @@ app.controller('SelectLocalCtrl', function($scope, $filter, $http, $log, $locati
 });
 app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $log) {
     var query_args = $location.search();
-    $scope.isDefined = angular.isDefined;
+    $scope.isNumber = angular.isNumber;
     if (query_args.filter) {
         $scope.filterAp = query_args.filter;
         $log.debug("set filter AP from url: " + $scope.filterAp);
@@ -36,17 +42,25 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
     }
     $http.get('/tools/ap_list').then(function(resp) {
         var ap_data = resp.data;
+        var owners = [{text: "Owner: All", value: ''}];
         if (ap_data) {
             $log.debug(ap_data);
             $scope.aps = ap_data;
+            angular.forEach(ap_data, function(ap, index, array) {
+                for (var i=0; i < owners.length; i++) {
+                    if (owners[i].value == ap.owner) {
+                        return;
+                    }
+                }
+                owners.push({text: "Owner: " + ap.owner, value: ap.owner});
+            });
+            console.log("Got owners:");
+            console.log(owners);
+            $scope.$emit('getFilterEvent', {'selected': $scope.filterAp, 'options': owners});
         } else {
             $log.debug("Cannot get ap data from remote!")
         }
     });
-    // $scope.aps = [
-    //     {id: 1, brand: 'Cisco', ssid: 'sns-test-2g', type: 'WEP', password: '1234567890', owner: 'for_sdm845', aging: '15 mins'},
-    //     {id: 2, brand: 'Cisco', ssid: 'sns-test-5g', type: 'WPA2', password: '1234567890', owner: 'for_apq', aging: '25 mins'},
-    // ];
     $scope.types = [];
     $scope.loadTypes = function() {
         return $scope.types.length ? null : $http.get('/tools/api/ap_types').then(function(data) {
@@ -90,14 +104,30 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
     };
 
     $scope.saveAp = function(data, id) {
-        //$scope.user not updated yet
         angular.extend(data, {id: id});
-        return $http.post('/saveAp', data);
+        console.log("save ap:");
+        console.log(data);
+        return $http.post('/tools/api/ap', {data: data, method: 'save'}).then(function(resp) {
+            console.log("create ap ok!");
+            return;
+        },
+        function(resp) {
+            console.log(resp);
+            return "error";
+        });
     };
 
     // remove user
-    $scope.removeAp = function(index) {
-        $scope.aps.splice(index, 1);
+    $scope.removeAp = function(index, id) {
+        return $http.post('/tools/api/ap', {data: {id: id}, method: 'delete'}).then(function(resp) {
+            console.log("delete ap ok!");
+            $scope.aps.splice(index, 1);
+            return;
+        },
+        function(resp) {
+            console.log(resp);
+            return "error";
+        });
     };
 
     // add user
@@ -109,7 +139,7 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
             type: null,
             password: '',
             owner: '',
-            aging: ''
+            aging: -1
         };
         $scope.aps.push($scope.inserted);
     };

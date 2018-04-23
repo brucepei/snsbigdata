@@ -16,7 +16,7 @@ class Ap(models.Model):
     brand = models.CharField(default="", max_length=30)
     owner = models.CharField(default="", max_length=30)
     ssid = models.CharField(unique=True, max_length=50)
-    aging = models.DateTimeField(blank=True)
+    aging = models.DateTimeField(null=True, blank=True)
     type = models.CharField(choices=ENCRYPTION_TYPE, max_length=4)
     password = models.CharField(blank=True, max_length=20)
 
@@ -26,12 +26,13 @@ class Ap(models.Model):
     def aging_time(self):
         result = None
         if self.aging is not None:
-            tzinfo = self.aging.tzinfo
-            now = datetime.now() if tzinfo is None else datetime.now(pytz.timezone(str(tzinfo)))
+            now = datetime.now(pytz.timezone('UTC'))
             seconds = now - self.aging
             result = "{:.2f}".format(seconds.total_seconds() / 60)
         return result
 
+    def update_aging(self):
+        self.aging = datetime.now(pytz.timezone('UTC'))
 
     def __unicode__(self):
         return "{}({}, {}, aging={})".format(self.ssid, self.password, self.type, self.aging)
