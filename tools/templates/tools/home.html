@@ -8,212 +8,26 @@
             <div class="col-md-12" ng-app="toolsApp">
                 <h2>SNS Test Tools</h2>
                 <ul>
-                    <li><a href="#!/">AP Monitor</a></li>
+                    <li><a href="#!/">Home</a></li>
+                    <li><a href="#!/aps">AP table</a></li>
                 </ul>
-                <div ng-controller="EditableRowCtrl">
-                  <table class="table table-bordered table-hover table-condensed">
-                    <tr style="font-weight: bold">
-                      <td style="width:15%">Brand</td>
-                      <td style="width:20%">SSID</td>
-                      <td style="width:10%">Type</td>
-                      <td style="width:20%">Password</td>
-                      <td style="width:15%">
-                        <div ng-controller="SelectLocalCtrl">
-                            <a href="#" editable-select="filterOwner.value" e-ng-options="owner.value as owner.text for owner in owners">
-                                {{ filterOwner.text || "All" }}
-                            </a>
-                        </div>
-                      </td>
-                      <td style="width:20%">Aging</td>
-                      <td style="width:20%">Edit</td>
-                    </tr>
-                    <tr ng-repeat="ap in aps" ng-if="filterAp == '' || filterAp== ap.owner">
-                      <td>
-                        <span editable-text="ap.brand" e-name="brand" e-form="rowform" onbeforesave="checkBrand($data, ap.id)">
-                          {{ ap.brand || 'empty' }}
-                        </span>
-                      </td>
-                      <td>
-                        <span editable-text="ap.ssid" e-name="ssid" e-form="rowform" onbeforesave="checkSsid($data, ap.id)">
-                          {{ ap.ssid || 'empty' }}
-                        </span>
-                      </td>
-                      <td>
-                        <span editable-select="ap.type" e-name="type" onshow="loadTypes()" e-form="rowform" e-ng-options="t.value as t.text for t in types">
-                          {{ showType(ap) }}
-                        </span>
-                      </td>
-                      <td>
-                        <span editable-text="ap.password" e-name="password" e-form="rowform" onbeforesave="checkPassword($data, ap)">
-                          {{ ap.password || 'empty' }}
-                        </span>
-                      </td>
-                      <td>
-                        <span editable-text="ap.owner" e-name="owner" e-form="rowform" onbeforesave="checkOwner($data, ap.id)">
-                          {{ ap.owner || 'empty' }}
-                        </span>
-                      </td>
-                      <td>
-                        <span>
-                          {{ ap.aging || 'empty' }}
-                        </span>
-                      </td>
-                      <td style="white-space: nowrap">
-                        <form editable-form name="rowform" onbeforesave="saveAp($data, ap.id)" ng-show="rowform.$visible" class="form-buttons form-inline" shown="inserted == ap">
-                          <button type="submit" ng-disabled="rowform.$waiting" class="btn btn-primary">
-                            save
-                          </button>
-                          <button type="button" ng-disabled="rowform.$waiting" ng-click="rowform.$cancel()" class="btn btn-default">
-                            cancel
-                          </button>
-                        </form>
-                        <div class="buttons" ng-show="!rowform.$visible">
-                          <button type="button" class="btn btn-primary" ng-click="rowform.$show()">edit</button>
-                          <button type="button" class="btn btn-danger" ng-click="removeAp($index)">del</button>
-                        </div>
-                      </td>
-                    </tr>
-                  </table>
-
-                  <button type="button" class="btn btn-default" ng-click="addAp()">Add row</button>
-                </div>
+                <div ng-view></div>
             </div>
             {% endverbatim %}
         </div>
     </div>
 {% endblock %}
 {% block user_js %}
-<script type="text/javascript">
-        var app = angular.module('toolsApp', ['ngRoute', "xeditable"]);
-        app.run(['editableOptions', '$rootScope', function(editableOptions, $rootScope) {
-            editableOptions.theme = 'bs3'; // bootstrap3 theme. Can be also 'bs2', 'default'
-            $rootScope.$on('changeFilterOwner', function(event, args) {
-                $rootScope.$broadcast('filterOwnerBroadcast', args);
-            });
-        }]);
-        app.controller('SelectLocalCtrl', function($scope, $filter, $http) {
-            $scope.owners = [
-                {text: "Owner: All", value: ''},
-                {text: "Owner: for_sdm845", value: 'for_sdm845'},
-                {text: "Owner: for_apq", value: 'for_apq'},
-            ];
-            $scope.filterOwner = {text: "Owner: for_sdm845", value: 'for_sdm845'};
-            $scope.$watch('filterOwner.value', function(newVal, oldVal) {
-                if (newVal !== oldVal) {
-                    var selected = $filter('filter')($scope.owners, {value: $scope.filterOwner.value});
-                    if (selected.length) {
-                        $scope.filterOwner.text = selected[0].text;
-                        $scope.filterOwner.value = selected[0].value;
-                        $scope.$emit('changeFilterOwner', {value: $scope.filterOwner.value});
-                    }
-                    console.log("filter owner changed to: " + $scope.filterOwner.value);
-                }
-            });
-        });
-        app.controller('EditableRowCtrl', function($scope, $filter, $http) {
-            $scope.filterAp = "";
-            $scope.aps = [
-                {id: 1, brand: 'Cisco', ssid: 'sns-test-2g', type: 'WEP', password: '1234567890', owner: 'for_sdm845', aging: '15 mins'},
-                {id: 2, brand: 'Cisco', ssid: 'sns-test-5g', type: 'WPA2', password: '1234567890', owner: 'for_apq', aging: '25 mins'},
-            ];
-            $scope.$on('filterOwnerBroadcast', function(event, args) {
-                $scope.filterAp = args.value;
-                console.log("filterAp = " + $scope.filterAp);
-            });
-            $scope.types = [];
-            $scope.loadTypes = function() {
-                return $scope.types.length ? null : $http.get('/tools/api/ap_types').then(function(data) {
-                    for (var i =0; i < data.data.length; i++) {
-                        data.data[i] = {value: data.data[i][0], text: data.data[i][1]};
-                    };
-                    $scope.types = data.data;
-                });
-            };
-
-            $scope.showType = function(ap) {
-                if(ap.type && $scope.types.length) {
-                    var selected = $filter('filter')($scope.types, {value: ap.type});
-                    return selected.length ? selected[0].text : 'Not set';
-                } else {
-                    return ap.type || 'Not set';
-                }
-            };
-
-            $scope.checkSsid = function(data, id) {
-                if (data.length <= 0) {
-                    return "ssid should not be empty!";
-                }
-            };
-
-            $scope.checkBrand = function(data, id) {
-                console.log("Brand is " + data);
-            };
-
-            $scope.checkPassword = function(data, ap) {
-                console.log($scope.aps);
-                if (ap.type != "OPEN" && data && data.length < 8) {
-                    return "password of Non-OPEN should be more than 8 chars!";
-                } else if (ap.type == "OPEN" && data && data.length != 0) {
-                    return "password of OPEN should be empty!";
-                }
-            };
-
-            $scope.checkOwner = function(data, id) {
-                console.log("Owner is " + data);
-            };
-
-            $scope.saveAp = function(data, id) {
-                //$scope.user not updated yet
-                angular.extend(data, {id: id});
-                return $http.post('/saveAp', data);
-            };
-
-            // remove user
-            $scope.removeAp = function(index) {
-                $scope.aps.splice(index, 1);
-            };
-
-            // add user
-            $scope.addAp = function() {
-                $scope.inserted = {
-                    id: $scope.aps.length+1,
-                    brand: '',
-                    ssid: '',
-                    type: null,
-                    password: '',
-                    owner: '',
-                    aging: ''
-                };
-                $scope.aps.push($scope.inserted);
-            };
-        });
-{#    app.config(function($interpolateProvider) {#}
-{#        $interpolateProvider.startSymbol('[[');#}
-{#        $interpolateProvider.endSymbol(']]');#}
-{#    });#}
-{#    app.config(['$routeProvider', function($routeProvider) {#}
-{#        $routeProvider#}
-{#            .when('/', {template: "Home page aaa!"})#}
-{#            .when('/computers', {template: 'This is the page for computers!'})#}
-{#            .when('/printers', {template: 'This is the page for printers!'})#}
-{#            .otherwise({redirectTo:'/'});#}
-{#    }]);#}
-{#    app.controller('excelCtrl', function($scope) {#}
-{#        $scope.firstName = "Bruce";#}
-{#        $scope.lastName = "Pei";#}
-{#        $scope.age = 20;#}
-{#        $scope.time = 4;#}
-{#        $scope.listData = [1.2, 3.4, 4.5, 5.5, 3.3, 4.4, 5.8];#}
-{#        $scope.lpei = {#}
-{#            firstName: "Bruce",#}
-{#            lastName: "Pei",#}
-{#            age: 34#}
-{#        };#}
-{#    });#}
-{#    app.directive("testTips", function() {#}
-{#        return {#}
-{#            template : "test tips!"#}
-{#        };#}
-{#    });#}
+<script type="application/javascript">
+    var app = angular.module('toolsApp', ['ngRoute', "xeditable"]);
+    app.config(['$routeProvider', function($routeProvider) {
+        $routeProvider
+            .when('/', {template: "<h1>Welcome to use tools of SNS!</h1>"})
+            .when('/aps', {
+                templateUrl: '/static/tools/views/aps.html'
+            })
+            .otherwise({redirectTo:'/'});
+    }]);
 </script>
+<script src="/static/tools/js/aps.js"></script>
 {% endblock %}

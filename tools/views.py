@@ -6,7 +6,7 @@ from rest_framework import viewsets, serializers, status, permissions
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
-from .serializer import UserSerializer, GroupSerializer, ApSerializer
+from .serializer import UserSerializer, GroupSerializer, ApSerializer, APSerializer
 from .models import Ap
 import logging
 
@@ -47,7 +47,10 @@ class ApTypesView(APIView):
 def ap_list(request):
     if request.method == 'GET':
         aps = Ap.objects.all()
-        serializer = ApSerializer(aps, many=True)
+        for ap in aps:
+            print("aging time={}".format(ap.aging_time()))
+            ap.aging = ap.aging_time()
+        serializer = APSerializer(aps, many=True)
         return JsonResponse(serializer.data, safe=False)
     elif request.method == 'POST':
         logger.debug("post body={}".format(request.body))
