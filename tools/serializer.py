@@ -22,7 +22,7 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 class ApSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Ap
-        fields = ('id', 'brand', 'ssid', 'type', 'password', 'owner', 'aging', 'ip')
+        fields = ('id', 'brand', 'ssid', 'type', 'password', 'owner', 'ping_aging', 'ip')
 
     def validate(self, data):
         logger.info("validate ap setting: {} at {}!".format(data, __name__))
@@ -42,7 +42,7 @@ class APSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=20, allow_blank=True)
     owner = serializers.CharField(max_length=30)
     ip = serializers.IPAddressField()
-    aging = serializers.FloatField(allow_null=True, required=False)
+    ping_aging = serializers.FloatField(allow_null=True, required=False)
 
     def create(self, validated_data):
         return Ap.objects.create(**validated_data)

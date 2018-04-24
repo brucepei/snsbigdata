@@ -57,8 +57,8 @@ def ap_list(request):
     if request.method == 'GET':
         aps = Ap.objects.all()
         for ap in aps:
-            print("ap {} {} aging time={}".format(ap.id, ap.ssid, ap.aging_time()))
-            ap.aging = ap.aging_time()
+            print("ap {} {} ping_aging={}".format(ap.id, ap.ssid, ap.aging_time(ap.ping_aging)))
+            ap.ping_aging = ap.aging_time(ap.ping_aging)
         serializer = APSerializer(aps, many=True)
         return JsonResponse(serializer.data, safe=False)
         
@@ -85,7 +85,7 @@ def ap(request):
                         ap.owner = data['owner']
                         ap.ip = data['ip']
                         if 'aging' in data and data['aging']:
-                            ap.update_aging()
+                            ap.update_aging('ping')
                         ap.save()
                     else:
                         logger.debug("No ap id, so create it!")
@@ -100,7 +100,7 @@ def ap(request):
                 if data['ssid']:
                     ap = Ap.objects.get(ssid=data['ssid'])
                     logger.debug("Get ap {}={}".format(data['ssid'], ap))
-                    ap.update_aging()
+                    ap.update_aging('ping')
                     ap.save()
                     data = ApSerializer(ap).data
                 return JsonResponse(data, status=201)
