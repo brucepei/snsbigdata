@@ -17,6 +17,8 @@ class Ap(models.Model):
     owner = models.CharField(default="", max_length=30)
     ssid = models.CharField(unique=True, max_length=50)
     ping_aging = models.DateTimeField(null=True, blank=True)
+    scan_aging = models.DateTimeField(null=True, blank=True)
+    connect_aging = models.DateTimeField(null=True, blank=True)
     type = models.CharField(choices=ENCRYPTION_TYPE, max_length=4)
     password = models.CharField(blank=True, max_length=20)
     ip = models.GenericIPAddressField(blank=True, null=True)
@@ -36,6 +38,10 @@ class Ap(models.Model):
     def update_aging(self, aging_type):
         if aging_type == 'ping':
             self.ping_aging = datetime.now(pytz.timezone('UTC'))
+        elif aging_type == 'scan':
+            self.scan_aging = datetime.now(pytz.timezone('UTC'))
+        elif aging_type == 'connect':
+            self.connect_aging = datetime.now(pytz.timezone('UTC'))
 
     def __unicode__(self):
         return "{}({}, {}, ip={})".format(self.ssid, self.password, self.type, self.ip)

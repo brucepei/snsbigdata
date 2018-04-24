@@ -58,13 +58,13 @@
         </span>
       </td>
       <td>
-        <span ng-class="!isNumber(ap.ping_aging) || ap.ping_aging >= 600 ? 'highlight' : ''">
-          {{ isNumber(ap.ping_aging) && ap.ping_aging >= 0 ? ap.ping_aging : 'Null' }}
+        <span ng-class="!isNumber(ap.scan_aging) || ap.scan_aging >= 600 ? 'highlight' : ''">
+          {{ isNumber(ap.scan_aging) && ap.scan_aging >= 0 ? ap.scan_aging : 'Null' }}
         </span>
       </td>
       <td>
-        <span ng-class="!isNumber(ap.ping_aging) || ap.ping_aging >= 30 ? 'highlight' : ''">
-          {{ isNumber(ap.ping_aging) && ap.ping_aging >= 0 ? ap.ping_aging : 'Null' }}
+        <span ng-class="!isNumber(ap.connect_aging) || ap.connect_aging >= 30 ? 'highlight' : ''">
+          {{ isNumber(ap.connect_aging) && ap.connect_aging >= 0 ? ap.connect_aging : 'Null' }}
         </span>
       </td>
       <td style="white-space: nowrap">
