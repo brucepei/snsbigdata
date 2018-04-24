@@ -48,4 +48,10 @@
         border: 1px solid #aaaaaa;
         padding: 1em;
     }
+    .highlight {
+        font-style: italic;
+        color: #D14;
+        text-decoration: none;
+        background-color: yellow;
+    }
 }

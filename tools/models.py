@@ -19,6 +19,7 @@ class Ap(models.Model):
     aging = models.DateTimeField(null=True, blank=True)
     type = models.CharField(choices=ENCRYPTION_TYPE, max_length=4)
     password = models.CharField(blank=True, max_length=20)
+    ip = models.GenericIPAddressField(blank=True, null=True)
 
     class Meta:
         ordering = ("ssid", )

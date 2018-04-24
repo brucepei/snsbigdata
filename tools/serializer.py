@@ -22,7 +22,7 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 class ApSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Ap
-        fields = ('id', 'brand', 'ssid', 'type', 'password', 'owner', 'aging')
+        fields = ('id', 'brand', 'ssid', 'type', 'password', 'owner', 'aging', 'ip')
 
     def validate(self, data):
         logger.info("validate ap setting: {} at {}!".format(data, __name__))
@@ -41,17 +41,19 @@ class APSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=Ap.ENCRYPTION_TYPE, default='OPEN')
     password = serializers.CharField(max_length=20, allow_blank=True)
     owner = serializers.CharField(max_length=30)
+    ip = serializers.IPAddressField()
     aging = serializers.FloatField(allow_null=True, required=False)
 
     def create(self, validated_data):
         return Ap.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        instance.brand = validated_data.get('brand', instance.ssid)
+        instance.brand = validated_data.get('brand', instance.brand)
         instance.ssid = validated_data.get('ssid', instance.ssid)
-        instance.type = validated_data.get('type', instance.ssid)
-        instance.password = validated_data.get('password', instance.ssid)
-        instance.owner = validated_data.get('owner', instance.ssid)
+        instance.type = validated_data.get('type', instance.type)
+        instance.password = validated_data.get('password', instance.password)
+        instance.owner = validated_data.get('owner', instance.owner)
+        instance.ip = validated_data.get('ip', instance.ip)
         instance.save()
         return instance
 

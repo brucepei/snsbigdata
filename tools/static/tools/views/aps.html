@@ -1,19 +1,25 @@
 <div ng-controller="EditableRowCtrl">
   <table class="table table-bordered table-hover table-condensed">
     <tr style="font-weight: bold">
-      <td style="width:15%">Brand</td>
-      <td style="width:20%">SSID</td>
-      <td style="width:10%">Type</td>
-      <td style="width:20%">Password</td>
-      <td style="width:15%">
+      <td style="width:6%" rowspan="2">Brand</td>
+      <td style="width:10%" rowspan="2">SSID</td>
+      <td style="width:10%" rowspan="2">Type</td>
+      <td style="width:10%" rowspan="2">Password</td>
+      <td style="width:10%" rowspan="2">IP</td>
+      <td style="width:10%" rowspan="2">
         <div ng-controller="SelectLocalCtrl">
             <a href="#" editable-select="filterOwner.value" e-ng-options="owner.value as owner.text for owner in owners">
                 {{ filterOwner.text || "All" }}
             </a>
         </div>
       </td>
-      <td style="width:20%">Aging</td>
-      <td style="width:20%">Edit</td>
+      <td style="width:24%" align="center" colspan="3">Aging Time(minutes)</td>
+      <td style="width:20%" rowspan="2">Edit</td>
+    </tr>
+    <tr style="font-weight: bold">
+      <td style="width:8%">Ping</td>
+      <td style="width:8%">Scan</td>
+      <td style="width:8%">Connect</td>
     </tr>
     <tr ng-repeat="ap in aps" ng-if="filterAp == '' || filterAp== ap.owner">
       <td>
@@ -37,13 +43,28 @@
         </span>
       </td>
       <td>
+        <span editable-text="ap.ip" e-name="ip" e-form="rowform" onbeforesave="checkIp($data, ap)">
+          {{ ap.ip || 'empty' }}
+        </span>
+      </td>
+      <td>
         <span editable-text="ap.owner" e-name="owner" e-form="rowform" onbeforesave="checkOwner($data, ap.id)">
           {{ ap.owner || 'empty' }}
         </span>
       </td>
       <td>
-        <span>
-          {{ isNumber(ap.aging) && ap.aging >= 0 ? ap.aging + ' minutes' : 'Null' }}
+        <span ng-class="!isNumber(ap.aging) || ap.aging >= 30 ? 'highlight' : ''">
+          {{ isNumber(ap.aging) && ap.aging >= 0 ? ap.aging : 'Null' }}
+        </span>
+      </td>
+      <td>
+        <span ng-class="!isNumber(ap.aging) || ap.aging >= 600 ? 'highlight' : ''">
+          {{ isNumber(ap.aging) && ap.aging >= 0 ? ap.aging : 'Null' }}
+        </span>
+      </td>
+      <td>
+        <span ng-class="!isNumber(ap.aging) || ap.aging >= 30 ? 'highlight' : ''">
+          {{ isNumber(ap.aging) && ap.aging >= 0 ? ap.aging : 'Null' }}
         </span>
       </td>
       <td style="white-space: nowrap">

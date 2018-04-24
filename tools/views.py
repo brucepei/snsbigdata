@@ -83,6 +83,7 @@ def ap(request):
                         ap.password = data['password']
                         ap.type = data['type']
                         ap.owner = data['owner']
+                        ap.ip = data['ip']
                         if 'aging' in data and data['aging']:
                             ap.update_aging()
                         ap.save()
