@@ -101,7 +101,7 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
     };
 
     $scope.checkIp = function(data) {
-        if (!IP_Regex.test(data)) {
+        if (data && !IP_Regex.test(data)) {
             return "Invalid IP address!";
         }
     };

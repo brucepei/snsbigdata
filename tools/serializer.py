@@ -41,7 +41,7 @@ class APSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=Ap.ENCRYPTION_TYPE, default='OPEN')
     password = serializers.CharField(max_length=20, allow_blank=True)
     owner = serializers.CharField(max_length=30)
-    ip = serializers.IPAddressField(allow_null=True, required=False)
+    ip = serializers.IPAddressField(allow_null=True, allow_blank=True, required=False)
     ping_aging = serializers.FloatField(allow_null=True, required=False)
     scan_aging = serializers.FloatField(allow_null=True, required=False)
     connect_aging = serializers.FloatField(allow_null=True, required=False)
