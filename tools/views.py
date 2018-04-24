@@ -101,6 +101,8 @@ def ap(request):
                         ap = Ap.objects.create(**data)
                         data = ApSerializer(ap).data
                     return JsonResponse(data, status=201)
+                else:
+                    return JsonResponse({'invalid_data': serializer.errors}, status=400)
             if method == 'refresh':
                 logger.debug("refresh data={}".format(data))
                 if data['ssid']:

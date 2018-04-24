@@ -31,6 +31,7 @@ app.controller('SelectLocalCtrl', function($scope, $filter, $http, $log, $locati
     });
 });
 app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $log) {
+    var IP_Regex = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
     var query_args = $location.search();
     $scope.isNumber = angular.isNumber;
     if (query_args.filter) {
@@ -96,6 +97,12 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
             return "password of Non-OPEN should be more than 8 chars!";
         } else if (ap.type == "OPEN" && data && data.length != 0) {
             return "password of OPEN should be empty!";
+        }
+    };
+
+    $scope.checkIp = function(data) {
+        if (!IP_Regex.test(data)) {
+            return "Invalid IP address!";
         }
     };
 
