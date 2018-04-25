@@ -54,7 +54,7 @@ class ApView(APIView):
         
 @csrf_exempt
 def ap_list(request):
-    if request.method == 'GET':
+    if request.method in ('GET', 'POST'):
         aps = Ap.objects.all()
         for ap in aps:
             print("ap {} {} ping_aging={}".format(ap.id, ap.ssid, ap.aging_time(ap.ping_aging)))

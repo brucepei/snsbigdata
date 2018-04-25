@@ -41,7 +41,7 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
         $scope.filterAp = "";
         $log.debug("set filter AP to empty");
     }
-    $http.get('/tools/ap_list').then(function(resp) {
+    $http.post('/tools/ap_list').then(function(resp) {
         var ap_data = resp.data;
         var owners = [{text: "Owner: All", value: ''}];
         if (ap_data) {
