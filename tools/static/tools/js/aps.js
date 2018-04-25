@@ -83,7 +83,7 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
 
     $scope.checkSsid = function(data, id) {
         if (data.length <= 0) {
-            return "ssid should not be empty!";
+            return "ssid is must!";
         }
     };
 
@@ -108,6 +108,9 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
 
     $scope.checkOwner = function(data, id) {
         console.log("Owner is " + data);
+        if (!data) {
+            return "Owner is must!";
+        }
     };
 
     $scope.saveAp = function(data, id) {
