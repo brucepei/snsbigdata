@@ -3,7 +3,6 @@ from rest_framework import serializers
 from .models import Ap
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -28,28 +27,53 @@ class ApSerializer(serializers.HyperlinkedModelSerializer):
         logger.info("validate ap setting: {} at {}!".format(data, __name__))
         pass_len = len(data['password'])
         if data['type'] != 'OPEN' and pass_len < 8:
-            raise serializers.ValidationError({'password': "Password of {} should be more than 8 characters!".format(data['type'])})
+            raise serializers.ValidationError(
+                {'password': "Password of {} should be more than 8 characters!".format(data['type'])})
         elif data['type'] == 'OPEN' and pass_len != 0:
             raise serializers.ValidationError({'password': "Password of OPEN should be empty!"})
         return data
+
+
+class AgingField(serializers.DurationField):
+    def to_representation(self, duration):
+        days = duration.days
+        seconds = duration.seconds
+
+        minutes = seconds // 60
+        seconds = seconds % 60
+
+        hours = minutes // 60
+        minutes = minutes % 60
+
+        string = '{:02d}h:{:02d}m:{:02d}s'.format(hours, minutes, seconds)
+        if days:
+            string = '{} days '.format(days) + string
+        return string
 
 
 class APSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     brand = serializers.CharField(max_length=30, allow_blank=True)
     ssid = serializers.CharField(max_length=20)
-    type = serializers.ChoiceField(choices=Ap.ENCRYPTION_TYPE, default='OPEN')
+    type = serializers.ChoiceField(choices=Ap.ENCRYPTION_TYPE, default=Ap.ENCRYPTION_TYPE[0][0])
     password = serializers.CharField(max_length=20, allow_blank=True)
     owner = serializers.CharField(max_length=30)
-    ip = serializers.IPAddressField(allow_null=True, allow_blank=True, required=False)
-    ping_aging = serializers.FloatField(allow_null=True, required=False)
-    scan_aging = serializers.FloatField(allow_null=True, required=False)
-    connect_aging = serializers.FloatField(allow_null=True, required=False)
+    # ip is not string, can be null, so use None as default value
+    ip = serializers.IPAddressField(allow_null=True, default=None, required=False)
+    ping_aging = AgingField(read_only=True, source='ping_aging_delta')
+    scan_aging = AgingField(read_only=True, source='scan_aging_delta')
+    connect_aging = AgingField(read_only=True, source='connect_aging_delta')
+
+    def __init__(self, *args, **kwargs):
+        super(serializers.Serializer, self).__init__(*args, **kwargs)
+        # logger.debug("APSerializer init: {}, args={}, kwargs={}".format(self, args, kwargs))
 
     def create(self, validated_data):
+        logger.debug("serializer created with data: {}".format(validated_data))
         return Ap.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
+        logger.debug("serializer updated with data: {}".format(validated_data))
         instance.brand = validated_data.get('brand', instance.brand)
         instance.ssid = validated_data.get('ssid', instance.ssid)
         instance.type = validated_data.get('type', instance.type)
@@ -58,5 +82,3 @@ class APSerializer(serializers.Serializer):
         instance.ip = validated_data.get('ip', instance.ip)
         instance.save()
         return instance
-
-

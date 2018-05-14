@@ -2,7 +2,8 @@ from django.shortcuts import render
 from django.contrib.auth.models import User, Group
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import viewsets, serializers, status, permissions
+from rest_framework import viewsets, serializers, status, permissions, generics
+from django.urls import reverse, resolve
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
@@ -44,20 +45,30 @@ class ApTypesView(APIView):
         logger.debug("get {}, response data: {}".format(request.path, response.data))
         return response
 
-class ApView(APIView):
+
+class ApListView(generics.ListCreateAPIView):
     permission_classes = (permissions.AllowAny,)
-    def post(self, request, *args, **kw):
-        response = Response({}, status=status.HTTP_200_OK)
-        logger.debug("get {}, response data: {}".format(request.data, response.data))
+    queryset = Ap.objects.all()
+    serializer_class = APSerializer
+
+    def list(self, request, *args, **kws):
+        all_aps = self.get_queryset()
+        serialized_aps = APSerializer(all_aps, many=True)
+        response = Response(serialized_aps.data, status=status.HTTP_200_OK)
+        logger.debug("List APs, response data: {}".format(response.data))
         return response
 
-        
+    def create(self, request, *args, **kws):
+        logger.debug("Create AP with data: {}".format(request.data))
+        return self.get(request, *args, **kws)
+
+
 @csrf_exempt
 def ap_list(request):
     if request.method in ('GET', 'POST'):
         aps = Ap.objects.all()
         for ap in aps:
-            print("ap {} {} ping_aging={}".format(ap.id, ap.ssid, ap.aging_time(ap.ping_aging)))
+            logger.debug("ap {} {} ping_aging={}".format(ap.id, ap.ssid, ap.aging_time(ap.ping_aging)))
             ap.ping_aging = ap.aging_time(ap.ping_aging)
             ap.scan_aging = ap.aging_time(ap.scan_aging)
             ap.connect_aging = ap.aging_time(ap.connect_aging)

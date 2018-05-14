@@ -35,6 +35,21 @@ class Ap(models.Model):
             result = "{:.2f}".format(seconds.total_seconds() / 60)
         return result
 
+    def ping_aging_delta(self):
+        now = datetime.now(pytz.timezone('UTC'))
+        result = now - self.ping_aging
+        return result
+
+    def scan_aging_delta(self):
+        now = datetime.now(pytz.timezone('UTC'))
+        result = now - self.scan_aging
+        return result
+
+    def connect_aging_delta(self):
+        now = datetime.now(pytz.timezone('UTC'))
+        result = now - self.connect_aging
+        return result
+
     def update_aging(self, aging_type):
         if aging_type == 'ping':
             self.ping_aging = datetime.now(pytz.timezone('UTC'))
