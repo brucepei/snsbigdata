@@ -11,7 +11,7 @@ from celery.result import AsyncResult
 from SnSBigData import celery_app
 import time
 import json,datetime
-from tools.write_excel_result import write_excel
+from .tools.write_excel_result import write_excel
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
 
@@ -2308,7 +2308,7 @@ def utility_page(request):
                 res.save(response)
                 return response
             except Exception as error:
-                print "error: {}".format(error)
+                print("error: {}".format(error))
         return render(request, utility_template, utility_args)
     else:
         utility_template = 'tbd/utility.html'

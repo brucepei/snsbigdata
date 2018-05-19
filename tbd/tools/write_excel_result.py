@@ -3,7 +3,7 @@ from django.db.models import Sum
 from tbd.models import Build,TestResult,Project,TestAction,Host
 
 def write_excel(all_build_result):
-    print "111111111111111111"
+    print( "111111111111111111")
     wb2=xlwt.Workbook()
     for mode_obj in all_build_result:
         if not mode_obj:
@@ -56,7 +56,7 @@ def write_excel(all_build_result):
                 end_result[i[0]]=[]
             end_result[i[0]].append((i[1],host_ac_pass_keys.get(i,0),host_ac_faill_keys.get(i,0)))
             
-        print end_result
+        print(end_result)
         #{host_id:[(1,2,3)]}
         
 
@@ -68,13 +68,13 @@ def write_excel(all_build_result):
         i=1
         for dic_result in end_result:
             ac_len=len(end_result[dic_result])
-            print host_id_name[dic_result]
+            print(host_id_name[dic_result])
             wb_sheet2.write_merge(start_clu,ac_len+start_clu-1,1,1,str(host_id_name[dic_result]))
             start_clu+=ac_len
-            print '+++++++++++++++'
-            print dic_result
-            print end_result[dic_result]
-            print '============'
+            print( '+++++++++++++++' )
+            print( dic_result)
+            print( end_result[dic_result])
+            print('============')
             for j in end_result[dic_result]:
                 wb_sheet2.write(i,2,ac_id_name[j[0]])
                 wb_sheet2.write(i,3,j[1])
