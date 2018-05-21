@@ -7,6 +7,7 @@ from django.urls import reverse, resolve
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from datetime import datetime
 from .serializer import UserSerializer, GroupSerializer, ApSerializer, APSerializer
 from .models import Ap
@@ -46,10 +47,16 @@ class ApTypesView(APIView):
         return response
 
 
-class ApListView(generics.ListCreateAPIView):
+class ApListView(viewsets.ViewSet):
     permission_classes = (permissions.AllowAny,)
     queryset = Ap.objects.all()
     serializer_class = APSerializer
+
+    @action(methods=['get'], detail=False)
+    def list_type(self, request, *args, **kwargs):
+        response = Response(Ap.ENCRYPTION_TYPE, status=status.HTTP_200_OK)
+        logger.debug("get {}, response data: {}".format(request.path, response.data))
+        return response
 
     def list(self, request, *args, **kws):
         all_aps = self.get_queryset()
