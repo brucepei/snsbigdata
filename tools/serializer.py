@@ -51,34 +51,12 @@ class AgingField(serializers.DurationField):
         return string
 
 
-class APSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    brand = serializers.CharField(max_length=30, allow_blank=True)
-    ssid = serializers.CharField(max_length=20)
-    type = serializers.ChoiceField(choices=Ap.ENCRYPTION_TYPE, default=Ap.ENCRYPTION_TYPE[0][0])
-    password = serializers.CharField(max_length=20, allow_blank=True)
-    owner = serializers.CharField(max_length=30)
-    # ip is not string, can be null, so use None as default value
-    ip = serializers.IPAddressField(allow_null=True, default=None, required=False)
+class APSerializer(serializers.ModelSerializer):
     ping_aging = AgingField(read_only=True, source='ping_aging_delta')
     scan_aging = AgingField(read_only=True, source='scan_aging_delta')
     connect_aging = AgingField(read_only=True, source='connect_aging_delta')
 
-    def __init__(self, *args, **kwargs):
-        super(serializers.Serializer, self).__init__(*args, **kwargs)
-        # logger.debug("APSerializer init: {}, args={}, kwargs={}".format(self, args, kwargs))
+    class Meta:
+        model = Ap
+        fields = ('id', 'brand', 'ssid', 'type', 'password', 'owner', 'ip', 'ping_aging', 'scan_aging', 'connect_aging')
 
-    def create(self, validated_data):
-        logger.debug("serializer created with data: {}".format(validated_data))
-        return Ap.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        logger.debug("serializer updated with data: {}".format(validated_data))
-        instance.brand = validated_data.get('brand', instance.brand)
-        instance.ssid = validated_data.get('ssid', instance.ssid)
-        instance.type = validated_data.get('type', instance.type)
-        instance.password = validated_data.get('password', instance.password)
-        instance.owner = validated_data.get('owner', instance.owner)
-        instance.ip = validated_data.get('ip', instance.ip)
-        instance.save()
-        return instance

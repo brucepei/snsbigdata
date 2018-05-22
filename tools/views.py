@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
 from datetime import datetime
 from .serializer import UserSerializer, GroupSerializer, ApSerializer, APSerializer
 from .models import Ap
@@ -47,27 +48,47 @@ class ApTypesView(APIView):
         return response
 
 
-class ApListView(viewsets.ViewSet):
+class ApListView(viewsets.ModelViewSet):
     permission_classes = (permissions.AllowAny,)
     queryset = Ap.objects.all()
     serializer_class = APSerializer
 
-    @action(methods=['get'], detail=False)
-    def list_type(self, request, *args, **kwargs):
+    def get_ap_by_ssid(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = 'ssid'
+        assert lookup_url_kwarg in self.kwargs, (
+            'Expected view %s to be called with a URL keyword argument '
+            'named "%s". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.' %
+            (self.__class__.__name__, lookup_url_kwarg)
+        )
+        filter_kwargs = {lookup_url_kwarg: self.kwargs[lookup_url_kwarg]}
+        obj = get_object_or_404(queryset, **filter_kwargs)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    @action(methods=['get', 'post'], detail=False)
+    def types(self, request, *args, **kwargs):
         response = Response(Ap.ENCRYPTION_TYPE, status=status.HTTP_200_OK)
         logger.debug("get {}, response data: {}".format(request.path, response.data))
         return response
 
-    def list(self, request, *args, **kws):
-        all_aps = self.get_queryset()
-        serialized_aps = APSerializer(all_aps, many=True)
-        response = Response(serialized_aps.data, status=status.HTTP_200_OK)
-        logger.debug("List APs, response data: {}".format(response.data))
-        return response
-
-    def create(self, request, *args, **kws):
-        logger.debug("Create AP with data: {}".format(request.data))
-        return self.get(request, *args, **kws)
+    @action(methods=['get', 'post'], url_path='ssid/(?P<ssid>[^/.]+)', detail=False)
+    def refresh(self, request, *args, **kwargs):
+        instance = self.get_ap_by_ssid()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        ping = request.data.get('ping', False)
+        scan = request.data.get('scan', False)
+        connect = request.data.get('connect', False)
+        if ping:
+            instance.update_aging('ping')
+        if scan:
+            instance.update_aging('scan')
+        if connect:
+            instance.update_aging('connect')
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
 
 @csrf_exempt
