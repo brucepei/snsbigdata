@@ -36,18 +36,24 @@ class Ap(models.Model):
         return result
 
     def ping_aging_delta(self):
-        now = datetime.now(pytz.timezone('UTC'))
-        result = now - self.ping_aging
+        result = None
+        if self.ping_aging is not None:
+            now = datetime.now(pytz.timezone('UTC'))
+            result = now - self.ping_aging
         return result
 
     def scan_aging_delta(self):
-        now = datetime.now(pytz.timezone('UTC'))
-        result = now - self.scan_aging
+        result = None
+        if self.scan_aging is not None:
+            now = datetime.now(pytz.timezone('UTC'))
+            result = now - self.scan_aging
         return result
 
     def connect_aging_delta(self):
-        now = datetime.now(pytz.timezone('UTC'))
-        result = now - self.connect_aging
+        result = None
+        if self.connect_aging is not None:
+            now = datetime.now(pytz.timezone('UTC'))
+            result = now - self.connect_aging
         return result
 
     def update_aging(self, aging_type):
