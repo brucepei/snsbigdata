@@ -81,6 +81,14 @@ class ApListView(viewsets.ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data)
 
+    def update(self, request, *args, **kwargs):
+        obj_id = int(kwargs.get(self.lookup_field, -1))
+        if obj_id > 0:
+            return super(ApListView, self).update(request, *args, **kwargs)
+        else:
+            logger.debug("Invalid ID {}, so create object, data: {}!".format(obj_id, request.data))
+            return super(ApListView, self).create(request, *args, **kwargs)
+
 
 @csrf_exempt
 def ap_list(request):
@@ -93,7 +101,7 @@ def ap_list(request):
             ap.connect_aging = ap.aging_time(ap.connect_aging)
         serializer = APSerializer(aps, many=True)
         return JsonResponse(serializer.data, safe=False)
-        
+
 @csrf_exempt
 def ap(request):
     if request.method == 'POST':

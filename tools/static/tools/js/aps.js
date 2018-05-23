@@ -114,10 +114,10 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
     };
 
     $scope.saveAp = function(data, id) {
-        angular.extend(data, {id: id});
+        //angular.extend(data, {id: id});
         console.log("save ap:");
         console.log(data);
-        return $http.post('/tools/api/ap', {data: data, method: 'save'}).then(function(resp) {
+        return $http.put('/tools/api/ap/' + id + '/', data).then(function(resp) {
             console.log("create ap ok!");
             console.log(resp.data);
             if (id == -1) {

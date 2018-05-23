@@ -52,6 +52,7 @@ class AgingField(serializers.DurationField):
 
 
 class APSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     ping_aging = AgingField(read_only=True, source='ping_aging_delta')
     scan_aging = AgingField(read_only=True, source='scan_aging_delta')
     connect_aging = AgingField(read_only=True, source='connect_aging_delta')
