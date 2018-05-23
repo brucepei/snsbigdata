@@ -1,6 +1,10 @@
 from django.core.management.base import BaseCommand, CommandError
 from tbd.models import Build,TestResult,Project,TestAction,Host
-import xlwt,ConfigParser,datetime,os
+import xlwt, datetime, os
+try:
+    import configparser as ConfigParser
+except ImportError:
+    from six.moves import configparser as ConfigParser
 
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -41,17 +45,17 @@ class Command(BaseCommand):
                     test_result=cbd_build.testresult_set.all()
                     all_sp_build.append(test_result)
                 except:
-                    print 'build is invalid'
+                    print( 'build is invalid' )
         result_file=write_xlsfile(all_sp_build)
         send_mail(os.path.join(os.getcwd(),result_file),send_users)#['c_lishuj@qti.qualcomm.com'])
-        print send_users
+        print( send_users)
         
 
 def get_config(config_file):
     cf = ConfigParser.ConfigParser()
     cf.read(config_file)
     projects=cf.sections()
-    print '>>>>>>>>>>>>>>',projects
+    print( '>>>>>>>>>>>>>>',projects )
     collect_arr=[]
     for project in projects:
         owner = cf.get(project, "owner")
@@ -60,7 +64,7 @@ def get_config(config_file):
             owner[i]=owner[i] + '@qti.qualcomm.com'
         sp = cf.get(project, "sp")
         collect_arr.append((project,sp,owner))
-    print collect_arr
+    print( collect_arr )
     return collect_arr
         
 def write_xlsfile(all_build_result=None):
@@ -143,7 +147,7 @@ def write_xlsfile(all_build_result=None):
                     end_result[i[0]]=[]
                 end_result[i[0]].append((i[1],host_ac_pass_keys.get(i,0),host_ac_faill_keys.get(i,0)))
                 
-            print end_result
+            print( end_result)
             #{host_id:[(1,2,3)]}
             
 
@@ -155,13 +159,13 @@ def write_xlsfile(all_build_result=None):
             i=1
             for dic_result in end_result:
                 ac_len=len(end_result[dic_result])
-                print host_id_name[dic_result]
+                print( host_id_name[dic_result] )
                 wb_sheet2.write_merge(start_clu,ac_len+start_clu-1,1,1,str(host_id_name[dic_result]))
                 start_clu+=ac_len
-                print '+++++++++++++++'
-                print dic_result
-                print end_result[dic_result]
-                print '============'
+                print( '+++++++++++++++' )
+                print( dic_result )
+                print( end_result[dic_result] )
+                print( '============' )
                 for j in end_result[dic_result]:
                     wb_sheet2.write(i,2,ac_id_name[j[0]])
                     wb_sheet2.write(i,3,j[1])

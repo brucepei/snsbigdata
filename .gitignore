@@ -7,8 +7,7 @@ _eric6project
 .idea
 .DS_Store
 *.log
-venv
-venv_old
+venv*/
 *.komodoproject
 *.xlsx
 *.xls
