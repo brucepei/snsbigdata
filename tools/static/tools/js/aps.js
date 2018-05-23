@@ -41,7 +41,7 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
         $scope.filterAp = "";
         $log.debug("set filter AP to empty");
     }
-    $http.post('/tools/ap_list').then(function(resp) {
+    $http.get('/tools/api/ap/').then(function(resp) {
         var ap_data = resp.data;
         var owners = [{text: "Owner: All", value: ''}];
         if (ap_data) {
@@ -64,7 +64,7 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
     });
     $scope.types = [];
     $scope.loadTypes = function() {
-        return $scope.types.length ? null : $http.get('/tools/api/ap_types').then(function(data) {
+        return $scope.types.length ? null : $http.get('/tools/api/ap/types/').then(function(data) {
             for (var i =0; i < data.data.length; i++) {
                 data.data[i] = {value: data.data[i][0], text: data.data[i][1]};
             };
@@ -139,7 +139,7 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
 
     // remove user
     $scope.removeAp = function(index, id) {
-        return $http.post('/tools/api/ap', {data: {id: id}, method: 'delete'}).then(function(resp) {
+        return $http.delete('/tools/api/ap/' + id + '/').then(function(resp) {
             console.log("delete ap ok!");
             $scope.aps.splice(index, 1);
             return;
