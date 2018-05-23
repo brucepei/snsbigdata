@@ -33,7 +33,7 @@ app.controller('SelectLocalCtrl', function($scope, $filter, $http, $log, $locati
 app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $log) {
     var IP_Regex = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
     var query_args = $location.search();
-    $scope.isNumber = angular.isNumber;
+    $scope.isString = angular.isString;
     if (query_args.filter) {
         $scope.filterAp = query_args.filter;
         $log.debug("set filter AP from url: " + $scope.filterAp);
@@ -41,7 +41,8 @@ app.controller('EditableRowCtrl', function($scope, $filter, $http, $location, $l
         $scope.filterAp = "";
         $log.debug("set filter AP to empty");
     }
-    $http.get('/tools/api/ap/').then(function(resp) {
+    timestamp = Math.floor(Date.now());
+    $http.get('/tools/api/ap/?' + timestamp).then(function(resp) {
         var ap_data = resp.data;
         var owners = [{text: "Owner: All", value: ''}];
         if (ap_data) {
