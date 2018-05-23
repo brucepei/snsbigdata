@@ -58,8 +58,7 @@ class ApListView(viewsets.ModelViewSet):
         lookup_url_kwarg = 'ssid'
         assert lookup_url_kwarg in self.kwargs, (
             'Expected view %s to be called with a URL keyword argument '
-            'named "%s". Fix your URL conf, or set the `.lookup_field` '
-            'attribute on the view correctly.' %
+            'named "%s". Fix your URL conf.' %
             (self.__class__.__name__, lookup_url_kwarg)
         )
         filter_kwargs = {lookup_url_kwarg: self.kwargs[lookup_url_kwarg]}
@@ -78,15 +77,7 @@ class ApListView(viewsets.ModelViewSet):
         instance = self.get_ap_by_ssid()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        ping = request.data.get('ping', False)
-        scan = request.data.get('scan', False)
-        connect = request.data.get('connect', False)
-        if ping:
-            instance.update_aging('ping')
-        if scan:
-            instance.update_aging('scan')
-        if connect:
-            instance.update_aging('connect')
+        instance.update_aging(request.data)
         self.perform_update(serializer)
         return Response(serializer.data)
 

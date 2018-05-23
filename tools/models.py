@@ -57,11 +57,13 @@ class Ap(models.Model):
         return result
 
     def update_aging(self, aging_type):
-        if aging_type == 'ping':
+        if isinstance(aging_type, str):
+            aging_type[aging_type] = True
+        if aging_type.get('ping', False):
             self.ping_aging = datetime.now(pytz.timezone('UTC'))
-        elif aging_type == 'scan':
+        if aging_type.get('scan', False):
             self.scan_aging = datetime.now(pytz.timezone('UTC'))
-        elif aging_type == 'connect':
+        if aging_type.get('connect', False):
             self.connect_aging = datetime.now(pytz.timezone('UTC'))
 
     def __unicode__(self):
