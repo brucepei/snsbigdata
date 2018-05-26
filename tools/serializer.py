@@ -61,3 +61,12 @@ class APSerializer(serializers.ModelSerializer):
         model = Ap
         fields = ('id', 'brand', 'ssid', 'type', 'password', 'owner', 'ip', 'ping_aging', 'scan_aging', 'connect_aging')
 
+    def validate(self, data):
+        logger.info("validate ap setting: {} at {}!".format(data, __name__))
+        pass_len = len(data['password']) if 'password' in data else 0
+        if data['type'] != 'OPEN' and pass_len < 8:
+            raise serializers.ValidationError(
+                {'password': "Password of {} should be more than 8 characters!".format(data['type'])})
+        elif data['type'] == 'OPEN' and pass_len != 0:
+            raise serializers.ValidationError({'password': "Password of OPEN should be empty!"})
+        return data
