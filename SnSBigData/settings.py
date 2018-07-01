@@ -56,6 +56,13 @@ MIDDLEWARE_CLASSES = [
     # 'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cbd_cache_table',
+    }
+}
+
 ROOT_URLCONF = 'SnSBigData.urls'
 
 TEMPLATES = [

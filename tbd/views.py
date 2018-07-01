@@ -3,6 +3,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.core.cache import cache
 from collections import Iterable
 from tbd.models import Project, TestAction, Build, Crash, TestCase, Host, JIRA, TestResult,TestTime
 from .forms import AddProjectForm, AddBuildForm, AddCrashForm, AddHostForm, AddTestCaseForm
@@ -14,7 +15,6 @@ import json,datetime
 from .tools.write_excel_result import write_excel
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
-
 # from dwebsocket.decorators import accept_websocket,require_websocket
 
 DEFAULT = {
@@ -24,9 +24,10 @@ DEFAULT = {
     'testcase': {'name': '!NULL!'},
 }
 
-Issue_Frequency_Buffer = {
-    # issue1 => {result: {}, assoc_issues: [], orig_issue_id: issue1, start_at: ?, update_at: ?}
-}
+Cache_Key_Issue_Frequency_Buffer = 'issue_frequency_buffer'
+# Issue_Frequency_Buffer = {
+#     # issue1 => {result: {}, assoc_issues: [], orig_issue_id: issue1, start_at: ?, update_at: ?}
+# }
 # Issue_Frequency_Buffer = set()
 
 ONE_DAY = 24 * 60 * 60
@@ -44,16 +45,17 @@ def seconds_to_humanable(seconds):
     return humanable_str
 
 def get_cached_issue_frequency(target_issue_id, check_result=False):
-    if target_issue_id in Issue_Frequency_Buffer:
-        if (not check_result) or (check_result and (Issue_Frequency_Buffer[target_issue_id].get('result', None) or Issue_Frequency_Buffer[target_issue_id].get('exception', None))):
+    issue_frequency_buffer = cache.get(Cache_Key_Issue_Frequency_Buffer, {})
+    if target_issue_id in issue_frequency_buffer:
+        if (not check_result) or (check_result and (issue_frequency_buffer[target_issue_id].get('result', None) or issue_frequency_buffer[target_issue_id].get('exception', None))):
             print("get cached issue: {}".format(target_issue_id))
-            return Issue_Frequency_Buffer[target_issue_id]
-    for issue_id in Issue_Frequency_Buffer:
-        if 'assoc_issues' in Issue_Frequency_Buffer[issue_id] and isinstance(Issue_Frequency_Buffer[issue_id]['assoc_issues'], Iterable) \
-            and target_issue_id in Issue_Frequency_Buffer[issue_id]['assoc_issues']:
-            if (not check_result) or (check_result and Issue_Frequency_Buffer[issue_id].get('result', None)):
+            return issue_frequency_buffer[target_issue_id]
+    for issue_id in issue_frequency_buffer:
+        if 'assoc_issues' in issue_frequency_buffer[issue_id] and isinstance(issue_frequency_buffer[issue_id]['assoc_issues'], Iterable) \
+            and target_issue_id in issue_frequency_buffer[issue_id]['assoc_issues']:
+            if (not check_result) or (check_result and issue_frequency_buffer[issue_id].get('result', None)):
                 print("get associated cached issue: {}".format(target_issue_id))
-                return Issue_Frequency_Buffer[issue_id]
+                return issue_frequency_buffer[issue_id]
     print("Cannot get cached issue!")
     return None
 
@@ -67,29 +69,30 @@ def update_issue_frequency(issue_id, result=None, assoc_issues=None, exception=N
         elif exception:
             cached_result['exception'] = exception
             cached_result['update_at'] = time.time()
+            cache.set(Cache_Key_Issue_Frequency_Buffer, cached_result)
         else:
             print("Update cached issue {}, but no result found!".format(issue_id))
     else:
-        Issue_Frequency_Buffer[issue_id] = {
+        issue_frequency_buffer[issue_id] = {
             'start_at': time.time(),
             'orig_issue_id': issue_id,
             'assoc_issues': assoc_issues
         }
         if result:
-            Issue_Frequency_Buffer[issue_id]['update_at'] = time.time() #start_at and update_at at the same time
-            Issue_Frequency_Buffer[issue_id]['result'] = result
+            issue_frequency_buffer[issue_id]['update_at'] = time.time() #start_at and update_at at the same time
+            issue_frequency_buffer[issue_id]['result'] = result
 
 def query_cached_issue_frequency(issue_id, result_url, force_refresh):
     cached_result = get_cached_issue_frequency(issue_id, True) #True: must get completed result, but not pending result!
     if cached_result:
         if force_refresh:
             print("Force refresh, and delete cached result with orig id: {}".format(cached_result['orig_issue_id']))
-            del Issue_Frequency_Buffer[cached_result['orig_issue_id']]
+            del issue_frequency_buffer[cached_result['orig_issue_id']]
         else:
             return
     query_issue_frequency.delay(issue_id, result_url)
-    Issue_Frequency_Buffer[issue_id] = {'orig_issue_id': issue_id, 'start_at': time.time()}
-    
+    issue_frequency_buffer[issue_id] = {'orig_issue_id': issue_id, 'start_at': time.time()}
+
 def set_default_records(prj_name=None, project=None, set_jira=False, set_host=False, set_testcase=False, set_testaction=False):
     result = None
     try:
@@ -581,7 +584,7 @@ def ajax_build_list(request):
                         'create_time': timezone.localtime(bld.create).strftime("%Y-%m-%d %H:%M:%S") if bld.create else None,
                     })
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
-    
+
 def ajax_build_create(request):
     print("request build create:" + repr(request.POST))
     message = None
@@ -785,7 +788,7 @@ def ajax_host_create(request):
         return JsonResponse({'Result': 'ERROR', 'Message': message})
     else:
         return JsonResponse({'Result': 'OK', "Record": record})
-    
+
 def ajax_host_update(request):
     print("request host update:" + repr(request.POST))
     message = None
@@ -945,7 +948,7 @@ def ajax_testcase_create(request):
         return JsonResponse({'Result': 'ERROR', 'Message': message})
     else:
         return JsonResponse({'Result': 'OK', "Record": record})
-    
+
 def ajax_testcase_update(request):
     print("request testcase update:" + repr(request.POST))
     message = None
@@ -1257,7 +1260,7 @@ def ajax_crash_update(request):
         return JsonResponse({'Result': 'ERROR', 'Message': message})
     else:
         return JsonResponse({'Result': 'OK'})
-    
+
 #testresult
 def ajax_testresult_list(request):
     print("request testresult list:" + repr(request.POST))
@@ -1470,7 +1473,7 @@ def ajax_testresult_update(request):
         return JsonResponse({'Result': 'ERROR', 'Message': message})
     else:
         return JsonResponse({'Result': 'OK'})
-    
+
 #list_options
 def ajax_list_options_testactions_in_project(request):
     print(request.POST)
@@ -1509,7 +1512,7 @@ def ajax_list_options_builds_in_project(request):
                         "Value": bld.id
                     })
     return JsonResponse({'Result': 'OK', 'Options': options})
-    
+
 def ajax_list_options_hosts_in_project(request):
     print(request.POST)
     options = []
@@ -1583,7 +1586,7 @@ def ajax_issue_frequency_result(request):
         err_code = -1
         msg = "not support request method: {}!".format(request.method)
     return json_response(msg, err_code)
-    
+
 def ajax_ping_results(request):
     err_code = None
     msg = None
@@ -1593,7 +1596,7 @@ def ajax_ping_results(request):
         err_code = 0
         msg = ping_result
     return json_response(msg, err_code)
-    
+
 # Create auto API here, no CSRF
 @csrf_exempt
 def auto(request, action):
@@ -1748,7 +1751,7 @@ def auto_query_project(request):
                 'owner': prj.owner,
             })
     return json_response(msg, err_code)
-    
+
 def auto_query_build(request):
     err_code = None
     msg = None
@@ -1769,7 +1772,7 @@ def auto_query_build(request):
                 'use_server': bld.use_server,
             })
     return json_response(msg, err_code)
-    
+
 def auto_crash_info(request):
     err_code = 0
     msg = None
@@ -1992,7 +1995,7 @@ def auto_get_running_jira(request):
         err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
     return json_response(msg, err_code)
-    
+
 def auto_jira_info(request):
     err_code = 0
     msg = None
@@ -2043,7 +2046,7 @@ def auto_jira_info(request):
         err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
     return json_response(msg, err_code)
-    
+
 def auto_task_result(request):
     err_code = 0
     msg = None
@@ -2064,11 +2067,11 @@ def auto_task_result(request):
         err_code = -1
         msg = "Incorrect request method: {}, only support POST now!".format(request.method)
     return json_response(msg, err_code)
-    
+
 # Create your views here.
 def home_page(request):
     return render(request, 'tbd/home.html')
-        
+
 def project_page(request):
     return render(request, 'tbd/project.html')
 
@@ -2262,7 +2265,7 @@ def utility_page(request):
     elif utility_name == "test_time":
         utility_args['utility_name'] = utility_name
         utility_template = 'tbd/utility_{}.html'.format(utility_name)
-        
+
         test_build = request.GET.get('testbuild', '')
         test_dut = request.GET.get('testdut', '')
         test_date = request.GET.get('testdate', '')
@@ -2270,7 +2273,7 @@ def utility_page(request):
             test_build = Build.objects.filter(version=test_build)[0]
         if test_dut:
             test_dut = Host.objects.get(name=test_dut,project=test_build.project)
-        
+
         testbuilds = Build.objects.values("version").distinct()
         if test_build :
             testduts = TestTime.objects.filter(testbuild=test_build).values("testdut__name").distinct()
@@ -2293,7 +2296,7 @@ def utility_page(request):
         testbuilds = Build.objects.values("version").distinct()
         utility_args['utility_name'] = utility_name
         utility_template = 'tbd/utility_{}.html'.format(utility_name)
-        
+
         query_build = request.GET.get('query_build', '')
         utility_args['query_build']=query_build
         utility_args['testbuilds']=testbuilds
@@ -2302,9 +2305,9 @@ def utility_page(request):
                 query_tst_build = Build.objects.filter(version=query_build)[0]
                 test_result=TestResult.objects.filter(build=query_tst_build)
                 res = write_excel([test_result,])
- 
-                response = HttpResponse(content_type='application/vnd.ms-excel') 
-                response['Content-Disposition'] = 'attachment; filename=beifen'+time.strftime('%Y%m%d',time.localtime(time.time()))+'.xls' 
+
+                response = HttpResponse(content_type='application/vnd.ms-excel')
+                response['Content-Disposition'] = 'attachment; filename=beifen'+time.strftime('%Y%m%d',time.localtime(time.time()))+'.xls'
                 res.save(response)
                 return response
             except Exception as error:
@@ -2314,7 +2317,7 @@ def utility_page(request):
         utility_template = 'tbd/utility.html'
     return render(request, utility_template, utility_args)
 
-@csrf_exempt    
+@csrf_exempt
 def ajax_test_time(request):
     post_data = json.loads(request.body)
     test_build = post_data.get("testbuild",None)
@@ -2337,14 +2340,14 @@ def ajax_test_time(request):
         test_dut = Host.objects.get(name=test_dut,project=test_project)
     except Exception as err:
         return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
-    
+
     if not test_date:
         test_date = str(datetime.date.today())
     if (test_build is not None) and (test_dut is not None) and (test_date is not None):
         testtime=record_test_time(test_build =test_build,test_dut = test_dut,test_date = test_date)
         return JsonResponse({'Result':'OK', 'dut':test_dut.name if test_dut else '','build':test_build.version if test_build else '','testcount':testtime.testcount})
     return JsonResponse({'Result':'Fail', 'reason':'build/dut/date exist None'})
-    
+
 def record_test_time(test_build = None,test_dut = None,test_date = None):
     test_date = datetime.date(*map(lambda x:int(x),test_date.split('-')))
     today_date = str(datetime.datetime.today())[:10]
@@ -2355,12 +2358,12 @@ def record_test_time(test_build = None,test_dut = None,test_date = None):
         testtime.testcount = 1
         testtime.save()
     return testtime
-    
+
 def testtime_page(request):
     test_build = request.GET.get('testbuild', '')
     test_dut = request.GET.get('testdut', '')
     test_date = request.GET.get('testdate', '')
-    
+
     try:
         if test_build:
             test_build = Build.objects.filter(version=test_build)[0]
@@ -2368,7 +2371,7 @@ def testtime_page(request):
             test_dut = Host.objects.get(name=test_dut,project=test_build.project)
     except Exception as err:
         return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
-    
+
     testbuilds = Build.objects.values("version").distinct()
     if test_build :
         testduts = TestTime.objects.filter(testbuild=test_build).values("testdut__name").distinct()
@@ -2389,7 +2392,7 @@ def testtime_page(request):
         'testdate': test_date, 'testdates': testdates,
     })
 
-    
+
 def testtime_api(request):
     print("request testresult list:" + repr(request.POST))
     records = []
@@ -2403,7 +2406,7 @@ def testtime_api(request):
         record_date = test_date
         start_index = int(request.GET.get('jtStartIndex', 0))
         page_size = int(request.GET.get('jtPageSize', 20))
-        
+
         try:
             if test_build:
                 test_build = Build.objects.filter(version=test_build)[0]
@@ -2412,11 +2415,11 @@ def testtime_api(request):
 
         except Exception as err:
             return JsonResponse({'Result':'Error','Records': [],'Message':'error info : {}'.format(str(err))})
-        
+
         if test_build:
             if test_date:
                 test_date = datetime.date(*map(lambda x:int(x),test_date.split('-')))
-                
+
             if test_dut and test_date:
                 time_objs = TestTime.objects.filter(testbuild=test_build,testdut=test_dut,testdate=test_date)
                 time_objs = time_objs.values('testbuild__version','testdut__name','testdate').annotate(testcount=Sum('testcount'))
@@ -2430,7 +2433,7 @@ def testtime_api(request):
             else:
                 time_objs = TestTime.objects.filter(testbuild=test_build,testdut=test_dut)
                 time_objs = time_objs.values('testdate').annotate(testcount=Sum('testcount'))
-                
+
             #time_objs = time_objs.values('testbuild__version','testdut__name','testdate').annotate(testcount=Sum('testcount'))
         else:
             time_objs = []
@@ -2477,7 +2480,7 @@ def testtime_api(request):
                 })
         total_count = len(time_objs)
     return JsonResponse({'Result': 'OK', 'Records': records, 'TotalRecordCount': total_count})
-    
+
 def testtime_create(request):
     #{u'test_times': [u'13'], u'test_dut': [u'0'], u'test_date': [u'0'], u'test_build': [u'wert']}>
     test_count=request.POST.get('test_count',None)
@@ -2485,7 +2488,7 @@ def testtime_create(request):
     test_dut=request.POST.get('test_dut',None)
     test_date=datetime.date.today()
     test_build=request.POST.get('test_build',None)
-    
+
     try:
         if test_build:
             test_build = Build.objects.filter(version=test_build)[0]
@@ -2503,7 +2506,7 @@ def testtime_create(request):
                 return JsonResponse({'Result': 'OK', "Record": record})
         except Exception as err:
             return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
-    
+
 def testtime_update(request):
     #print request.POST
     test_count=request.POST.get('test_count',None)
@@ -2520,7 +2523,7 @@ def testtime_update(request):
             return JsonResponse({'Result': 'OK', "Record": record})
         except Exception as err:
             return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
-    
+
 def testtime_delete(request):
     test_time_id=request.POST.get('test_time_id',None)
     if test_time_id:
@@ -2531,8 +2534,8 @@ def testtime_delete(request):
             return JsonResponse({'Result': 'OK'})
         except Exception as err:
             return JsonResponse({'Result':'Error','Message':'error info : {}'.format(str(err))})
-            
-            
+
+
 # @accept_websocket
 # def echo(request):
     # if not request.is_websocket():
