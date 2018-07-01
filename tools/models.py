@@ -14,7 +14,7 @@ class Ap(models.Model):
         ('WEP', 'WEP')
     )
     brand = models.CharField(default="", max_length=30)
-    owner = models.CharField(default="", max_length=30)
+    owner = models.CharField(blank=False, max_length=30)
     ssid = models.CharField(unique=True, max_length=50)
     ping_aging = models.DateTimeField(null=True, blank=True)
     scan_aging = models.DateTimeField(null=True, blank=True)
