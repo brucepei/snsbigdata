@@ -24,15 +24,19 @@ DEFAULT = {
     'testcase': {'name': '!NULL!'},
 }
 
+
+ONE_DAY = 24 * 60 * 60
+ONE_HOUR = 60 * 60
+ONE_MINUTE = 60
+
 Cache_Issue_Frequency_Buffer = 'ifb_{}'
+Cache_Issue_Frequency_Timeout = 15 * ONE_DAY
 # Issue_Frequency_Buffer = {
 #     # issue1 => {result: {}, assoc_issues: [], orig_issue_id: issue1, start_at: ?, update_at: ?}
 # }
 # Issue_Frequency_Buffer = set()
 
-ONE_DAY = 24 * 60 * 60
-ONE_HOUR = 60 * 60
-ONE_MINUTE = 60
+
 def seconds_to_humanable(seconds):
     if seconds > ONE_DAY:
         humanable_str = "{:.1f} days".format(seconds/ONE_DAY)
@@ -45,53 +49,56 @@ def seconds_to_humanable(seconds):
     return humanable_str
 
 def get_cached_issue_frequency(target_issue_id, check_result=False):
-    cached_issue = cache.get(Cache_Issue_Frequency_Buffer.format(target_issue_id))
-    if cached_issue is not None:
+    cached_key = Cache_Issue_Frequency_Buffer.format(target_issue_id)
+    cached_issue = cache.get(cached_key)
+    if (cached_issue is not None) and (not isinstance(cached_issue, dict)):
+        print("get associated cached issue: {} for {}".format(cached_issue, target_issue_id))
+        cached_key = Cache_Issue_Frequency_Buffer.format(cached_issue)
+        cached_issue = cache.get(cached_key)
+    if isinstance(cached_issue, dict):
         if (not check_result) or (check_result and (cached_issue.get('result', None) or cached_issue.get('exception', None))):
             print("get cached issue: {}".format(target_issue_id))
             return cached_issue
-    for issue_id in issue_frequency_buffer:
-        if 'assoc_issues' in cached_issue and isinstance(cached_issue['assoc_issues'], Iterable) \
-            and target_issue_id in cached_issue['assoc_issues']:
-            if (not check_result) or (check_result and cached_issue.get('result', None)):
-                print("get associated cached issue: {}".format(target_issue_id))
-                return cached_issue
     print("Cannot get cached issue!")
     return None
 
 def update_issue_frequency(issue_id, result=None, assoc_issues=None, exception=None):
-    cached_result = get_cached_issue_frequency(issue_id)
-    if cached_result:
+    cached_key = Cache_Issue_Frequency_Buffer.format(issue_id)
+    need_cached_result = get_cached_issue_frequency(issue_id)
+    if need_cached_result:
         if result:
-            cached_result['result'] = result
-            cached_result['update_at'] = time.time()
-            cached_result['assoc_issues'] = assoc_issues
+            need_cached_result['result'] = result
+            need_cached_result['update_at'] = time.time()
         elif exception:
-            cached_result['exception'] = exception
-            cached_result['update_at'] = time.time()
-            cache.set(Cache_Key_Issue_Frequency_Buffer, cached_result)
+            need_cached_result['exception'] = exception
+            need_cached_result['update_at'] = time.time()
         else:
             print("Update cached issue {}, but no result found!".format(issue_id))
     else:
-        issue_frequency_buffer[issue_id] = {
+        need_cached_result = {
             'start_at': time.time(),
             'orig_issue_id': issue_id,
-            'assoc_issues': assoc_issues
         }
         if result:
-            issue_frequency_buffer[issue_id]['update_at'] = time.time() #start_at and update_at at the same time
-            issue_frequency_buffer[issue_id]['result'] = result
+            need_cached_result['update_at'] = time.time() #start_at and update_at at the same time
+            need_cached_result['result'] = result
+    if assoc_issues is not None:
+        for assoc_issue in assoc_issues:
+            assoc_cached_key = Cache_Issue_Frequency_Buffer.format(assoc_issue)
+            cache.set(assoc_cached_key, issue_id, Cache_Issue_Frequency_Timeout)
+    cache.set(cached_key, need_cached_result, Cache_Issue_Frequency_Timeout)
 
 def query_cached_issue_frequency(issue_id, result_url, force_refresh):
     cached_result = get_cached_issue_frequency(issue_id, True) #True: must get completed result, but not pending result!
     if cached_result:
         if force_refresh:
+            orig_cached_key = Cache_Issue_Frequency_Buffer.format(cached_result['orig_issue_id'])
             print("Force refresh, and delete cached result with orig id: {}".format(cached_result['orig_issue_id']))
-            del issue_frequency_buffer[cached_result['orig_issue_id']]
+            cache.delete(orig_cached_key)
         else:
             return
     query_issue_frequency.delay(issue_id, result_url)
-    issue_frequency_buffer[issue_id] = {'orig_issue_id': issue_id, 'start_at': time.time()}
+    update_issue_frequency(issue_id)
 
 def set_default_records(prj_name=None, project=None, set_jira=False, set_host=False, set_testcase=False, set_testaction=False):
     result = None
