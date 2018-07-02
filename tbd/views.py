@@ -24,7 +24,7 @@ DEFAULT = {
     'testcase': {'name': '!NULL!'},
 }
 
-Cache_Key_Issue_Frequency_Buffer = 'issue_frequency_buffer'
+Cache_Issue_Frequency_Buffer = 'ifb_{}'
 # Issue_Frequency_Buffer = {
 #     # issue1 => {result: {}, assoc_issues: [], orig_issue_id: issue1, start_at: ?, update_at: ?}
 # }
@@ -45,17 +45,17 @@ def seconds_to_humanable(seconds):
     return humanable_str
 
 def get_cached_issue_frequency(target_issue_id, check_result=False):
-    issue_frequency_buffer = cache.get(Cache_Key_Issue_Frequency_Buffer, {})
-    if target_issue_id in issue_frequency_buffer:
-        if (not check_result) or (check_result and (issue_frequency_buffer[target_issue_id].get('result', None) or issue_frequency_buffer[target_issue_id].get('exception', None))):
+    cached_issue = cache.get(Cache_Issue_Frequency_Buffer.format(target_issue_id))
+    if cached_issue is not None:
+        if (not check_result) or (check_result and (cached_issue.get('result', None) or cached_issue.get('exception', None))):
             print("get cached issue: {}".format(target_issue_id))
-            return issue_frequency_buffer[target_issue_id]
+            return cached_issue
     for issue_id in issue_frequency_buffer:
-        if 'assoc_issues' in issue_frequency_buffer[issue_id] and isinstance(issue_frequency_buffer[issue_id]['assoc_issues'], Iterable) \
-            and target_issue_id in issue_frequency_buffer[issue_id]['assoc_issues']:
-            if (not check_result) or (check_result and issue_frequency_buffer[issue_id].get('result', None)):
+        if 'assoc_issues' in cached_issue and isinstance(cached_issue['assoc_issues'], Iterable) \
+            and target_issue_id in cached_issue['assoc_issues']:
+            if (not check_result) or (check_result and cached_issue.get('result', None)):
                 print("get associated cached issue: {}".format(target_issue_id))
-                return issue_frequency_buffer[issue_id]
+                return cached_issue
     print("Cannot get cached issue!")
     return None
 
