@@ -263,6 +263,8 @@ class TestTime(models.Model):
     testdate = models.DateField(auto_now_add=True)
     testcount = models.IntegerField(default=0)
     timesection = models.IntegerField(default=0)
+    actionpass = models.IntegerField(default=0)
+    actionfail = models.IntegerField(default=0)
     
     class Meta:
         unique_together = ('testbuild','testdut','testdate','timesection')

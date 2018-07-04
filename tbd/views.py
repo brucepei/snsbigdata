@@ -1,3 +1,4 @@
+from __future__ import division
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, JsonResponse
@@ -1919,7 +1920,9 @@ def auto_testaction_info(request):
                         testaction, created = TestAction.objects.get_or_create(name=ta_name, project=project)
                     if host and testaction:
                         if is_pass:
-                            testtime=record_test_time(test_build =build,test_dut = host,test_date = str(datetime.date.today()))
+                            testtime=record_test_time(test_build =build,test_dut = host,actionpass=True,test_date = str(datetime.date.today()))
+                        else:
+                            testtime=record_test_time(test_build =build,test_dut = host,actionfail=True,test_date = str(datetime.date.today()))
                         try:
                             testresult = TestResult.objects.get(testaction=testaction, build=build, host=host)
                         except Exception as err:
@@ -2309,7 +2312,11 @@ def utility_page(request):
         utility_args['testbuilds']=testbuilds
         if query_build:
             try:
-                query_tst_build = Build.objects.filter(version=query_build)[0]
+                if "SDM845" in query_build and "1.0.1" not in query_build:
+                    project_ = Project.objects.get(name="SDM845")
+                    query_tst_build = Build.objects.filter(version=query_build,project=project_)[0]
+                else:
+                    query_tst_build = Build.objects.filter(version=query_build)[0]
                 test_result=TestResult.objects.filter(build=query_tst_build)
                 res = write_excel([test_result,])
 
@@ -2331,6 +2338,11 @@ def ajax_test_time(request):
     test_dut = post_data.get("testdut",None)
     test_date = post_data.get("testdate",None)
     test_project = post_data.get("testproject",None)
+    passfail = post_data.get("actionpassfail",None)
+    if passfail == 1:
+        passfail = True
+    else:
+        passfail = False
     #test_time = post_data.get("testtime",None)
     try:
         test_project = Project.objects.get(name=test_project)
@@ -2351,21 +2363,49 @@ def ajax_test_time(request):
     if not test_date:
         test_date = str(datetime.date.today())
     if (test_build is not None) and (test_dut is not None) and (test_date is not None):
-        testtime=record_test_time(test_build =test_build,test_dut = test_dut,test_date = test_date)
-        return JsonResponse({'Result':'OK', 'dut':test_dut.name if test_dut else '','build':test_build.version if test_build else '','testcount':testtime.testcount})
+        if passfail:
+            testtime=record_test_time(test_build =test_build,test_dut = test_dut,actionpass=True,test_date = test_date)
+        else:
+            testtime=record_test_time(test_build =test_build,test_dut = test_dut,actionfail=True,test_date = test_date)
+        return JsonResponse({'Result':'OK', 'dut':test_dut.name if test_dut else '','build':test_build.version if test_build else '','testcount':testtime})
     return JsonResponse({'Result':'Fail', 'reason':'build/dut/date exist None'})
 
 def record_test_time(test_build = None,test_dut = None,test_date = None):
     test_date = datetime.date(*map(lambda x:int(x),test_date.split('-')))
     today_date = str(datetime.datetime.today())[:10]
     start_time = datetime.datetime.strptime('{} 00:00:00'.format(today_date),'%Y-%m-%d %H:%M:%S')
-    time_section = (datetime.datetime.now() - start_time).seconds/(30*60)
-    testtime = TestTime.objects.get_or_create(testbuild=test_build,testdut=test_dut,testdate=test_date,timesection=time_section)[0]
-    if testtime.testcount != 1:
-        testtime.testcount = 1
+    time_section = int((datetime.datetime.now() - start_time).seconds/(30*60))
+    if ACTION_RECORD['record_date'] != datetime.date.today():
+        for r_keys in ACTION_RECORD.keys():
+            if str(ACTION_RECORD['record_date']) in r_keys:
+                del ACTION_RECORD[r_keys]
+        ACTION_RECORD['record_date'] = datetime.date.today()
+        
+    if record_key not in ACTION_RECORD.keys():
+        ACTION_RECORD[record_key]=[0,0,0]
+        
+    if actionpass:
+        ACTION_RECORD[record_key][0] += 1
+    else:
+        ACTION_RECORD[record_key][1] += 1
+        
+    if time_section != ACTION_RECORD[record_key][2]:
+        testtime = TestTime.objects.get_or_create(testbuild=test_build,testdut=test_dut,testdate=test_date,timesection=ACTION_RECORD[record_key][2])[0]
+        testtime.actionpass=ACTION_RECORD[record_key][0]
+        testtime.actionfail=ACTION_RECORD[record_key][1]
+        # if actionpass and testtime.testcount != 1:
+        if (testtime.actionpass + testtime.actionfail) != 0 and round(testtime.actionpass/(testtime.actionpass + testtime.actionfail),2) * 100 > PASS_RATE:
+            testtime.testcount = 1
+        else:
+            testtime.testcount = 0
         testtime.save()
-    return testtime
-
+        ACTION_RECORD[record_key][0]=0
+        ACTION_RECORD[record_key][1]=0
+        ACTION_RECORD[record_key][2] = time_section
+        return 'Update'
+    else:
+        return 'Keep'
+    
 def testtime_page(request):
     test_build = request.GET.get('testbuild', '')
     test_dut = request.GET.get('testdut', '')
@@ -2429,18 +2469,18 @@ def testtime_api(request):
 
             if test_dut and test_date:
                 time_objs = TestTime.objects.filter(testbuild=test_build,testdut=test_dut,testdate=test_date)
-                time_objs = time_objs.values('testbuild__version','testdut__name','testdate').annotate(testcount=Sum('testcount'))
+                time_objs = time_objs.values('testbuild__version','testdut__name','testdate').annotate(testcount=Sum('testcount'),testpass=Sum('actionpass'),testfail=Sum('actionfail'))
             elif not test_dut and not test_date:
                 time_objs = TestTime.objects.filter(testbuild=test_build)
                 #time_objs = time_objs.values('testbuild__version').annotate(testcount=Sum('testcount'))
-                time_objs = time_objs.values('testdut__name').annotate(testcount=Sum('testcount'))
+                time_objs = time_objs.values('testdut__name').annotate(testcount=Sum('testcount'),testpass=Sum('actionpass'),testfail=Sum('actionfail'))
             elif not test_dut:
                 time_objs = TestTime.objects.filter(testbuild=test_build,testdate=test_date)
-                time_objs = time_objs.values('testdut__name').annotate(testcount=Sum('testcount'))
+                time_objs = time_objs.values('testdut__name').annotate(testcount=Sum('testcount'),testpass=Sum('actionpass'),testfail=Sum('actionfail'))
             else:
                 time_objs = TestTime.objects.filter(testbuild=test_build,testdut=test_dut)
-                time_objs = time_objs.values('testdate').annotate(testcount=Sum('testcount'))
-
+                time_objs = time_objs.values('testdate').annotate(testcount=Sum('testcount'),testpass=Sum('actionpass'),testfail=Sum('actionfail'))
+                
             #time_objs = time_objs.values('testbuild__version','testdut__name','testdate').annotate(testcount=Sum('testcount'))
         else:
             time_objs = []
@@ -2456,6 +2496,8 @@ def testtime_api(request):
                     'test_dut': ta['testdut__name'],
                     'test_date': str(ta['testdate']),
                     'test_count': ta['testcount'],
+                    'test_pass': ta['testpass'],
+                    'test_fail': ta['testfail'],
                     #'test_section':ta['timesection'],
                 })
             elif not test_dut and not test_date:
@@ -2465,6 +2507,8 @@ def testtime_api(request):
                     'test_dut': ta['testdut__name'],
                     'test_date': record_date,
                     'test_count': ta['testcount'],
+                    'test_pass': ta['testpass'],
+                    'test_fail': ta['testfail'],
                     #'test_section':ta['timesection'],
                 })
             elif not test_dut:
@@ -2474,6 +2518,8 @@ def testtime_api(request):
                     'test_dut': ta['testdut__name'],
                     'test_date': record_date,
                     'test_count': ta['testcount'],
+                    'test_pass': ta['testpass'],
+                    'test_fail': ta['testfail'],
                     #'test_section':ta['timesection'],
                 })
             else:
@@ -2483,6 +2529,8 @@ def testtime_api(request):
                     'test_dut': record_dut,
                     'test_date': str(ta['testdate']),
                     'test_count': ta['testcount'],
+                    'test_pass': ta['testpass'],
+                    'test_fail': ta['testfail'],
                     #'test_section':ta['timesection'],
                 })
         total_count = len(time_objs)
