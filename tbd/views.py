@@ -50,6 +50,7 @@ def seconds_to_humanable(seconds):
     return humanable_str
 
 def get_cached_issue_frequency(target_issue_id, check_result=False):
+    target_issue_id = target_issue_id.upper()
     cached_key = Cache_Issue_Frequency_Buffer.format(target_issue_id)
     cached_issue = cache.get(cached_key)
     if (cached_issue is not None) and (not isinstance(cached_issue, dict)):
@@ -64,6 +65,7 @@ def get_cached_issue_frequency(target_issue_id, check_result=False):
     return None
 
 def update_issue_frequency(issue_id, result=None, assoc_issues=None, exception=None):
+    issue_id = issue_id.upper()
     cached_key = Cache_Issue_Frequency_Buffer.format(issue_id)
     need_cached_result = get_cached_issue_frequency(issue_id)
     if need_cached_result:
@@ -84,12 +86,18 @@ def update_issue_frequency(issue_id, result=None, assoc_issues=None, exception=N
             need_cached_result['update_at'] = time.time() #start_at and update_at at the same time
             need_cached_result['result'] = result
     if assoc_issues is not None:
-        for assoc_issue in assoc_issues:
-            assoc_cached_key = Cache_Issue_Frequency_Buffer.format(assoc_issue)
-            cache.set(assoc_cached_key, issue_id, Cache_Issue_Frequency_Timeout)
+        try:
+            assoc_issues = json.loads(assoc_issues)
+        except Exception as err:
+            print("Failed to deserialize json: {}, error: {}".format(assoc_issues, err))
+        if isinstance(assoc_issues, list):
+            for assoc_issue in assoc_issues:
+                assoc_cached_key = Cache_Issue_Frequency_Buffer.format(assoc_issue.upper())
+                cache.set(assoc_cached_key, issue_id, Cache_Issue_Frequency_Timeout)
     cache.set(cached_key, need_cached_result, Cache_Issue_Frequency_Timeout)
 
 def query_cached_issue_frequency(issue_id, result_url, force_refresh):
+    issue_id = issue_id.upper()
     cached_result = get_cached_issue_frequency(issue_id, True) #True: must get completed result, but not pending result!
     if cached_result:
         if force_refresh:
