@@ -91,9 +91,12 @@ def update_issue_frequency(issue_id, result=None, assoc_issues=None, exception=N
         except Exception as err:
             print("Failed to deserialize json: {}, error: {}".format(assoc_issues, err))
         if isinstance(assoc_issues, list):
+            assoc_issues_dict = {}
             for assoc_issue in assoc_issues:
                 assoc_cached_key = Cache_Issue_Frequency_Buffer.format(assoc_issue.upper())
-                cache.set(assoc_cached_key, issue_id, Cache_Issue_Frequency_Timeout)
+                assoc_issues_dict[assoc_cached_key] = issue_id
+            if assoc_issues_dict:
+                cache.set_many(assoc_issues_dict, Cache_Issue_Frequency_Timeout)
     cache.set(cached_key, need_cached_result, Cache_Issue_Frequency_Timeout)
 
 def query_cached_issue_frequency(issue_id, result_url, force_refresh):
